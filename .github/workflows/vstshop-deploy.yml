@@ -5,6 +5,7 @@ on:
     branches: [ "master" ]
     paths:
       - 'infra/workloads/dev/VSTShop/**'
+      - 'infra/management/identity/**'
       - 'services/vstshop/**'
       - '.github/workflows/vstshop-deploy.yml'
 
