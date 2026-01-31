@@ -84,6 +84,7 @@ resource "aws_iam_role_policy" "github_actions_assume_role" {
 }
 
 # 5. Policy for App Deployment (Website S3 + CloudFront)
+# 5. Confident App Deployment Policy (S3 Sync + CloudFront)
 resource "aws_iam_role_policy" "github_actions_vstshop_deploy" {
   name = "GitHubActionsAppDeploy"
   role = aws_iam_role.github_actions.id
@@ -92,33 +93,33 @@ resource "aws_iam_role_policy" "github_actions_vstshop_deploy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "S3SyncPermissions"
+        Sid    = "S3BucketLevelPermissions"
         Effect = "Allow"
         Action = [
-          "s3:ListBucket",            # Required to see what's already there
-          "s3:GetBucketLocation",     # Required for the CLI to find the bucket
-          "s3:ListBucketMultipartUploads" # Helps with larger file syncs
+          "s3:ListBucket",            # Required for 'sync' to compare files
+          "s3:GetBucketLocation",     # Required for the CLI to find the right region
+          "s3:ListBucketMultipartUploads"
         ]
+        # Target the BUCKET ARN (no slash)
         Resource = "arn:aws:s3:::phoenix-vst-frontend-dev"
       },
       {
-        Sid    = "S3ObjectPermissions"
+        Sid    = "S3ObjectLevelPermissions"
         Effect = "Allow"
         Action = [
-          "s3:PutObject",             # Upload new files
-          "s3:GetObject",             # Read files (sync needs this to check metadata)
-          "s3:DeleteObject",          # Required because you are using --delete
-          "s3:PutObjectAcl"           # Required if your sync command sets permissions
+          "s3:PutObject",             # Upload files
+          "s3:GetObject",             # Read files (sync metadata check)
+          "s3:DeleteObject",          # Required for '--delete' flag
+          "s3:PutObjectAcl"           # Required if the sync tries to set permissions
         ]
+        # Target the OBJECTS ARN (with /*)
         Resource = "arn:aws:s3:::phoenix-vst-frontend-dev/*"
       },
       {
         Sid    = "CloudFrontInvalidation"
         Effect = "Allow"
         Action = ["cloudfront:CreateInvalidation"]
-        # Scoped to all distributions for simplicity, 
-        # or use "arn:aws:cloudfront::YOUR_ACCOUNT_ID:distribution/YOUR_DIST_ID"
-        Resource = "*" 
+        Resource = "*" # Allows clearing cache for your distribution
       }
     ]
   })
