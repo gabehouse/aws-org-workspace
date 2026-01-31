@@ -82,3 +82,38 @@ resource "aws_iam_role_policy" "github_actions_assume_role" {
     ]
   })
 }
+
+# 5. Policy for App Deployment (Website S3 + CloudFront)
+resource "aws_iam_role_policy" "github_actions_vstshop_deploy" {
+  name = "GitHubActionsAppDeploy"
+  role = aws_iam_role.github_actions.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        # Permission to list the bucket (required for 'aws s3 sync')
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket", "s3:GetBucketLocation"]
+        Resource = "arn:aws:s3:::phoenix-vst-frontend-dev"
+      },
+      {
+        # Permission to upload, delete, and update the index.html/assets
+        Effect   = "Allow"
+        Action   = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:PutObjectAcl"
+        ]
+        Resource = "arn:aws:s3:::phoenix-vst-frontend-dev/*"
+      },
+      {
+        # Permission to tell CloudFront to clear its cache
+        Effect   = "Allow"
+        Action   = ["cloudfront:CreateInvalidation"]
+        Resource = "*" # You can narrow this to your specific Distribution ARN later
+      }
+    ]
+  })
+}
