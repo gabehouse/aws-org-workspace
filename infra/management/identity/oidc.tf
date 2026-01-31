@@ -83,7 +83,6 @@ resource "aws_iam_role_policy" "github_actions_assume_role" {
   })
 }
 
-# 5. Policy for App Deployment (Website S3 + CloudFront)
 # 5. Confident App Deployment Policy (S3 Sync + CloudFront)
 resource "aws_iam_role_policy" "github_actions_vstshop_deploy" {
   name = "GitHubActionsAppDeploy"
@@ -96,11 +95,11 @@ resource "aws_iam_role_policy" "github_actions_vstshop_deploy" {
         Sid    = "S3BucketLevelPermissions"
         Effect = "Allow"
         Action = [
-          "s3:ListBucket",            # Required for 'sync' to compare files
-          "s3:GetBucketLocation",     # Required for the CLI to find the right region
+          "s3:ListBucket",            # Fixes the ListObjectsV2 AccessDenied
+          "s3:GetBucketLocation",     # Required for the CLI to "find" the bucket
           "s3:ListBucketMultipartUploads"
         ]
-        # Target the BUCKET ARN (no slash)
+        # TARGET THE BUCKET ITSELF (No slash at the end)
         Resource = "arn:aws:s3:::phoenix-vst-frontend-dev"
       },
       {
@@ -108,18 +107,18 @@ resource "aws_iam_role_policy" "github_actions_vstshop_deploy" {
         Effect = "Allow"
         Action = [
           "s3:PutObject",             # Upload files
-          "s3:GetObject",             # Read files (sync metadata check)
-          "s3:DeleteObject",          # Required for '--delete' flag
-          "s3:PutObjectAcl"           # Required if the sync tries to set permissions
+          "s3:GetObject",             # Check metadata (required for sync)
+          "s3:DeleteObject",          # Required for the --delete flag
+          "s3:PutObjectAcl"           # Prevents errors if your bucket uses ACLs
         ]
-        # Target the OBJECTS ARN (with /*)
+        # TARGET THE CONTENTS (Must have /* at the end)
         Resource = "arn:aws:s3:::phoenix-vst-frontend-dev/*"
       },
       {
         Sid    = "CloudFrontInvalidation"
         Effect = "Allow"
         Action = ["cloudfront:CreateInvalidation"]
-        Resource = "*" # Allows clearing cache for your distribution
+        Resource = "*" 
       }
     ]
   })
