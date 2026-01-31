@@ -8,6 +8,7 @@ on:
       - 'infra/management/identity/**'
       - 'services/vstshop/**'
       - '.github/workflows/vstshop-deploy.yml'
+  workflow_dispatch: # Allows manual re-run from the Actions tab
 
 permissions:
   id-token: write
@@ -48,17 +49,17 @@ jobs:
         id: infra
         working-directory: ${{ env.TF_DIR }}
         run: |
-          # These names MUST match the 'output' names in your outputs.tf
+          # Capturing outputs from Terraform to use in AWS CLI steps
           echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
           echo "DIST_ID=$(terraform output -raw distribution_id)" >> $GITHUB_OUTPUT
-      - name: Check Caller Identity
-        run: aws sts get-caller-identity
+          echo "URL=$(terraform output -raw website_url)" >> $GITHUB_OUTPUT
+
       - name: Debug and Sync
         run: |
           echo "Checking if $SITE_DIR exists..."
-          ls -d "$SITE_DIR" || echo "FOLDER NOT FOUND!"
+          ls -d "$SITE_DIR" || exit 1
           
-          # Sync using the bucket name retrieved from Terraform
+          # Sync local files to S3
           aws s3 sync "${{ env.SITE_DIR }}" s3://${{ steps.infra.outputs.BUCKET_NAME }} --delete
 
       - name: Invalidate CloudFront Cache
@@ -66,3 +67,9 @@ jobs:
           aws cloudfront create-invalidation \
             --distribution-id ${{ steps.infra.outputs.DIST_ID }} \
             --paths "/*"
+
+      - name: Deployment Summary
+        run: |
+          echo "### Deployment Successful! 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** ${{ steps.infra.outputs.URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Bucket:** ${{ steps.infra.outputs.BUCKET_NAME }}" >> $GITHUB_OUTPUT
