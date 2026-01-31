@@ -4,7 +4,7 @@ provider "aws" {
   assume_role {
     # This tells Terraform: "Once GitHub logs me in, 
     # immediately switch to this powerful execution role."
-    role_arn = "arn:aws:iam::DEV_ACCOUNT_ID:role/terraform-execution-role-dev"
+    role_arn = "arn:aws:iam::195481994910:role/terraform-execution-role-dev"
   }
 }
 
