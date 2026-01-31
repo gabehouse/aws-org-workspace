@@ -21,7 +21,7 @@ resource "aws_iam_role" "github_actions" {
         }
         Condition = {
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:gabehouse/vstshop:*"
+            "token.actions.githubusercontent.com:sub" = "repo:gabehouse/aws-org-workspace:*"
           }
         }
       }
