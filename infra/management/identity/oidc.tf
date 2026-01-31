@@ -92,27 +92,33 @@ resource "aws_iam_role_policy" "github_actions_vstshop_deploy" {
     Version = "2012-10-17"
     Statement = [
       {
-        # Permission to list the bucket (required for 'aws s3 sync')
-        Effect   = "Allow"
-        Action   = ["s3:ListBucket", "s3:GetBucketLocation"]
+        Sid    = "S3SyncPermissions"
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket",            # Required to see what's already there
+          "s3:GetBucketLocation",     # Required for the CLI to find the bucket
+          "s3:ListBucketMultipartUploads" # Helps with larger file syncs
+        ]
         Resource = "arn:aws:s3:::phoenix-vst-frontend-dev"
       },
       {
-        # Permission to upload, delete, and update the index.html/assets
-        Effect   = "Allow"
-        Action   = [
-          "s3:PutObject",
-          "s3:GetObject",
-          "s3:DeleteObject",
-          "s3:PutObjectAcl"
+        Sid    = "S3ObjectPermissions"
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",             # Upload new files
+          "s3:GetObject",             # Read files (sync needs this to check metadata)
+          "s3:DeleteObject",          # Required because you are using --delete
+          "s3:PutObjectAcl"           # Required if your sync command sets permissions
         ]
         Resource = "arn:aws:s3:::phoenix-vst-frontend-dev/*"
       },
       {
-        # Permission to tell CloudFront to clear its cache
-        Effect   = "Allow"
-        Action   = ["cloudfront:CreateInvalidation"]
-        Resource = "*" # You can narrow this to your specific Distribution ARN later
+        Sid    = "CloudFrontInvalidation"
+        Effect = "Allow"
+        Action = ["cloudfront:CreateInvalidation"]
+        # Scoped to all distributions for simplicity, 
+        # or use "arn:aws:cloudfront::YOUR_ACCOUNT_ID:distribution/YOUR_DIST_ID"
+        Resource = "*" 
       }
     ]
   })
