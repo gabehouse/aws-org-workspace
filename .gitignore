@@ -1,0 +1,15 @@
+# Local terraform directories
+**/.terraform/*
+
+# .tfstate files (These should be in S3, not GitHub)
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+
+# Exclude all .exe files
+*.exe
+
+# Terraform lock file (Keep this one! It ensures version consistency)
+! .terraform.lock.hcl

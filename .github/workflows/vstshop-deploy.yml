@@ -1,0 +1,64 @@
+name: "VSTShop Deploy"
+
+on:
+  push:
+    branches: [ "master" ]
+    paths:
+      - 'infra/workloads/dev/VSTShop/**'
+      - 'services/vstshop/**'
+      - '.github/workflows/vstshop-deploy.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      # These paths match your tree exactly
+      TF_DIR: "infra/workloads/dev/VSTShop"
+      SITE_DIR: "services/vstshop" 
+      AWS_REGION: "us-east-2" # Update this to your region (e.g. us-east-2)
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # Use the Secret you set in GitHub Settings
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform apply -auto-approve
+
+      - name: Get Infrastructure Details
+        id: infra
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          # Grabs the bucket and distro ID from your outputs.tf
+          echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
+          echo "DIST_ID=$(terraform output -raw distribution_id)" >> $GITHUB_OUTPUT
+
+      - name: Sync S3 Bucket
+        run: |
+          aws s3 sync "${{ env.SITE_DIR }}" s3://${{ steps.infra.outputs.BUCKET_NAME }} --delete
+
+      - name: Invalidate CloudFront Cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ steps.infra.outputs.DIST_ID }} \
+            --paths "/*"
