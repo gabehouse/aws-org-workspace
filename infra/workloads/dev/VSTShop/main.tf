@@ -1,17 +1,54 @@
-# 1. THE FRONTEND BUCKET (Private)
+# 1. THE FRONTEND BUCKET
 resource "aws_s3_bucket" "frontend" {
   bucket        = "${var.project_name}-frontend-${var.environment}"
   force_destroy = true 
 }
 
-# Block all public access to the bucket directly
-resource "aws_s3_bucket_public_access_block" "frontend" {
+# 2. THE BUCKET POLICY (Merged)
+resource "aws_s3_bucket_policy" "frontend_policy" {
   bucket = aws_s3_bucket.frontend.id
+  policy = data.aws_iam_policy_document.combined_policy.json
+}
 
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
+data "aws_iam_policy_document" "combined_policy" {
+  # Statement 1: Allow CloudFront to read files (OAC)
+  statement {
+    sid       = "AllowCloudFrontServicePrincipal"
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.frontend.arn}/*"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["cloudfront.amazonaws.com"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "AWS:SourceArn"
+      values   = [aws_cloudfront_distribution.s3_distribution.arn]
+    }
+  }
+
+  # Statement 2: Allow GitHub Actions Role to Sync
+  statement {
+    sid       = "AllowGithubActionsSync"
+    actions   = [
+      "s3:ListBucket",
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject"
+    ]
+    # Bucket and Objects
+    resources = [
+      aws_s3_bucket.frontend.arn,
+      "${aws_s3_bucket.frontend.arn}/*"
+    ]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::086739225244:role/github-actions-oidc-role"]
+    }
+  }
 }
 
 # 2. ORIGIN ACCESS CONTROL (The "Identity" for CloudFront)
