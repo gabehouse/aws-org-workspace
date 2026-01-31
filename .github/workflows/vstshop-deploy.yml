@@ -51,7 +51,8 @@ jobs:
           # These names MUST match the 'output' names in your outputs.tf
           echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
           echo "DIST_ID=$(terraform output -raw distribution_id)" >> $GITHUB_OUTPUT
-
+      - name: Check Caller Identity
+        run: aws sts get-caller-identity
       - name: Debug and Sync
         run: |
           echo "Checking if $SITE_DIR exists..."
