@@ -29,19 +29,10 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          # Point directly to the role in the DEV account (195481994910)
+          # Point directly to the Dev role
           role-to-assume: arn:aws:iam::195481994910:role/terraform-execution-role-dev
-          aws-region: ${{ env.AWS_REGION }}
-          
-      - name: Assume Dev Execution Role
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ${{ env.AWS_REGION }}
-          role-to-assume: arn:aws:iam::195481994910:role/terraform-execution-role-dev # The role IN the Dev account
-          role-chaining: true
-          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ env.AWS_SESSION_TOKEN }}
+          aws-region: us-east-2
+          # NO role-chaining here. We want a clean OIDC login.
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
