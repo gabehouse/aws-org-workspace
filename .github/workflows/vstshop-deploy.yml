@@ -80,3 +80,16 @@ jobs:
           echo "### Deployment Successful! 🚀" >> $GITHUB_STEP_SUMMARY
           echo "**URL:** ${{ steps.infra.outputs.URL }}" >> $GITHUB_STEP_SUMMARY
           echo "**Bucket:** ${{ steps.infra.outputs.BUCKET_NAME }}" >> $GITHUB_OUTPUT
+
+      - name: Generate Summary
+        if: success()
+        run: |
+          echo "### Deployment Successful! 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Resource | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Terraform** | ✅ Applied |" >> $GITHUB_STEP_SUMMARY
+          echo "| **S3 Sync** | ✅ Files Uploaded |" >> $GITHUB_STEP_SUMMARY
+          echo "| **CloudFront** | ✅ Cache Invalidated |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "View your site here: [https://vst-shop.example.com](https://vst-shop.example.com)" >> $GITHUB_STEP_SUMMARY
