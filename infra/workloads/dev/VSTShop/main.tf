@@ -7,7 +7,44 @@ resource "aws_s3_bucket" "frontend" {
 # 2. THE BUCKET POLICY (Merged)
 resource "aws_s3_bucket_policy" "frontend_policy" {
   bucket = aws_s3_bucket.frontend.id
-  policy = data.aws_iam_policy_document.combined_policy.json
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowCloudFrontServicePrincipal"
+        Effect = "Allow"
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        }
+        Action   = "s3:GetObject"
+        Resource = "${aws_s3_bucket.frontend.arn}/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.s3_distribution.arn
+          }
+        }
+      },
+      {
+        Sid    = "AllowGithubActionsSync"
+        Effect = "Allow"
+        Principal = {
+          # This is the role GitHub is assuming
+          AWS = "arn:aws:iam::086739225244:role/github-actions-oidc-role"
+        }
+        Action = [
+          "s3:ListBucket",
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          aws_s3_bucket.frontend.arn,
+          "${aws_s3_bucket.frontend.arn}/*"
+        ]
+      }
+    ]
+  })
 }
 
 data "aws_iam_policy_document" "combined_policy" {
