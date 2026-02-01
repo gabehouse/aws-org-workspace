@@ -64,9 +64,14 @@ jobs:
 
       - name: Invalidate CloudFront Cache
         run: |
+          # Debug: Who is the CLI acting as right now?
+          aws sts get-caller-identity
+
+          # The Actual Invalidation
           aws cloudfront create-invalidation \
             --distribution-id ${{ steps.infra.outputs.DIST_ID }} \
-            --paths "/*"
+            --paths "/*" \
+            --region us-east-1
 
       - name: Deployment Summary
         run: |
