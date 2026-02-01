@@ -5,5 +5,6 @@ terraform {
     region         = "us-east-2"
     dynamodb_table = "terraform-state-lock"
     encrypt        = true
+    role_arn       = "arn:aws:iam::086739225244:role/github-actions-oidc-role"
   }
 }
