@@ -82,14 +82,11 @@ jobs:
           echo "**Bucket:** ${{ steps.infra.outputs.BUCKET_NAME }}" >> $GITHUB_OUTPUT
 
       - name: Generate Summary
-        if: success()
         run: |
+          # This goes to the UI Summary page
           echo "### Deployment Successful! 🚀" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Resource | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Terraform** | ✅ Applied |" >> $GITHUB_STEP_SUMMARY
-          echo "| **S3 Sync** | ✅ Files Uploaded |" >> $GITHUB_STEP_SUMMARY
-          echo "| **CloudFront** | ✅ Cache Invalidated |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "View your site here: [https://vst-shop.example.com](https://vst-shop.example.com)" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** https://dweiairln5c7c.cloudfront.net" >> $GITHUB_STEP_SUMMARY
+          echo "**Bucket:** phoenix-vst-frontend-dev" >> $GITHUB_STEP_SUMMARY
+
+          # This saves the data for other workflow steps (Machine readable)
+          echo "bucket_name=phoenix-vst-frontend-dev" >> $GITHUB_OUTPUT
