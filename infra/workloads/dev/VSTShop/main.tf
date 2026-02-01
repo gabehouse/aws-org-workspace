@@ -4,7 +4,25 @@ resource "aws_s3_bucket" "frontend" {
   force_destroy = true 
 }
 
-# 2. THE BUCKET POLICY (Merged)
+# Ensure the bucket is private (Standard for CloudFront OAC)
+resource "aws_s3_bucket_public_access_block" "frontend" {
+  bucket = aws_s3_bucket.frontend.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# 2. ORIGIN ACCESS CONTROL (The "Identity" for CloudFront)
+resource "aws_cloudfront_origin_access_control" "default" {
+  name                              = "${var.project_name}-oac-${var.environment}"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
+}
+
+# 3. THE UNIFIED BUCKET POLICY (The "One Policy" to stop the 403 errors)
 resource "aws_s3_bucket_policy" "frontend_policy" {
   bucket = aws_s3_bucket.frontend.id
 
@@ -12,7 +30,7 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "AllowCloudFrontServicePrincipal"
+        Sid    = "AllowCloudFrontRead"
         Effect = "Allow"
         Principal = {
           Service = "cloudfront.amazonaws.com"
@@ -26,11 +44,13 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
         }
       },
       {
-        Sid    = "AllowGithubActionsSync"
+        Sid    = "AllowGithubActionsAndLocalAdmin"
         Effect = "Allow"
         Principal = {
-          # This is the role GitHub is assuming
-          AWS = "arn:aws:iam::086739225244:role/github-actions-oidc-role"
+          AWS = [
+            "arn:aws:iam::086739225244:role/github-actions-oidc-role",
+            "arn:aws:iam::195481994910:root"
+          ]
         }
         Action = [
           "s3:ListBucket",
@@ -47,61 +67,11 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
   })
 }
 
-data "aws_iam_policy_document" "combined_policy" {
-  # Statement 1: Allow CloudFront to read files (OAC)
-  statement {
-    sid       = "AllowCloudFrontServicePrincipal"
-    actions   = ["s3:GetObject"]
-    resources = ["${aws_s3_bucket.frontend.arn}/*"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["cloudfront.amazonaws.com"]
-    }
-
-    condition {
-      test     = "StringEquals"
-      variable = "AWS:SourceArn"
-      values   = [aws_cloudfront_distribution.s3_distribution.arn]
-    }
-  }
-
-  # Statement 2: Allow GitHub Actions Role to Sync
-  statement {
-    sid       = "AllowGithubActionsSync"
-    actions   = [
-      "s3:ListBucket",
-      "s3:GetObject",
-      "s3:PutObject",
-      "s3:DeleteObject"
-    ]
-    # Bucket and Objects
-    resources = [
-      aws_s3_bucket.frontend.arn,
-      "${aws_s3_bucket.frontend.arn}/*"
-    ]
-
-    principals {
-      type        = "AWS"
-      identifiers = ["arn:aws:iam::086739225244:role/github-actions-oidc-role"]
-    }
-  }
-}
-
-# 2. ORIGIN ACCESS CONTROL (The "Identity" for CloudFront)
-resource "aws_cloudfront_origin_access_control" "default" {
-  name                              = "${var.project_name}-oac-${var.environment}"
-  description                       = "OAC for ${var.project_name} S3 access"
-  origin_access_control_origin_type = "s3"
-  signing_behavior                  = "always"
-  signing_protocol                  = "sigv4"
-}
-
-# 3. CLOUDFRONT DISTRIBUTION
+# 4. CLOUDFRONT DISTRIBUTION
 resource "aws_cloudfront_distribution" "s3_distribution" {
   origin {
     domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
-    origin_id                = "S3-${aws_s3_bucket.frontend.id}"
+    origin_id                = "S3Origin"
     origin_access_control_id = aws_cloudfront_origin_access_control.default.id
   }
 
@@ -112,7 +82,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "S3-${aws_s3_bucket.frontend.id}"
+    target_origin_id = "S3Origin"
 
     forwarded_values {
       query_string = false
@@ -135,29 +105,5 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
 
   viewer_certificate {
     cloudfront_default_certificate = true
-  }
-}
-
-# 4. BUCKET POLICY (Allows only CloudFront to talk to S3)
-resource "aws_s3_bucket_policy" "allow_access_from_cloudfront" {
-  bucket = aws_s3_bucket.frontend.id
-  policy = data.aws_iam_policy_document.allow_access_from_cloudfront.json
-}
-
-data "aws_iam_policy_document" "allow_access_from_cloudfront" {
-  statement {
-    actions   = ["s3:GetObject"]
-    resources = ["${aws_s3_bucket.frontend.arn}/*"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["cloudfront.amazonaws.com"]
-    }
-
-    condition {
-      test     = "StringEquals"
-      variable = "AWS:SourceArn"
-      values   = [aws_cloudfront_distribution.s3_distribution.arn]
-    }
   }
 }
