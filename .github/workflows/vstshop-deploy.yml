@@ -75,18 +75,13 @@ jobs:
             --paths "/*" \
             --region us-east-1
 
-      - name: Deployment Summary
-        run: |
-          echo "### Deployment Successful! 🚀" >> $GITHUB_STEP_SUMMARY
-          echo "**URL:** ${{ steps.infra.outputs.URL }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Bucket:** ${{ steps.infra.outputs.BUCKET_NAME }}" >> $GITHUB_OUTPUT
-
       - name: Generate Summary
         run: |
-          # This goes to the UI Summary page
+          # 1. This shows up on the GitHub Actions landing page (Markdown is fine)
           echo "### Deployment Successful! 🚀" >> $GITHUB_STEP_SUMMARY
           echo "**URL:** https://dweiairln5c7c.cloudfront.net" >> $GITHUB_STEP_SUMMARY
           echo "**Bucket:** phoenix-vst-frontend-dev" >> $GITHUB_STEP_SUMMARY
 
-          # This saves the data for other workflow steps (Machine readable)
+          # 2. This is for other steps to use (Must be key=value)
           echo "bucket_name=phoenix-vst-frontend-dev" >> $GITHUB_OUTPUT
+          echo "cf_url=https://dweiairln5c7c.cloudfront.net" >> $GITHUB_OUTPUT
