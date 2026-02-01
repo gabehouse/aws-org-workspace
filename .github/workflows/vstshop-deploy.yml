@@ -29,8 +29,21 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: arn:aws:iam::086739225244:role/github-actions-oidc-role
           aws-region: ${{ env.AWS_REGION }}
+          # ADD THESE TWO LINES:
+          role-chaining: true
+          role-to-assume-external-id: "" # Optional, usually empty
+          
+      - name: Assume Dev Execution Role
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::195481994910:role/terraform-execution-role-dev # The role IN the Dev account
+          role-chaining: true
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ env.AWS_SESSION_TOKEN }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
