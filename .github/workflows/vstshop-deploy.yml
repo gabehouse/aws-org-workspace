@@ -51,7 +51,14 @@ jobs:
         run: |
           aws sts get-caller-identity
           aws dynamodb describe-table --table-name terraform-state-lock --region us-east-2
-          
+
+      - name: Locate the Table
+        run: |
+          echo "Checking Ohio..."
+          aws dynamodb describe-table --table-name terraform-state-lock --region us-east-2 || echo "Not in Ohio"
+          echo "Checking Virginia..."
+          aws dynamodb describe-table --table-name terraform-state-lock --region us-east-1 || echo "Not in Virginia"
+
       - name: Terraform Init
         working-directory: ${{ env.TF_DIR }}
         run: terraform init
