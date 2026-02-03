@@ -37,10 +37,10 @@ jobs:
       - name: Configure Dev Account Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::195481994910:role/terraform_execution_role
           aws-region: us-east-2
           role-chaining: true
-          role-to-assume-external-id: vst-shop
+          role-to-assume: arn:aws:iam::195481994910:role/terraform-execution-role-dev
+          role-external-id: vst-shop  # Fixed the key name here
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
