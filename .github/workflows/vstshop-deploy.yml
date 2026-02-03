@@ -21,6 +21,7 @@ jobs:
       TF_DIR: "infra/workloads/dev/VSTShop"
       SITE_DIR: "services/vstshop" 
       AWS_REGION: "us-east-2"
+      AWS_ACCOUNT_ID_ENDPOINT_MODE: "disabled"
 
     steps:
       - name: Checkout
