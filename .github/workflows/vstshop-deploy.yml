@@ -23,16 +23,24 @@ jobs:
       AWS_REGION: "us-east-2"
 
     steps:
-      - name: Checkout Code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials
+      # STEP 1: Log into the Management Gateway (The Hub)
+      - name: Configure Management Gateway Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          # Point directly to the Dev role
-          role-to-assume: arn:aws:iam::195481994910:role/terraform-execution-role-dev
+          role-to-assume: arn:aws:iam::086739225244:role/github-gateway-role
           aws-region: us-east-2
-          # NO role-chaining here. We want a clean OIDC login.
+
+      # STEP 2: "Hop" into the Dev Execution Role (The Spoke)
+      - name: Configure Dev Account Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::195481994910:role/terraform_execution_role
+          aws-region: us-east-2
+          role-chaining: true
+          role-to-assume-external-id: vst-shop
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
