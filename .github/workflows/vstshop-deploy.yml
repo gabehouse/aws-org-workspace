@@ -58,7 +58,8 @@ jobs:
       - name: Debug AWS Identity and Dynamo
         run: |
           aws sts get-caller-identity
-          aws dynamodb describe-table --table-name terraform-state-lock --region us-east-2
+          # USE THE FULL ARN HERE
+          aws dynamodb describe-table --table-name arn:aws:dynamodb:us-east-2:086739225244:table/terraform-state-lock --region us-east-2
 
       - name: Terraform Init
         working-directory: ${{ env.TF_DIR }}

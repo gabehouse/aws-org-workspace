@@ -3,7 +3,7 @@ terraform {
     bucket         = "gabriel-tf-state-2026"
     key            = "workloads/dev/vstshop/terraform.tfstate"
     region         = "us-east-2"
-    dynamodb_table = "terraform-state-lock"
+    dynamodb_table = "arn:aws:dynamodb:us-east-2:086739225244:table/terraform-state-lock"
     encrypt        = true
   }
 }
