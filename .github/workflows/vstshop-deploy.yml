@@ -40,7 +40,7 @@ jobs:
           aws-region: us-east-2
           role-chaining: true
           role-to-assume: arn:aws:iam::195481994910:role/terraform-execution-role-dev
-          role-external-id: vst-shop  # Fixed the key name here
+          role-external-id: vst-shop
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
