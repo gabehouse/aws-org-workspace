@@ -46,7 +46,10 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
-
+      - name: Debug AWS Identity and Dynamo
+        run: |
+          aws sts get-caller-identity
+          aws dynamodb describe-table --table-name terraform-state-lock --region us-east-2
       - name: Terraform Init
         working-directory: ${{ env.TF_DIR }}
         run: terraform init
