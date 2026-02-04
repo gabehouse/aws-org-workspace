@@ -64,12 +64,6 @@ resource "aws_ssoadmin_permission_set_inline_policy" "safety_and_style" {
           "uxc:DeleteAccountColor"
         ]
         Resource = "*" 
-      },
-      {
-        # THE SAFETY RAIL: Prevents deleting the VPC itself
-        Effect   = "Deny"
-        Action   = "ec2:DeleteVpc"
-        Resource = "*"
       }
     ]
   })
