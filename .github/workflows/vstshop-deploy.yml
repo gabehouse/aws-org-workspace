@@ -8,11 +8,11 @@ on:
       - 'infra/management/identity/**'
       - 'services/vstshop/**'
       - '.github/workflows/vstshop-deploy.yml'
-  workflow_dispatch: # Allows manual re-run from the Actions tab
+  workflow_dispatch:
 
 permissions:
-  id-token: write
-  contents: read
+  id-token: write # Required for OIDC
+  contents: read  # Required for checkout
 
 jobs:
   deploy:
@@ -21,64 +21,72 @@ jobs:
       TF_DIR: "infra/workloads/dev/VSTShop"
       SITE_DIR: "services/vstshop" 
       AWS_REGION: "us-east-2"
-      AWS_ACCOUNT_ID_ENDPOINT_MODE: "disabled"
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # STEP 1: Log into the Management Gateway (The Hub)
-      - name: Configure Management Gateway Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::086739225244:role/github-gateway-role
-          aws-region: us-east-2
-
-      # STEP 2: "Hop" into the Dev Execution Role (The Spoke)
-      - name: Configure Dev Account Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: us-east-2
-          role-chaining: true
-          role-to-assume: arn:aws:iam::195481994910:role/terraform-execution-role-dev
-          role-external-id: vst-shop
-
+      # --- PRE-APPLY QUALITY CHECKS ---
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
 
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        working-directory: ${{ env.TF_DIR }}
+
+      - name: TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Run TFLint
+        run: tflint --init && tflint -f compact
+        working-directory: ${{ env.TF_DIR }}
+
+      # --- AWS AUTHENTICATION ---
+      - name: Configure Management Gateway Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::086739225244:role/github-gateway-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Configure Dev Account Credentials (Role Hopping)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-chaining: true
+          role-to-assume: arn:aws:iam::195481994910:role/terraform-execution-role-dev
+          role-external-id: vst-shop
+
+      # --- TERRAFORM EXECUTION ---
       - name: Terraform Init
         working-directory: ${{ env.TF_DIR }}
         run: terraform init
+
+      - name: Terraform Validate
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform validate
 
       - name: Terraform Apply
         working-directory: ${{ env.TF_DIR }}
         run: terraform apply -auto-approve
 
+      # --- POST-DEPLOY: CONTENT SYNC ---
       - name: Get Infrastructure Details
         id: infra
         working-directory: ${{ env.TF_DIR }}
         run: |
-          # Capturing outputs from Terraform to use in AWS CLI steps
           echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
           echo "DIST_ID=$(terraform output -raw distribution_id)" >> $GITHUB_OUTPUT
-          echo "URL=$(terraform output -raw website_url)" >> $GITHUB_OUTPUT
 
-      - name: Debug and Sync
+      - name: S3 Sync
         run: |
-          echo "Checking if $SITE_DIR exists..."
-          ls -d "$SITE_DIR" || exit 1
-          
-          # Sync local files to S3
           aws s3 sync "${{ env.SITE_DIR }}" s3://${{ steps.infra.outputs.BUCKET_NAME }} --delete
 
       - name: Invalidate CloudFront Cache
         run: |
-          # Debug: Who is the CLI acting as right now?
-          aws sts get-caller-identity
-
-          # The Actual Invalidation
           aws cloudfront create-invalidation \
             --distribution-id ${{ steps.infra.outputs.DIST_ID }} \
             --paths "/*" \
@@ -86,11 +94,6 @@ jobs:
 
       - name: Generate Summary
         run: |
-          # 1. This shows up on the GitHub Actions landing page (Markdown is fine)
           echo "### Deployment Successful! 🚀" >> $GITHUB_STEP_SUMMARY
-          echo "**URL:** https://dweiairln5c7c.cloudfront.net" >> $GITHUB_STEP_SUMMARY
-          echo "**Bucket:** phoenix-vst-frontend-dev" >> $GITHUB_STEP_SUMMARY
-
-          # 2. This is for other steps to use (Must be key=value)
-          echo "bucket_name=phoenix-vst-frontend-dev" >> $GITHUB_OUTPUT
-          echo "cf_url=https://dweiairln5c7c.cloudfront.net" >> $GITHUB_OUTPUT
+          echo "**Bucket:** ${{ steps.infra.outputs.BUCKET_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Time:** $(date)" >> $GITHUB_STEP_SUMMARY
