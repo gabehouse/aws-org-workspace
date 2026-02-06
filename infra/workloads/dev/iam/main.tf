@@ -6,7 +6,7 @@ resource "aws_iam_role" "terraform_execution" {
     Statement = [
       {
         Sid    = "AllowGitHubOIDC"
-        Action = "sts:AssumeRole"
+        Action = ["sts:AssumeRole", "sts:TagSession"]
         Effect = "Allow"
         Principal = {
           # Trust the Identity Account Role (GitHub Actions)
