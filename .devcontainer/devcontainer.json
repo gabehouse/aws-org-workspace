@@ -1,0 +1,48 @@
+{
+  "name": "AWS-Master-Template-Workbench",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": true
+    },
+    "ghcr.io/devcontainers/features/terraform:1": {
+      "version": "latest",
+      "tflint": "latest",
+      "terragrunt": "latest"
+    },
+    "ghcr.io/devcontainers/features/aws-cli:1": {},
+    "ghcr.io/devcontainers/features/python:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terraform.languageServer.enable": true,
+        "terraform.validation.enableLocalCodeCheck": true,
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "hashicorp.terraform"
+      },
+      "extensions": [
+        "hashicorp.terraform",
+        "anton-prazdnichnykh.tflint",
+        "ms-python.python",
+        "amazonwebservices.aws-toolkit-vscode",
+        "usernamehw.errorlens"
+      ]
+    }
+  },
+
+  "mounts": [
+    {
+      "source": "${localEnv:HOME}/.aws",
+      "target": "/home/vscode/.aws",
+      "type": "bind"
+    }
+  ],
+
+"postCreateCommand": "sudo apt-get update && sudo apt-get install -y tree curl && pip install pre-commit --break-system-packages && curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin && curl -Lo ./terraform-docs.tar.gz https://github.com/terraform-docs/terraform-docs/releases/download/v0.17.0/terraform-docs-v0.17.0-linux-amd64.tar.gz && tar -xzf terraform-docs.tar.gz && chmod +x terraform-docs && sudo mv terraform-docs /usr/local/bin/ && rm terraform-docs.tar.gz && /home/vscode/.local/bin/pre-commit install",
+  "remoteUser": "vscode"
+}

@@ -1,15 +1,22 @@
-# Local terraform directories
-**/.terraform/*
+# Ignore the entire directory, not just the contents
+**/.terraform/
 
-# .tfstate files (These should be in S3, not GitHub)
-*.tfstate
-*.tfstate.*
+# Use a more aggressive glob for state files
+*.tfstate*
 
-# Crash log files
-crash.log
+# Ignore the AWS CLI installer folder you downloaded earlier
+aws/
+awscliv2.zip
 
-# Exclude all .exe files
-*.exe
+# Optional: Ignore the pre-commit cache if it's acting up
+.cache/pre-commit/
 
-# Terraform lock file (Keep this one! It ensures version consistency)
-! .terraform.lock.hcl
+# Ignore compressed archives
+*.tar.gz
+*.zip
+*.7z
+
+# Ignore binaries (like the ones we downloaded for tools)
+terraform-docs
+tflint
+trivy

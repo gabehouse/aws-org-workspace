@@ -1,8 +1,8 @@
 locals {
-  instance_arn      = data.aws_ssoadmin_instances.main.arns[0]
-  identity_store_id = data.aws_ssoadmin_instances.main.identity_store_ids[0]
-  dev_account_id    = data.terraform_remote_state.org.outputs.dev_account_id
-  prod_account_id   = data.terraform_remote_state.org.outputs.prod_account_id
+  instance_arn = data.aws_ssoadmin_instances.main.arns[0]
+  # identity_store_id = data.aws_ssoadmin_instances.main.identity_store_ids[0]
+  dev_account_id  = data.terraform_remote_state.org.outputs.dev_account_id
+  prod_account_id = data.terraform_remote_state.org.outputs.prod_account_id
 }
 
 # --- PERMISSION SETS ---
@@ -52,18 +52,18 @@ resource "aws_ssoadmin_managed_policy_attachment" "billing_view" {
 resource "aws_ssoadmin_permission_set_inline_policy" "safety_and_style" {
   instance_arn       = local.instance_arn
   permission_set_arn = aws_ssoadmin_permission_set.safe_prod.arn
-  inline_policy      = jsonencode({
+  inline_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
         # Fix: Using correct Actions and a broader Resource ARN for the UXC service
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "uxc:GetAccountColor",
           "uxc:PutAccountColor",
           "uxc:DeleteAccountColor"
         ]
-        Resource = "*" 
+        Resource = "*"
       }
     ]
   })

@@ -7,9 +7,9 @@ module "vpc" {
   name = var.vpc_name
   cidr = var.vpc_cidr
 
-  azs             = slice(data.aws_availability_zones.available.names, 0, 2)
-  public_subnets  = var.public_subnets
-  intra_subnets   = var.intra_subnets
+  azs            = slice(data.aws_availability_zones.available.names, 0, 2)
+  public_subnets = var.public_subnets
+  intra_subnets  = var.intra_subnets
 
   enable_nat_gateway   = false
   enable_dns_hostnames = true

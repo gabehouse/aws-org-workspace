@@ -1,9 +1,9 @@
-# 1. Create the OIDC Provider 
+# 1. Create the OIDC Provider
 resource "aws_iam_openid_connect_provider" "github" {
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com"]
   # Thumbprint is now optional in modern Terraform AWS providers for GitHub
-  thumbprint_list = [] 
+  thumbprint_list = []
 }
 
 # 2. Create the GitHub Action Role
@@ -41,14 +41,14 @@ resource "aws_iam_role_policy" "github_actions_terraform_backend" {
     Statement = [
       {
         # Permission to list the bucket and find the state file
-        Effect = "Allow"
-        Action = ["s3:ListBucket", "s3:GetBucketLocation"]
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket", "s3:GetBucketLocation"]
         Resource = "arn:aws:s3:::gabriel-tf-state-2026"
       },
       {
         # Permission to read/write the state file itself
-        Effect = "Allow"
-        Action = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
+        Effect   = "Allow"
+        Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
         Resource = "arn:aws:s3:::gabriel-tf-state-2026/dev/vstshop/terraform.tfstate"
       },
       {
@@ -77,7 +77,7 @@ resource "aws_iam_role_policy" "github_actions_assume_role" {
       {
         Action   = "sts:AssumeRole"
         Effect   = "Allow"
-        Resource = "arn:aws:iam::*:role/terraform-execution-role-*" 
+        Resource = "arn:aws:iam::*:role/terraform-execution-role-*"
       }
     ]
   })
@@ -95,8 +95,8 @@ resource "aws_iam_role_policy" "github_actions_vstshop_deploy" {
         Sid    = "S3BucketLevelPermissions"
         Effect = "Allow"
         Action = [
-          "s3:ListBucket",            # Fixes the ListObjectsV2 AccessDenied
-          "s3:GetBucketLocation",     # Required for the CLI to "find" the bucket
+          "s3:ListBucket",        # Fixes the ListObjectsV2 AccessDenied
+          "s3:GetBucketLocation", # Required for the CLI to "find" the bucket
           "s3:ListBucketMultipartUploads"
         ]
         # TARGET THE BUCKET ITSELF (No slash at the end)
@@ -106,19 +106,19 @@ resource "aws_iam_role_policy" "github_actions_vstshop_deploy" {
         Sid    = "S3ObjectLevelPermissions"
         Effect = "Allow"
         Action = [
-          "s3:PutObject",             # Upload files
-          "s3:GetObject",             # Check metadata (required for sync)
-          "s3:DeleteObject",          # Required for the --delete flag
-          "s3:PutObjectAcl"           # Prevents errors if your bucket uses ACLs
+          "s3:PutObject",    # Upload files
+          "s3:GetObject",    # Check metadata (required for sync)
+          "s3:DeleteObject", # Required for the --delete flag
+          "s3:PutObjectAcl"  # Prevents errors if your bucket uses ACLs
         ]
         # TARGET THE CONTENTS (Must have /* at the end)
         Resource = "arn:aws:s3:::phoenix-vst-frontend-dev/*"
       },
       {
-        Sid    = "CloudFrontInvalidation"
-        Effect = "Allow"
-        Action = ["cloudfront:CreateInvalidation"]
-        Resource = "*" 
+        Sid      = "CloudFrontInvalidation"
+        Effect   = "Allow"
+        Action   = ["cloudfront:CreateInvalidation"]
+        Resource = "*"
       }
     ]
   })

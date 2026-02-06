@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TF_DIR: "infra/workloads/dev/VSTShop"
-      SITE_DIR: "services/vstshop" 
+      SITE_DIR: "services/vstshop"
       AWS_REGION: "us-east-2"
 
     steps:

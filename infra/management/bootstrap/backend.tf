@@ -6,6 +6,6 @@ terraform {
     dynamodb_table = "terraform-state-lock"
     encrypt        = true
     # We use the profile we just successfully tested
-    profile        = "management" 
+    profile = "management"
   }
 }

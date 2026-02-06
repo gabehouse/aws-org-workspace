@@ -18,7 +18,7 @@ resource "aws_iam_role" "terraform_execution" {
         Action = "sts:AssumeRole"
         Effect = "Allow"
         Principal = {
-          # Trusting the local account root allows your SSO Admin 
+          # Trusting the local account root allows your SSO Admin
           # to assume this role when working from your terminal.
           AWS = "arn:aws:iam::195481994910:root"
         }
