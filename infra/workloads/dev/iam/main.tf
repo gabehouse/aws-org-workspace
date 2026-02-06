@@ -5,21 +5,20 @@ resource "aws_iam_role" "terraform_execution" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "AllowGitHubOIDC"
+        Sid = "AllowGitHubOIDC"
+        # Explicitly allowing TagSession ensures role-chaining works smoothly
         Action = ["sts:AssumeRole", "sts:TagSession"]
         Effect = "Allow"
         Principal = {
-          # Trust the Identity Account Role (GitHub Actions)
           AWS = "arn:aws:iam::086739225244:role/github-actions-oidc-role"
         }
       },
       {
-        Sid    = "AllowLocalSSO"
-        Action = "sts:AssumeRole"
+        Sid = "AllowLocalSSO"
+        # Adding TagSession here too for "Dev Container" parity
+        Action = ["sts:AssumeRole", "sts:TagSession"]
         Effect = "Allow"
         Principal = {
-          # Trusting the local account root allows your SSO Admin
-          # to assume this role when working from your terminal.
           AWS = "arn:aws:iam::195481994910:root"
         }
       }
@@ -27,7 +26,6 @@ resource "aws_iam_role" "terraform_execution" {
   })
 }
 
-# Give this role AdministratorAccess
 resource "aws_iam_role_policy_attachment" "admin" {
   role       = aws_iam_role.terraform_execution.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"

@@ -49,7 +49,7 @@ jobs:
       - name: Configure Management Gateway Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::086739225244:role/github-gateway-role
+          role-to-assume: arn:aws:iam::086739225244:role/github-actions-oidc-role
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Configure Dev Account Credentials (Role Hopping)
@@ -58,7 +58,6 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           role-chaining: true
           role-to-assume: arn:aws:iam::195481994910:role/terraform-execution-role-dev
-          role-external-id: vst-shop
 
       # --- TERRAFORM EXECUTION ---
       - name: Terraform Init
