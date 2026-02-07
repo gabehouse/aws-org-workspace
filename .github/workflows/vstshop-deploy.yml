@@ -70,7 +70,7 @@ jobs:
 
       - name: Terraform Apply
         working-directory: ${{ env.TF_DIR }}
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve -var-file=../../../global.tfvars
 
       # --- POST-DEPLOY: CONTENT SYNC ---
       - name: Get Infrastructure Details
