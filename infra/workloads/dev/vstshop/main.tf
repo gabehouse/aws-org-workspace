@@ -48,8 +48,8 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
         Effect = "Allow"
         Principal = {
           AWS = [
-            "arn:aws:iam::086739225244:role/github-actions-oidc-role",
-            "arn:aws:iam::195481994910:root"
+            "arn:aws:iam::${var.mgmt_account_id}:role/github-actions-oidc-role",
+            "arn:aws:iam::${var.dev_account_id}:root"
           ]
         }
         Action = [

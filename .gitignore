@@ -20,3 +20,6 @@ awscliv2.zip
 terraform-docs
 tflint
 trivy
+
+*.auto.tfvars
+backend.hcl
