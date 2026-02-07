@@ -48,7 +48,7 @@ jobs:
 
       - name: Run TFLint
         run: |
-          tflint --init --config=../../../.tflint.hcl
+          tflint --init --config=../../../../.tflint.hcl
           tflint --config=../../../.tflint.hcl -f compact
         working-directory: ${{ env.TF_DIR }}
 
