@@ -34,6 +34,8 @@ No modules.
 |------|-------------|------|---------|:--------:|
 | <a name="input_dev_account_id"></a> [dev\_account\_id](#input\_dev\_account\_id) | n/a | `string` | n/a | yes |
 | <a name="input_environment"></a> [environment](#input\_environment) | n/a | `string` | `"dev"` | no |
+| <a name="input_mgmt_account_id"></a> [mgmt\_account\_id](#input\_mgmt\_account\_id) | These are just to shut up the auto.tfvars warnings | `string` | n/a | yes |
+| <a name="input_prod_account_id"></a> [prod\_account\_id](#input\_prod\_account\_id) | n/a | `string` | n/a | yes |
 | <a name="input_project_name"></a> [project\_name](#input\_project\_name) | n/a | `string` | `"phoenix-vst"` | no |
 | <a name="input_region"></a> [region](#input\_region) | n/a | `string` | `"us-east-2"` | no |
 

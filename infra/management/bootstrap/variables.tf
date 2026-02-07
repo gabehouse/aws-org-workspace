@@ -18,8 +18,10 @@ variable "dynamodb_table_name" {
   default = "terraform-state-lock"
 }
 
-variable "external_account_ids" {
-  type        = list(string)
-  description = "List of AWS Account IDs (Dev, Prod, etc.) that need access to the state bucket"
-  default     = ["195481994910", "212984412001"] # Add Dev and Prod here
-}
+
+variable "dev_account_id" { type = string }
+# These are just to shut up the auto.tfvars warnings
+variable "mgmt_account_id" { type = string }
+variable "prod_account_id" { type = string }
+
+variable "region" { type = string }

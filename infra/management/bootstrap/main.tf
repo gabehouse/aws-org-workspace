@@ -1,3 +1,11 @@
+locals {
+  # This combines your individual account IDs into one list automatically
+  external_account_ids = [
+    var.dev_account_id,
+    var.prod_account_id
+  ]
+}
+
 # 1. THE BUCKET
 resource "aws_s3_bucket" "terraform_state" {
   bucket = var.state_bucket_name
@@ -59,7 +67,7 @@ resource "aws_s3_bucket_policy" "state_cross_account" {
         Effect = "Allow",
         Principal = {
           # This maps to ["arn:aws:iam::DEV_ID:root", "arn:aws:iam::PROD_ID:root"]
-          AWS = [for id in var.external_account_ids : "arn:aws:iam::${id}:root"]
+          AWS = [for id in local.external_account_ids : "arn:aws:iam::${id}:root"]
         },
         Action = [
           "s3:ListBucket",
@@ -87,7 +95,7 @@ resource "aws_dynamodb_resource_policy" "lock_table_policy" {
         Sid    = "AllowCrossAccountLocking"
         Effect = "Allow"
         Principal = {
-          AWS = [for id in var.external_account_ids : "arn:aws:iam::${id}:root"]
+          AWS = [for id in local.external_account_ids : "arn:aws:iam::${id}:root"]
         }
         Action = [
           "dynamodb:GetItem",

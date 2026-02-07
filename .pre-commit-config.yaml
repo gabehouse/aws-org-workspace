@@ -16,10 +16,13 @@ repos:
       - id: terraform_validate
       - id: terraform_tflint
         args:
-          - --args=--recursive
+          # Use --config to point to your root file relative to the subfolder
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
       - id: terraform_docs
         args:
           - --hook-config=--create-file-if-not-exist=true
       - id: terraform_trivy
         args:
           - --args=--severity=CRITICAL
+
+  # DELETE the repo: https://github.com/terraform-linters/tflint block entirely!

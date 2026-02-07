@@ -14,3 +14,6 @@ variable "region" {
 }
 
 variable "dev_account_id" { type = string }
+# These are just to shut up the auto.tfvars warnings
+variable "mgmt_account_id" { type = string }
+variable "prod_account_id" { type = string }
