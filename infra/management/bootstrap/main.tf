@@ -1,5 +1,5 @@
 locals {
-  # This combines your individual account IDs into one list automatically
+
   external_account_ids = [
     var.dev_account_id,
     var.prod_account_id

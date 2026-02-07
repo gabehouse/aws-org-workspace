@@ -29,8 +29,11 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| <a name="input_dev_account_id"></a> [dev\_account\_id](#input\_dev\_account\_id) | n/a | `string` | n/a | yes |
 | <a name="input_dev_account_root_arn"></a> [dev\_account\_root\_arn](#input\_dev\_account\_root\_arn) | n/a | `string` | n/a | yes |
 | <a name="input_github_actions_oidc_execution_role_arn"></a> [github\_actions\_oidc\_execution\_role\_arn](#input\_github\_actions\_oidc\_execution\_role\_arn) | The ARN of the execution role in the Dev account | `string` | n/a | yes |
+| <a name="input_mgmt_account_id"></a> [mgmt\_account\_id](#input\_mgmt\_account\_id) | n/a | `string` | n/a | yes |
+| <a name="input_prod_account_id"></a> [prod\_account\_id](#input\_prod\_account\_id) | n/a | `string` | n/a | yes |
 | <a name="input_region"></a> [region](#input\_region) | AWS Region | `string` | `"us-east-2"` | no |
 
 ## Outputs

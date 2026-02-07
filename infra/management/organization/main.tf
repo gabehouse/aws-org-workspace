@@ -13,7 +13,7 @@ resource "aws_organizations_organizational_unit" "workloads" {
 # THE DEV ACCOUNT (Admin Playground)
 resource "aws_organizations_account" "dev" {
   name              = "dev"
-  email             = "gabriel.jsh+dev2@gmail.com"
+  email             = var.dev_email
   parent_id         = aws_organizations_organizational_unit.workloads.id
   close_on_deletion = true
 }
@@ -21,7 +21,7 @@ resource "aws_organizations_account" "dev" {
 # THE PROD ACCOUNT (Protected Observatory)
 resource "aws_organizations_account" "prod" {
   name              = "prod"
-  email             = "gabriel.jsh+prod2@gmail.com"
+  email             = var.prod_email
   parent_id         = aws_organizations_organizational_unit.workloads.id
   close_on_deletion = true
 }

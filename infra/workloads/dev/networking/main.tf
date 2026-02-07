@@ -1,7 +1,7 @@
 module "networking" {
   source = "../../../modules/networking"
 
-  region         = "var.region"
+  region         = var.region
   vpc_name       = "phoenix-dev-vpc"
   vpc_cidr       = "10.0.0.0/16"
   public_subnets = ["10.0.1.0/24", "10.0.2.0/24"]

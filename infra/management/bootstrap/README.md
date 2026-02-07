@@ -34,12 +34,11 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_aws_region"></a> [aws\_region](#input\_aws\_region) | n/a | `string` | `"us-east-2"` | no |
 | <a name="input_dev_account_id"></a> [dev\_account\_id](#input\_dev\_account\_id) | n/a | `string` | n/a | yes |
 | <a name="input_dynamodb_table_name"></a> [dynamodb\_table\_name](#input\_dynamodb\_table\_name) | n/a | `string` | `"terraform-state-lock"` | no |
-| <a name="input_mgmt_account_id"></a> [mgmt\_account\_id](#input\_mgmt\_account\_id) | These are just to shut up the auto.tfvars warnings | `string` | n/a | yes |
+| <a name="input_mgmt_account_id"></a> [mgmt\_account\_id](#input\_mgmt\_account\_id) | n/a | `string` | n/a | yes |
 | <a name="input_prod_account_id"></a> [prod\_account\_id](#input\_prod\_account\_id) | n/a | `string` | n/a | yes |
-| <a name="input_region"></a> [region](#input\_region) | n/a | `string` | n/a | yes |
+| <a name="input_region"></a> [region](#input\_region) | n/a | `string` | `"us-east-2"` | no |
 | <a name="input_state_bucket_name"></a> [state\_bucket\_name](#input\_state\_bucket\_name) | n/a | `string` | `"gabriel-tf-state-2026"` | no |
 
 ## Outputs

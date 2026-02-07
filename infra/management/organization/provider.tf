@@ -1,4 +1,4 @@
 provider "aws" {
-  region  = var.aws_region
-  profile = "management" # Or whatever your Management account profile is named
+  region              = var.region
+  allowed_account_ids = [var.mgmt_account_id]
 }
