@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "master" ]
     paths:
-      - 'infra/workloads/dev/VSTShop/**'
+      - 'infra/workloads/dev/vstshop/**'
       - 'infra/management/identity/**'
       - 'services/vstshop/**'
       - '.github/workflows/vstshop-deploy.yml'
@@ -18,7 +18,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      TF_DIR: "infra/workloads/dev/VSTShop"
+      TF_DIR: "infra/workloads/dev/vstshop"
       SITE_DIR: "services/vstshop"
       AWS_REGION: "us-east-2"
 
