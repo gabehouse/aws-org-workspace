@@ -32,11 +32,14 @@ jobs:
         with:
           terraform_wrapper: false
 
-      - name: Terraform Format Check
-        # This finds all .tf files in your directory and formats only them,
-        # skipping the symlinked .tfvars file that causes the error.
-        run: find . -name "*.tf" | xargs -I {} terraform fmt -check {}
+      - name: Remove local symlinks for linting
+        run: find . -type l -name "*.auto.tfvars" -delete
         working-directory: ${{ env.TF_DIR }}
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        working-directory: ${{ env.TF_DIR }}
+        continue-on-error: false
 
       - name: TFLint
         uses: terraform-linters/setup-tflint@v4
