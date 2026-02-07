@@ -10,7 +10,7 @@ resource "aws_iam_role" "terraform_execution" {
         Action = ["sts:AssumeRole", "sts:TagSession"]
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::086739225244:role/github-actions-oidc-role"
+          AWS = var.github_actions_oidc_execution_role_arn
         }
       },
       {
@@ -19,7 +19,7 @@ resource "aws_iam_role" "terraform_execution" {
         Action = ["sts:AssumeRole", "sts:TagSession"]
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::195481994910:root"
+          AWS = var.dev_account_root_arn
         }
       }
     ]

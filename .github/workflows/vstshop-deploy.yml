@@ -62,7 +62,7 @@ jobs:
       # --- TERRAFORM EXECUTION ---
       - name: Terraform Init
         working-directory: ${{ env.TF_DIR }}
-        run: terraform init
+        run: terraform init -backend-config=../../../backend.hcl
 
       - name: Terraform Validate
         working-directory: ${{ env.TF_DIR }}

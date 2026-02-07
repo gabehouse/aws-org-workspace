@@ -1,6 +1,7 @@
 # The Default Provider (Ohio)
 provider "aws" {
-  region = "us-east-2"
+  region  = var.region
+  profile = "dev"
 }
 
 # The CloudFront/Certificate Provider (N. Virginia)

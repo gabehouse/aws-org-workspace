@@ -1,6 +1,6 @@
 terraform {
   backend "s3" {
-    key     = "workloads/dev/iam/terraform.tfstate"
+    key     = "workloads/dev/vstshop/terraform.tfstate"
     encrypt = true
   }
 }

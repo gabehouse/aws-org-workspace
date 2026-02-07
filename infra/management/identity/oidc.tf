@@ -51,7 +51,7 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "sts:TagSession"
         ]
         # Pointing to your Spoke account
-        Resource = "arn:aws:iam::195481994910:role/terraform-execution-role-dev"
+        Resource = var.dev_execution_role_arn
       }
     ]
   })
