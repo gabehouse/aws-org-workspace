@@ -1,3 +1,19 @@
+name: "VSTShop Deploy"
+
+on:
+  push:
+    branches: [ "master" ]
+    paths:
+      - 'infra/workloads/dev/vstshop/**'
+      - 'infra/management/identity/**'
+      - 'services/vstshop/**'
+      - '.github/workflows/vstshop-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  id-token: write # Required for OIDC
+  contents: read  # Required for checkout
+
 jobs:
   plan:
     runs-on: ubuntu-latest
