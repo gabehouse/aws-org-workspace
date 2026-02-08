@@ -48,11 +48,20 @@ jobs:
           tflint --config=../../../../.tflint.hcl -f compact
         working-directory: ${{ env.TF_DIR }}
 
-      # --- AWS AUTHENTICATION ---
+      # Scrape the values into GITHUB_ENV
+      - name: Load Config to Environment
+        run: |
+          echo "MGMT_ACCT=$(yq '.accounts.mgmt' config.yaml)" >> $GITHUB_ENV
+          echo "GATEWAY_ROLE=$(yq '.iam.gateway_role_name' config.yaml)" >> $GITHUB_ENV
+          echo "DEV_ACCT=$(yq '.accounts.dev' config.yaml)" >> $GITHUB_ENV
+          echo "DEV_ROLE=$(yq '.iam.dev_execution_role_name' config.yaml)" >> $GITHUB_ENV
+
+      #  Reference those variables in your Auth steps
       - name: Configure Management Gateway Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::086739225244:role/github-actions-oidc-role
+          # Use the environment variables we just created
+          role-to-assume: arn:aws:iam::${{ env.MGMT_ACCT }}:role/${{ env.GATEWAY_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Configure Dev Account Credentials (Role Hopping)
@@ -60,7 +69,7 @@ jobs:
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-chaining: true
-          role-to-assume: arn:aws:iam::195481994910:role/terraform-execution-role-dev
+          role-to-assume: arn:aws:iam::${{ env.DEV_ACCT }}:role/${{ env.DEV_ROLE }}
 
       # --- TERRAFORM EXECUTION ---
       - name: Terraform Init
