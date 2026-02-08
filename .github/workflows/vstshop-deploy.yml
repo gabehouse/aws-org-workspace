@@ -76,7 +76,7 @@ jobs:
 
       - name: Terraform Plan
         working-directory: ${{ env.TF_DIR }}
-        run: terraform plan -input=false -var-file=../../../global.tfvars
+        run: terraform plan -input=false
 
   # --- JOB 3: APPLY ---
   apply:
@@ -114,7 +114,7 @@ jobs:
 
       - name: Terraform Apply
         working-directory: ${{ env.TF_DIR }}
-        run: terraform apply -auto-approve -input=false -var-file=../../../global.tfvars
+        run: terraform apply -auto-approve -input=false
 
       # --- POST-DEPLOY: CONTENT SYNC ---
       - name: Get Infrastructure Details
