@@ -6,7 +6,11 @@ REGION=$(yq '.default_region' config.yaml)
 TABLE=$(yq '.backend.dynamodb_table' config.yaml)
 PROFILE=$(yq '.backend.profile' config.yaml)
 
-# 2. Generate Local backend.hcl (Includes Profile)
+# Scrape IAM and Account values for the CI backend
+MGMT_ID=$(yq '.accounts.mgmt' config.yaml)
+GATEWAY_ROLE=$(yq '.iam.gateway_role_name' config.yaml)
+
+# 2. Generate Local backend.hcl (Standard Profile usage)
 cat <<EOF > infra/backend.hcl
 bucket         = "$BUCKET"
 region         = "$REGION"
@@ -14,14 +18,18 @@ dynamodb_table = "$TABLE"
 profile        = "$PROFILE"
 EOF
 
-# 3. Generate CI/CD backend.ci.hcl (No Profile)
+# 3. Generate CI/CD backend.ci.hcl (Assume Role for State)
+# We use the modern 'assume_role' block syntax
 cat <<EOF > infra/backend.ci.hcl
 bucket         = "$BUCKET"
 region         = "$REGION"
 dynamodb_table = "$TABLE"
+assume_role = {
+  role_arn = "arn:aws:iam::${MGMT_ID}:role/${GATEWAY_ROLE}"
+}
 EOF
 
-echo "✅ Generated Local and CI/CD backend configs."
+echo "✅ Generated Local and CI/CD (cross-account) backend configs."
 
 # 4. Symlink BOTH to the workload directories
 TARGET_DIRS=$(find infra/workloads infra/management -path "*/.terraform" -prune -o -type d -print)
