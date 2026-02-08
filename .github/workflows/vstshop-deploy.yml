@@ -75,9 +75,7 @@ jobs:
       - name: Terraform Init
         working-directory: ${{ env.TF_DIR }}
         run: |
-          terraform init \
-            -backend-config=../../../backend.ci.hcl \
-            -backend-config="role_arn=arn:aws:iam::${{ env.MGMT_ACCT }}:role/${{ env.GATEWAY_ROLE }}"
+          terraform init -backend-config=../../../backend.ci.hcl
 
       - name: Terraform Validate
         working-directory: ${{ env.TF_DIR }}
