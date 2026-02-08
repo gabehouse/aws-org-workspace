@@ -49,11 +49,12 @@ jobs:
         working-directory: ${{ env.TF_DIR }}
 
       # Scrape the values into GITHUB_ENV
-      - name: Load Config
+      - name: Load Config to Environment
         run: |
-          # Use $GITHUB_WORKSPACE to ensure we hit the root regardless of where we are
-          echo "DEV_ROLE=$(yq '.iam.dev_execution_role_name' $GITHUB_WORKSPACE/config.yaml)" >> $GITHUB_ENV
-          echo "MGMT_ACCT=$(yq '.accounts.mgmt' $GITHUB_WORKSPACE/config.yaml)" >> $GITHUB_ENV
+          echo "MGMT_ACCT=$(yq '.accounts.mgmt' config.yaml)" >> $GITHUB_ENV
+          echo "GATEWAY_ROLE=$(yq '.iam.gateway_role_name' config.yaml)" >> $GITHUB_ENV
+          echo "DEV_ACCT=$(yq '.accounts.dev' config.yaml)" >> $GITHUB_ENV
+          echo "DEV_ROLE=$(yq '.iam.dev_execution_role_name' config.yaml)" >> $GITHUB_ENV
 
       #  Reference those variables in your Auth steps
       - name: Configure Management Gateway Credentials
