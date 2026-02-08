@@ -103,7 +103,8 @@ resource "aws_dynamodb_resource_policy" "lock_table_policy" {
         Action = [
           "dynamodb:GetItem",
           "dynamodb:PutItem",
-          "dynamodb:DeleteItem"
+          "dynamodb:DeleteItem",
+          "dynamodb:DescribeTable"
         ]
         Resource = aws_dynamodb_table.terraform_locks.arn
       }

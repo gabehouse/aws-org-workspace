@@ -63,16 +63,16 @@ jobs:
           role-to-assume: arn:aws:iam::${{ needs.setup.outputs.mgmt_account }}:role/${{ needs.setup.outputs.gateway_role }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Terraform Init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init -backend-config=../../../backend.ci.hcl
+
       - name: Configure Dev Account Credentials (Role Hopping)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-chaining: true
           role-to-assume: arn:aws:iam::${{ needs.setup.outputs.dev_account }}:role/${{ needs.setup.outputs.dev_role }}
-
-      - name: Terraform Init
-        working-directory: ${{ env.TF_DIR }}
-        run: terraform init -backend-config=../../../backend.ci.hcl
 
       - name: Terraform Plan
         working-directory: ${{ env.TF_DIR }}
