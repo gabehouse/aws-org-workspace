@@ -1,8 +1,11 @@
-locals {
+module "globals" {
+  source = "../../modules/globals"
+}
 
+locals {
   external_account_ids = [
-    var.dev_account_id,
-    var.prod_account_id
+    module.globals.accounts.prod,
+    module.globals.accounts.dev
   ]
 }
 

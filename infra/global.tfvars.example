@@ -1,4 +1,0 @@
-mgmt_account_id = "000000000000"
-dev_account_id  = "000000000000"
-prod_account_id = "000000000000"
-region          = "us-east-1"

@@ -9,7 +9,7 @@ resource "aws_iam_openid_connect_provider" "github" {
 
 # 2. THE GATEWAY: The role GitHub "Logs Into" (Hub Account)
 resource "aws_iam_role" "github_actions" {
-  name = "github-actions-oidc-role"
+  name = module.globals.github_gateway_role_name
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -51,7 +51,7 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "sts:TagSession"
         ]
         # Pointing to your Spoke account
-        Resource = var.dev_execution_role_arn
+        Resource = "arn:aws:iam::${module.globals.accounts.dev}:role/${module.globals.execution_role_name}"
       }
     ]
   })

@@ -17,7 +17,7 @@ data "aws_identitystore_user" "me" {
   alternate_identifier {
     unique_attribute {
       attribute_path  = "UserName"
-      attribute_value = "Gabe" # Change to your actual SSO username
+      attribute_value = "Gabe"
     }
   }
 }

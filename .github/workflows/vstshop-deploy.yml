@@ -32,10 +32,6 @@ jobs:
         with:
           terraform_wrapper: false
 
-      - name: Remove local symlinks for linting
-        run: find . -type l -name "*.auto.tfvars" -delete
-        working-directory: ${{ env.TF_DIR }}
-
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
         working-directory: ${{ env.TF_DIR }}
@@ -77,7 +73,7 @@ jobs:
 
       - name: Terraform Apply
         working-directory: ${{ env.TF_DIR }}
-        run: terraform apply -auto-approve -var-file=../../../global.tfvars
+        run: terraform apply
 
       # --- POST-DEPLOY: CONTENT SYNC ---
       - name: Get Infrastructure Details

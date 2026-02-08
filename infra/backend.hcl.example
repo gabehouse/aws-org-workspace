@@ -1,3 +1,0 @@
-bucket         = "your-unique-terraform-state-bucket"
-region         = "us-east-2"
-dynamodb_table = "your-terraform-lock-table"

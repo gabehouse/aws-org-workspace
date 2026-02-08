@@ -1,9 +1,3 @@
-variable "region" {
-  description = "AWS Region"
-  type        = string
-  default     = "us-east-2"
-}
-
 variable "vpc_name" {
   description = "Name of the VPC"
   type        = string
@@ -28,16 +22,4 @@ variable "tags" {
   description = "Common tags for all resources"
   type        = map(string)
   default     = {}
-}
-variable "dev_account_id" {
-  type    = string
-  default = null
-}
-variable "mgmt_account_id" {
-  type    = string
-  default = null
-}
-variable "prod_account_id" {
-  type    = string
-  default = null
 }

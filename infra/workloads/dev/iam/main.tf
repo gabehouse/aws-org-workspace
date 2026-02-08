@@ -1,5 +1,9 @@
+module "globals" {
+  source = "../../../modules/globals"
+}
+
 resource "aws_iam_role" "terraform_execution" {
-  name = "terraform-execution-role-dev"
+  name = module.globals.execution_role_name
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -10,7 +14,8 @@ resource "aws_iam_role" "terraform_execution" {
         Action = ["sts:AssumeRole", "sts:TagSession"]
         Effect = "Allow"
         Principal = {
-          AWS = var.github_actions_oidc_execution_role_arn
+          AWS = "arn:aws:iam::${module.globals.accounts.mgmt}:role/${module.globals.github_gateway_role_name}"
+
         }
       },
       {
@@ -19,7 +24,7 @@ resource "aws_iam_role" "terraform_execution" {
         Action = ["sts:AssumeRole", "sts:TagSession"]
         Effect = "Allow"
         Principal = {
-          AWS = var.dev_account_root_arn
+          AWS = "arn:aws:iam::${module.globals.accounts.dev}:root"
         }
       }
     ]

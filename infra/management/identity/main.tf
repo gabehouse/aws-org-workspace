@@ -1,8 +1,12 @@
+module "globals" {
+  source = "../../modules/globals"
+}
+
 locals {
   instance_arn = data.aws_ssoadmin_instances.main.arns[0]
   # identity_store_id = data.aws_ssoadmin_instances.main.identity_store_ids[0]
-  dev_account_id  = data.terraform_remote_state.org.outputs.dev_account_id
-  prod_account_id = data.terraform_remote_state.org.outputs.prod_account_id
+  dev_account_id  = module.globals.accounts.dev
+  prod_account_id = module.globals.accounts.prod
 }
 
 # --- PERMISSION SETS ---

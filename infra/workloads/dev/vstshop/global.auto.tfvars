@@ -1,1 +1,0 @@
-/workspaces/aws-org-workspace/infra/global.tfvars

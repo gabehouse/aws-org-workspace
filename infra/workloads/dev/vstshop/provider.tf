@@ -1,7 +1,7 @@
 # The Default Provider (Ohio)
 provider "aws" {
-  region              = var.region
-  allowed_account_ids = [var.dev_account_id]
+  region              = module.globals.region
+  allowed_account_ids = [module.globals.accounts.dev]
 }
 
 # The CloudFront/Certificate Provider (N. Virginia)

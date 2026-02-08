@@ -1,3 +1,8 @@
+module "globals" {
+  source = "../../../modules/globals"
+}
+
+
 # 1. THE FRONTEND BUCKET
 resource "aws_s3_bucket" "frontend" {
   bucket        = "${var.project_name}-frontend-${var.environment}"
@@ -48,8 +53,8 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
         Effect = "Allow"
         Principal = {
           AWS = [
-            "arn:aws:iam::${var.mgmt_account_id}:role/github-actions-oidc-role",
-            "arn:aws:iam::${var.dev_account_id}:root"
+            "arn:aws:iam::${module.globals.accounts.mgmt}:role/github-actions-oidc-role",
+            "arn:aws:iam::${module.globals.accounts.dev}:root"
           ]
         }
         Action = [

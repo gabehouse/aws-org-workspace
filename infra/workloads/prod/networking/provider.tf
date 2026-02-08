@@ -1,3 +1,4 @@
 provider "aws" {
-  region = "us-east-2"
+  region              = module.globals.region
+  allowed_account_ids = [module.globals.accounts.prod]
 }

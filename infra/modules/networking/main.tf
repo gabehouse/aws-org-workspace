@@ -1,3 +1,7 @@
+module "globals" {
+  source = "../globals"
+}
+
 data "aws_availability_zones" "available" { state = "available" }
 
 module "vpc" {
@@ -20,7 +24,7 @@ module "vpc" {
 
 resource "aws_vpc_endpoint" "s3" {
   vpc_id            = module.vpc.vpc_id
-  service_name      = "com.amazonaws.${var.region}.s3"
+  service_name      = "com.amazonaws.${module.globals.region}.s3"
   vpc_endpoint_type = "Gateway"
 
   route_table_ids = flatten([
