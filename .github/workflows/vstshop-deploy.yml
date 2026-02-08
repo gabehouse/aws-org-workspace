@@ -1,67 +1,45 @@
-name: "VSTShop Deploy"
-
-on:
-  push:
-    branches: [ "master" ]
-    paths:
-      - 'infra/workloads/dev/vstshop/**'
-      - 'infra/management/identity/**'
-      - 'services/vstshop/**'
-      - '.github/workflows/vstshop-deploy.yml'
-  workflow_dispatch:
-
-permissions:
-  id-token: write # Required for OIDC
-  contents: read  # Required for checkout
-
 jobs:
-  deploy:
+  plan:
     runs-on: ubuntu-latest
-    env:
-      TF_DIR: "infra/workloads/dev/vstshop"
-      SITE_DIR: "services/vstshop"
-      AWS_REGION: "us-east-2"
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # --- PRE-APPLY QUALITY CHECKS ---
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_wrapper: false
-
-      - name: Terraform Format Check
-        run: terraform fmt -check -recursive
-        working-directory: ${{ env.TF_DIR }}
-        continue-on-error: false
-
-      - name: TFLint
-        uses: terraform-linters/setup-tflint@v4
-        with:
-          tflint_version: latest
-
-      - name: Run TFLint
-        run: |
-          tflint --init --config=../../../../.tflint.hcl
-          tflint --config=../../../../.tflint.hcl -f compact
-        working-directory: ${{ env.TF_DIR }}
-
-      # Scrape the values into GITHUB_ENV
-      - name: Load Config to Environment
-        run: |
-          echo "MGMT_ACCT=$(yq '.accounts.mgmt' config.yaml)" >> $GITHUB_ENV
-          echo "GATEWAY_ROLE=$(yq '.iam.gateway_role_name' config.yaml)" >> $GITHUB_ENV
-          echo "DEV_ACCT=$(yq '.accounts.dev' config.yaml)" >> $GITHUB_ENV
-          echo "DEV_ROLE=$(yq '.iam.dev_execution_role_name' config.yaml)" >> $GITHUB_ENV
-
-      #  Reference those variables in your Auth steps
+      # Step A: Get Mgmt Access
       - name: Configure Management Gateway Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          # Use the environment variables we just created
-          role-to-assume: arn:aws:iam::${{ env.MGMT_ACCT }}:role/${{ env.GATEWAY_ROLE }}
+          role-to-assume: arn:aws:iam::086739225244:role/github-actions-oidc-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Step B: Chain into Dev (This is what worked before!)
+      - name: Configure Dev Account Credentials (Role Hopping)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-chaining: true
+          role-to-assume: arn:aws:iam::195481994910:role/terraform-execution-role-dev
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init -backend-config=../../../backend.ci.hcl
+
+      - name: Terraform Plan
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform plan -var-file=../../../global.tfvars
+
+  apply:
+    needs: plan
+    if: github.ref == 'refs/heads/master'
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # YOU MUST REPEAT THE DOUBLE-AUTH HERE
+      - name: Configure Management Gateway Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::086739225244:role/github-actions-oidc-role
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Configure Dev Account Credentials (Role Hopping)
@@ -69,43 +47,12 @@ jobs:
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-chaining: true
-          role-to-assume: arn:aws:iam::${{ env.DEV_ACCT }}:role/${{ env.DEV_ROLE }}
+          role-to-assume: arn:aws:iam::195481994910:role/terraform-execution-role-dev
 
-      # --- TERRAFORM EXECUTION ---
       - name: Terraform Init
         working-directory: ${{ env.TF_DIR }}
-        run: |
-          terraform init -backend-config=../../../backend.ci.hcl
-
-      - name: Terraform Validate
-        working-directory: ${{ env.TF_DIR }}
-        run: terraform validate
+        run: terraform init -backend-config=../../../backend.ci.hcl
 
       - name: Terraform Apply
         working-directory: ${{ env.TF_DIR }}
-        run: terraform apply
-
-      # --- POST-DEPLOY: CONTENT SYNC ---
-      - name: Get Infrastructure Details
-        id: infra
-        working-directory: ${{ env.TF_DIR }}
-        run: |
-          echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
-          echo "DIST_ID=$(terraform output -raw distribution_id)" >> $GITHUB_OUTPUT
-
-      - name: S3 Sync
-        run: |
-          aws s3 sync "${{ env.SITE_DIR }}" s3://${{ steps.infra.outputs.BUCKET_NAME }} --delete
-
-      - name: Invalidate CloudFront Cache
-        run: |
-          aws cloudfront create-invalidation \
-            --distribution-id ${{ steps.infra.outputs.DIST_ID }} \
-            --paths "/*" \
-            --region us-east-1
-
-      - name: Generate Summary
-        run: |
-          echo "### Deployment Successful! 🚀" >> $GITHUB_STEP_SUMMARY
-          echo "**Bucket:** ${{ steps.infra.outputs.BUCKET_NAME }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Time:** $(date)" >> $GITHUB_STEP_SUMMARY
+        run: terraform apply -auto-approve -var-file=../../../global.tfvars
