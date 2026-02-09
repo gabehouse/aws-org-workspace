@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       gateway_role: ${{ steps.vars.outputs.gateway_role }}
-      prod_role: ${{ steps.vars.outputs.dev_role }}
+      prod_role: ${{ steps.vars.outputs.prod_role }}
       mgmt_account: ${{ steps.vars.outputs.mgmt_account }}
       prod_account: ${{ steps.vars.outputs.prod_account }}
     steps:
