@@ -101,6 +101,13 @@ jobs:
               repo: context.repo.repo,
               body: output
             })
+      # This works for BOTH Pull Requests and direct pushes to Master
+      - name: Generate Job Summary
+        run: |
+          echo "### Terraform Plan Summary 📖" >> $GITHUB_STEP_SUMMARY
+          echo '```terraform' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.plan.outputs.stdout }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
   # --- JOB 3: APPLY ---
   apply:
