@@ -5,7 +5,6 @@ default_region: "us-east-2"
 # Infrastructure State Management (for backend.hcl)
 backend:
   bucket: "gabriel-tf-state-2026"
-  dynamodb_table: "terraform-state-lock"
   profile: "mgmt"
 
 # Organization Accounts
