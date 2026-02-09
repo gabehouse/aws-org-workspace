@@ -2,113 +2,20 @@ module "globals" {
   source = "../../../modules/globals"
 }
 
+module "vstshop" {
+  source = "../../../modules/vstshop-frontend"
 
-# 1. THE FRONTEND BUCKET
-resource "aws_s3_bucket" "frontend" {
-  bucket        = "${var.project_name}-frontend-${var.environment}"
-  force_destroy = true
+  project_name        = "vstshop"
+  environment         = "dev"
+  mgmt_account_id     = module.globals.accounts.mgmt
+  workload_account_id = module.globals.accounts.dev
 }
 
-# Ensure the bucket is private (Standard for CloudFront OAC)
-resource "aws_s3_bucket_public_access_block" "frontend" {
-  bucket = aws_s3_bucket.frontend.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
+# These pass the module outputs to the GitHub Action
+output "s3_bucket_name" {
+  value = module.vstshop.bucket_name
 }
 
-# 2. ORIGIN ACCESS CONTROL (The "Identity" for CloudFront)
-resource "aws_cloudfront_origin_access_control" "default" {
-  name                              = "${var.project_name}-oac-${var.environment}"
-  origin_access_control_origin_type = "s3"
-  signing_behavior                  = "always"
-  signing_protocol                  = "sigv4"
-}
-
-# 3. THE UNIFIED BUCKET POLICY (The "One Policy" to stop the 403 errors)
-resource "aws_s3_bucket_policy" "frontend_policy" {
-  bucket = aws_s3_bucket.frontend.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid    = "AllowCloudFrontRead"
-        Effect = "Allow"
-        Principal = {
-          Service = "cloudfront.amazonaws.com"
-        }
-        Action   = "s3:GetObject"
-        Resource = "${aws_s3_bucket.frontend.arn}/*"
-        Condition = {
-          StringEquals = {
-            "AWS:SourceArn" = aws_cloudfront_distribution.s3_distribution.arn
-          }
-        }
-      },
-      {
-        Sid    = "AllowGithubActionsAndLocalAdmin"
-        Effect = "Allow"
-        Principal = {
-          AWS = [
-            "arn:aws:iam::${module.globals.accounts.mgmt}:role/github-actions-oidc-role",
-            "arn:aws:iam::${module.globals.accounts.dev}:root"
-          ]
-        }
-        Action = [
-          "s3:ListBucket",
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject"
-        ]
-        Resource = [
-          aws_s3_bucket.frontend.arn,
-          "${aws_s3_bucket.frontend.arn}/*"
-        ]
-      }
-    ]
-  })
-}
-
-# 4. CLOUDFRONT DISTRIBUTION
-resource "aws_cloudfront_distribution" "s3_distribution" {
-  origin {
-    domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
-    origin_id                = "S3Origin"
-    origin_access_control_id = aws_cloudfront_origin_access_control.default.id
-  }
-
-  enabled             = true
-  is_ipv6_enabled     = true
-  default_root_object = "index.html"
-
-  default_cache_behavior {
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "S3Origin"
-
-    forwarded_values {
-      query_string = false
-      cookies {
-        forward = "none"
-      }
-    }
-
-    viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 3600
-    max_ttl                = 86400
-  }
-
-  restrictions {
-    geo_restriction {
-      restriction_type = "none"
-    }
-  }
-
-  viewer_certificate {
-    cloudfront_default_certificate = true
-  }
+output "distribution_id" {
+  value = module.vstshop.cloudfront_id
 }
