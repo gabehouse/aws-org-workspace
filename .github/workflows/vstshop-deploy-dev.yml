@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - "master"
-      - "feature/**"
     paths:
       - 'infra/workloads/dev/vstshop/**'
       - 'infra/workloads/dev/iam/**'
