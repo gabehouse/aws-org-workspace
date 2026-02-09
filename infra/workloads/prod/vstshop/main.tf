@@ -54,7 +54,7 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
         Principal = {
           AWS = [
             "arn:aws:iam::${module.globals.accounts.mgmt}:role/github-actions-oidc-role",
-            "arn:aws:iam::${module.globals.accounts.dev}:root"
+            "arn:aws:iam::${module.globals.accounts.prod}:root"
           ]
         }
         Action = [
