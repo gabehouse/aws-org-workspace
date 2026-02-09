@@ -2,26 +2,17 @@ name: "VSTShop Deploy Dev"
 
 on:
   push:
-    branches:
-      - "master"
+    branches: [ "feature/**", "dev" ]
     paths:
-      - 'infra/workloads/dev/vstshop/**'
-      - 'infra/workloads/dev/iam/**'
-      - 'infra/workloads/dev/networking/**'
+      - 'infra/workloads/dev/**'
       - 'infra/management/identity/**'
       - 'services/vstshop/**'
       - '.github/workflows/vstshop-deploy-dev.yml'
-
   pull_request:
-    branches: [ "master" ]
+    branches: [ "dev" ]
     paths:
-      - 'infra/workloads/dev/vstshop/**'
-      - 'infra/workloads/dev/iam/**'
-      - 'infra/workloads/dev/networking/**'
-      - 'infra/management/identity/**'
+      - 'infra/workloads/dev/**'
       - 'services/vstshop/**'
-      - '.github/workflows/vstshop-deploy-dev.yml'
-
   workflow_dispatch:
 
 permissions:
@@ -35,7 +26,6 @@ env:
   AWS_REGION: "us-east-2"
 
 jobs:
-  # --- JOB 1: SCRAPE CONFIG ---
   setup:
     name: "Scrape Config"
     runs-on: ubuntu-latest
@@ -54,27 +44,25 @@ jobs:
           echo "mgmt_account=$(yq '.accounts.mgmt' config.yaml)" >> $GITHUB_OUTPUT
           echo "dev_account=$(yq '.accounts.dev' config.yaml)" >> $GITHUB_OUTPUT
 
-  # --- JOB 2: PLAN ---
   plan:
     name: "Terraform Plan"
     needs: setup
     runs-on: ubuntu-latest
+    outputs:
+      plan_stdout: ${{ steps.plan.outputs.stdout }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: true
 
-      - name: Configure Management Gateway Credentials
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ needs.setup.outputs.mgmt_account }}:role/${{ needs.setup.outputs.gateway_role }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Configure Dev Account Credentials (Role Hopping)
+      - name: Role Chain to Dev
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
@@ -94,84 +82,4 @@ jobs:
         uses: actions/github-script@v7
         if: github.event_name == 'pull_request'
         env:
-          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const output = `#### Terraform Plan 📖
-            <details><summary>Show Plan</summary>
-
-            \`\`\`${process.env.PLAN}\`\`\`
-
-            </details>
-
-            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            })
-      # This works for BOTH Pull Requests and direct pushes to Master
-      - name: Generate Job Summary
-        run: |
-          echo "### Terraform Plan Summary 📖" >> $GITHUB_STEP_SUMMARY
-          echo '```terraform' >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.plan.outputs.stdout }}" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-
-  # --- JOB 3: APPLY ---
-  apply:
-    name: "Terraform Apply"
-    needs: [setup, plan]
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-    environment: production
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_wrapper: false
-
-      - name: Configure Management Gateway Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.mgmt_account }}:role/${{ needs.setup.outputs.gateway_role }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Configure Dev Account Credentials (Role Hopping)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ${{ env.AWS_REGION }}
-          role-chaining: true
-          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.dev_account }}:role/${{ needs.setup.outputs.dev_role }}
-
-      - name: Terraform Init
-        working-directory: ${{ env.TF_DIR }}
-        run: terraform init -backend-config=../../../backend.ci.hcl
-
-      - name: Terraform Apply
-        working-directory: ${{ env.TF_DIR }}
-        run: terraform apply -auto-approve -input=false
-
-      - name: Get Infrastructure Details
-        id: infra
-        working-directory: ${{ env.TF_DIR }}
-        run: |
-          echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
-          echo "DIST_ID=$(terraform output -raw distribution_id)" >> $GITHUB_OUTPUT
-
-      - name: S3 Sync
-        run: |
-          aws s3 sync "${{ env.SITE_DIR }}" s3://${{ steps.infra.outputs.BUCKET_NAME }} --delete
-
-      - name: Invalidate CloudFront Cache
-        run: |
-          aws cloudfront create-invalidation \
-            --distribution-id ${{ steps.infra.outputs.DIST_ID }} \
-            --paths "/*" \
-            --region us-east-1
+          PLAN:
