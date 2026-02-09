@@ -20,7 +20,7 @@ output "dev_execution_role_name" {
 }
 
 output "prod_execution_role_name" {
-  value = local.config.iam.dev_execution_role_name
+  value = local.config.iam.prod_execution_role_name
 }
 
 output "github_gateway_role_name" {

@@ -51,7 +51,10 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
           "sts:TagSession"
         ]
         # Pointing to your Spoke account
-        Resource = "arn:aws:iam::${module.globals.accounts.dev}:role/${module.globals.execution_role_name}"
+        Resource = [
+          "arn:aws:iam::${module.globals.accounts.dev}:role/${module.globals.dev_execution_role_name}",
+          "arn:aws:iam::${module.globals.accounts.prod}:role/${module.globals.prod_execution_role_name}"
+        ]
       }
     ]
   })
