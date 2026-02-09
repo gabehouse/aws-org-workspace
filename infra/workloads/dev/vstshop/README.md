@@ -33,4 +33,5 @@ No inputs.
 |------|-------------|
 | <a name="output_distribution_id"></a> [distribution\_id](#output\_distribution\_id) | n/a |
 | <a name="output_s3_bucket_name"></a> [s3\_bucket\_name](#output\_s3\_bucket\_name) | These pass the module outputs to the GitHub Action |
+| <a name="output_website_url"></a> [website\_url](#output\_website\_url) | The CloudFront URL to access your shop |
 <!-- END_TF_DOCS -->

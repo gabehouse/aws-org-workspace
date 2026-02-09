@@ -19,3 +19,8 @@ output "s3_bucket_name" {
 output "distribution_id" {
   value = module.vstshop.cloudfront_id
 }
+
+output "website_url" {
+  description = "The CloudFront URL to access your shop"
+  value       = "https://${module.vstshop.cloudfront_domain_name}"
+}
