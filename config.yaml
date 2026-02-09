@@ -15,5 +15,6 @@ accounts:
 
 # Automation
 iam:
+  prod_execution_role_name: "terraform-execution-role-prod"
   dev_execution_role_name: "terraform-execution-role-dev"
   gateway_role_name: "github-actions-oidc-role"

@@ -1,0 +1,114 @@
+name: "VSTShop Deploy Prod"
+
+on:
+  pull_request:
+    branches: [ "master" ]
+    paths:
+      - 'infra/workloads/prod/**'
+      - 'services/vstshop/**'
+  push:
+    branches: [ "master" ]
+    paths:
+      - 'infra/workloads/prod/**'
+      - 'services/vstshop/**'
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  TF_DIR: "infra/workloads/prod/vstshop"
+  SITE_DIR: "services/vstshop"
+  AWS_REGION: "us-east-2"
+
+jobs:
+  setup:
+    name: "Scrape Config"
+    runs-on: ubuntu-latest
+    outputs:
+      gateway_role: ${{ steps.vars.outputs.gateway_role }}
+      prod_role: ${{ steps.vars.outputs.prod_role }}
+      mgmt_account: ${{ steps.vars.outputs.mgmt_account }}
+      prod_account: ${{ steps.vars.outputs.prod_account }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract Variables
+        id: vars
+        run: |
+          echo "gateway_role=$(yq '.iam.gateway_role_name' config.yaml)" >> $GITHUB_OUTPUT
+          echo "prod_role=$(yq '.iam.prod_execution_role_name' config.yaml)" >> $GITHUB_OUTPUT
+          echo "mgmt_account=$(yq '.accounts.mgmt' config.yaml)" >> $GITHUB_OUTPUT
+          echo "prod_account=$(yq '.accounts.prod' config.yaml)" >> $GITHUB_OUTPUT
+
+  plan:
+    name: "Production Plan"
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: true
+
+      - name: Auth Prod
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.mgmt_account }}:role/${{ needs.setup.outputs.gateway_role }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Role Chain to Prod
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-chaining: true
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.prod_account }}:role/${{ needs.setup.outputs.prod_role }}
+
+      - name: Terraform Init & Plan
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          terraform init -backend-config=../../../backend.ci.hcl
+          terraform plan -no-color -input=false
+
+  apply:
+    name: "Production Apply"
+    needs: [setup, plan]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    environment: production # This triggers the Manual Approval gate in GitHub!
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: true
+
+      - name: Auth Prod
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.mgmt_account }}:role/${{ needs.setup.outputs.gateway_role }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Role Chain to Prod
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-chaining: true
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.prod_account }}:role/${{ needs.setup.outputs.prod_role }}
+
+      - name: Terraform Init & Apply
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          terraform init -backend-config=../../../backend.ci.hcl
+          terraform apply -auto-approve -input=false
+
+      - name: Get Infra Outputs
+        id: infra
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
+          echo "DIST_ID=$(terraform output -raw distribution_id)" >> $GITHUB_OUTPUT
+
+      - name: Deploy Frontend
+        run: |
+          aws s3 sync "${{ env.SITE_DIR }}" s3://${{ steps.infra.outputs.BUCKET_NAME }} --delete
+          aws cloudfront create-invalidation --distribution-id ${{ steps.infra.outputs.DIST_ID }} --paths "/*"
