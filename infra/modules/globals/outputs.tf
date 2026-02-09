@@ -15,7 +15,11 @@ output "backend" {
   value = local.config.backend
 }
 
-output "execution_role_name" {
+output "dev_execution_role_name" {
+  value = local.config.iam.dev_execution_role_name
+}
+
+output "prod_execution_role_name" {
   value = local.config.iam.dev_execution_role_name
 }
 

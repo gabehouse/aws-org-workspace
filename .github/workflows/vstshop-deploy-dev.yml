@@ -1,4 +1,4 @@
-name: "VSTShop Deploy"
+name: "VSTShop Deploy Dev"
 
 on:
   push:
@@ -9,9 +9,11 @@ on:
       - 'infra/workloads/dev/vstshop/**'
       - 'infra/management/identity/**'
       - 'services/vstshop/**'
-      - '.github/workflows/vstshop-deploy.yml'
+      - '.github/workflows/vstshop-deploy-dev.yml'
   pull_request:
     branches: [ "master" ]
+    paths:
+      - 'infra/workloads/dev/vstshop/**' # Fixed: Only PR if prod infra changes
   workflow_dispatch:
 
 permissions:

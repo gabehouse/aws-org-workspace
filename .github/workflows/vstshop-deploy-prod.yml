@@ -1,0 +1,169 @@
+name: "VSTShop Deploy Prod"
+
+on:
+  push:
+    branches:
+      - "master"
+      - "feature/**"
+    paths:
+      - 'infra/workloads/prod/vstshop/**'
+      - 'infra/management/identity/**'
+      - 'services/vstshop/**'
+      - '.github/workflows/vstshop-deploy-prod.yml'
+  pull_request:
+    branches: [ "master" ]
+    paths:
+      - 'infra/workloads/prod/vstshop/**' # Fixed: Only PR if prod infra changes
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  TF_DIR: "infra/workloads/prod/vstshop"
+  SITE_DIR: "services/vstshop"
+  AWS_REGION: "us-east-2"
+
+jobs:
+  # --- JOB 1: SCRAPE CONFIG ---
+  setup:
+    name: "Scrape Config"
+    runs-on: ubuntu-latest
+    outputs:
+      gateway_role: ${{ steps.vars.outputs.gateway_role }}
+      prod_role: ${{ steps.vars.outputs.dev_role }}
+      mgmt_account: ${{ steps.vars.outputs.mgmt_account }}
+      prod_account: ${{ steps.vars.outputs.prod_account }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract Variables
+        id: vars
+        run: |
+          echo "gateway_role=$(yq '.iam.gateway_role_name' config.yaml)" >> $GITHUB_OUTPUT
+          echo "prod_role=$(yq '.iam.prod_execution_role_name' config.yaml)" >> $GITHUB_OUTPUT
+          echo "mgmt_account=$(yq '.accounts.mgmt' config.yaml)" >> $GITHUB_OUTPUT
+          echo "prod_account=$(yq '.accounts.prod' config.yaml)" >> $GITHUB_OUTPUT
+
+  # --- JOB 2: PLAN ---
+  plan:
+    name: "Terraform Plan"
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: true
+
+      - name: Configure Management Gateway Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.mgmt_account }}:role/${{ needs.setup.outputs.gateway_role }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Configure Prod Account Credentials (Role Hopping)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-chaining: true
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.prod_account }}:role/${{ needs.setup.outputs.prod_role }}
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init -backend-config=../../../backend.ci.hcl
+
+      - name: Terraform Plan
+        id: plan
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform plan -no-color -input=false
+
+      - name: Update Pull Request
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Plan 📖
+            <details><summary>Show Plan</summary>
+
+            \`\`\`${process.env.PLAN}\`\`\`
+
+            </details>
+
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+      # This works for BOTH Pull Requests and direct pushes to Master
+      - name: Generate Job Summary
+        run: |
+          echo "### Terraform Plan Summary 📖" >> $GITHUB_STEP_SUMMARY
+          echo '```terraform' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.plan.outputs.stdout }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+  # --- JOB 3: APPLY ---
+  apply:
+    name: "Terraform Apply"
+    needs: [setup, plan]
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Configure Management Gateway Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.mgmt_account }}:role/${{ needs.setup.outputs.gateway_role }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Configure Dev Account Credentials (Role Hopping)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-chaining: true
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.prod_account }}:role/${{ needs.setup.outputs.prod_role }}
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init -backend-config=../../../backend.ci.hcl
+
+      - name: Terraform Apply
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform apply -auto-approve -input=false
+
+      - name: Get Infrastructure Details
+        id: infra
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
+          echo "DIST_ID=$(terraform output -raw distribution_id)" >> $GITHUB_OUTPUT
+
+      - name: S3 Sync
+        run: |
+          aws s3 sync "${{ env.SITE_DIR }}" s3://${{ steps.infra.outputs.BUCKET_NAME }} --delete
+
+      - name: Invalidate CloudFront Cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ steps.infra.outputs.DIST_ID }} \
+            --paths "/*" \
+            --region us-east-1

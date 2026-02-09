@@ -27,7 +27,8 @@ No inputs.
 |------|-------------|
 | <a name="output_accounts"></a> [accounts](#output\_accounts) | A map of AWS Account IDs for the organization |
 | <a name="output_backend"></a> [backend](#output\_backend) | n/a |
-| <a name="output_execution_role_name"></a> [execution\_role\_name](#output\_execution\_role\_name) | n/a |
+| <a name="output_dev_execution_role_name"></a> [dev\_execution\_role\_name](#output\_dev\_execution\_role\_name) | n/a |
 | <a name="output_github_gateway_role_name"></a> [github\_gateway\_role\_name](#output\_github\_gateway\_role\_name) | n/a |
+| <a name="output_prod_execution_role_name"></a> [prod\_execution\_role\_name](#output\_prod\_execution\_role\_name) | n/a |
 | <a name="output_region"></a> [region](#output\_region) | n/a |
 <!-- END_TF_DOCS -->
