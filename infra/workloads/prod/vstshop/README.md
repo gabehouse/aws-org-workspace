@@ -34,7 +34,7 @@
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_environment"></a> [environment](#input\_environment) | n/a | `string` | `"dev"` | no |
+| <a name="input_environment"></a> [environment](#input\_environment) | n/a | `string` | `"prod"` | no |
 | <a name="input_project_name"></a> [project\_name](#input\_project\_name) | n/a | `string` | `"phoenix-vst"` | no |
 
 ## Outputs

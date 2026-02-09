@@ -31,52 +31,33 @@ resource "aws_ssoadmin_permission_set" "safe_prod" {
   session_duration = "PT4H"
 }
 
-# Power: Full Networking capabilities
-resource "aws_ssoadmin_managed_policy_attachment" "vpc_manager" {
+# The "Keep Moving" Power: Full Admin
+# This removes the need for vpc_manager, iam_manager, and billing_view
+resource "aws_ssoadmin_managed_policy_attachment" "full_admin" {
   instance_arn       = local.instance_arn
-  managed_policy_arn = "arn:aws:iam::aws:policy/AmazonVPCFullAccess"
+  managed_policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
   permission_set_arn = aws_ssoadmin_permission_set.safe_prod.arn
 }
 
-# Power: Security Eyes (See dashboards, list resources, check for hackers)
-resource "aws_ssoadmin_managed_policy_attachment" "view_only" {
-  instance_arn       = local.instance_arn
-  managed_policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
-  permission_set_arn = aws_ssoadmin_permission_set.safe_prod.arn
-}
-
-# Power: Billing (Crucial for solo engineers to monitor costs)
-resource "aws_ssoadmin_managed_policy_attachment" "billing_view" {
-  instance_arn       = local.instance_arn
-  managed_policy_arn = "arn:aws:iam::aws:policy/job-function/Billing"
-  permission_set_arn = aws_ssoadmin_permission_set.safe_prod.arn
-}
-
-# Style & Safety Rail
-resource "aws_ssoadmin_permission_set_inline_policy" "safety_and_style" {
+resource "aws_ssoadmin_permission_set_inline_policy" "safety_rail" {
   instance_arn       = local.instance_arn
   permission_set_arn = aws_ssoadmin_permission_set.safe_prod.arn
   inline_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        # Fix: Using correct Actions and a broader Resource ARN for the UXC service
-        Effect = "Allow"
-        Action = [
-          "uxc:GetAccountColor",
-          "uxc:PutAccountColor",
-          "uxc:DeleteAccountColor"
+        # DENY deletion of the State Bucket
+        # This protects you from yourself!
+        Sid    = "ProtectState"
+        Effect = "Deny"
+        Action = ["s3:DeleteBucket", "s3:DeleteObject*"]
+        Resource = [
+          "arn:aws:s3:::gabriel-tf-state-2026",
+          "arn:aws:s3:::gabriel-tf-state-2026/*"
         ]
-        Resource = "*"
       }
     ]
   })
-}
-
-resource "aws_ssoadmin_managed_policy_attachment" "iam_manager" {
-  instance_arn       = local.instance_arn
-  managed_policy_arn = "arn:aws:iam::aws:policy/IAMFullAccess"
-  permission_set_arn = aws_ssoadmin_permission_set.safe_prod.arn
 }
 
 # --- ASSIGNMENTS ---
