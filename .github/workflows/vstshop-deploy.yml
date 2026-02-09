@@ -1,3 +1,4 @@
+
 name: "VSTShop Deploy"
 
 on:
@@ -41,7 +42,6 @@ jobs:
           echo "dev_role=$(yq '.iam.dev_execution_role_name' config.yaml)" >> $GITHUB_OUTPUT
           echo "mgmt_account=$(yq '.accounts.mgmt' config.yaml)" >> $GITHUB_OUTPUT
           echo "dev_account=$(yq '.accounts.dev' config.yaml)" >> $GITHUB_OUTPUT
-
   # --- JOB 2: PLAN ---
   plan:
     name: "Terraform Plan"
@@ -56,6 +56,7 @@ jobs:
         with:
           terraform_wrapper: true
 
+      # AWS AUTHENTICATION (Double-Hop)
       - name: Configure Management Gateway Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -74,47 +75,15 @@ jobs:
         run: terraform init -backend-config=../../../backend.ci.hcl
 
       - name: Terraform Plan
-        id: plan
         working-directory: ${{ env.TF_DIR }}
-        run: terraform plan -no-color -input=false -var-file=../../../global.tfvars
-
-      # This posts the plan to the PR comment section
-      - name: Update Pull Request
-        uses: actions/github-script@v7
-        if: github.event_name == 'pull_request'
-        env:
-          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const output = `#### Terraform Plan 📖
-            <details><summary>Show Plan</summary>
-
-            \`\`\`${process.env.PLAN}\`\`\`
-
-            </details>`;
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            })
-
-      # This makes the plan visible on the Summary page (Great for Master pushes)
-      - name: Generate Job Summary
-        run: |
-          echo "### Terraform Plan Summary" >> $GITHUB_STEP_SUMMARY
-          echo '```terraform' >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.plan.outputs.stdout }}" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+        run: terraform plan -input=false
 
   # --- JOB 3: APPLY ---
   apply:
     name: "Terraform Apply"
     needs: [setup, plan]
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-    environment: production
+    environment: production # Requires manual approval in GitHub UI
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -125,6 +94,7 @@ jobs:
         with:
           terraform_wrapper: false
 
+      # AWS AUTHENTICATION (Must repeat the Double-Hop for the new runner)
       - name: Configure Management Gateway Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -144,23 +114,21 @@ jobs:
 
       - name: Terraform Apply
         working-directory: ${{ env.TF_DIR }}
-        run: terraform apply -auto-approve -input=false -var-file=../../../global.tfvars
+        run: terraform apply -auto-approve -input=false
 
+      # --- POST-DEPLOY: CONTENT SYNC ---
       - name: Get Infrastructure Details
         id: infra
         working-directory: ${{ env.TF_DIR }}
         run: |
           echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
           echo "DIST_ID=$(terraform output -raw distribution_id)" >> $GITHUB_OUTPUT
-
       - name: S3 Sync
         run: |
           aws s3 sync "${{ env.SITE_DIR }}" s3://${{ steps.infra.outputs.BUCKET_NAME }} --delete
-
       - name: Invalidate CloudFront Cache
         run: |
           aws cloudfront create-invalidation \
             --distribution-id ${{ steps.infra.outputs.DIST_ID }} \
             --paths "/*" \
-
             --region us-east-1
