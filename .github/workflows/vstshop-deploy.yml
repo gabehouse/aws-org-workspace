@@ -2,7 +2,9 @@ name: "VSTShop Deploy"
 
 on:
   push:
-    branches: [ "master" ]
+    branches:
+      - "master"
+      - "feature/**"
     paths:
       - 'infra/workloads/dev/vstshop/**'
       - 'infra/management/identity/**'
