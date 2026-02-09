@@ -6,16 +6,23 @@ on:
       - "master"
       - "feature/**"
     paths:
+      - 'infra/workloads/dev/vstshop/**'
       - 'infra/workloads/dev/iam/**'
       - 'infra/workloads/dev/networking/**'
-      - 'infra/workloads/dev/vstshop/**'
       - 'infra/management/identity/**'
       - 'services/vstshop/**'
       - '.github/workflows/vstshop-deploy-dev.yml'
+
   pull_request:
     branches: [ "master" ]
     paths:
-      - 'infra/workloads/dev/vstshop/**' # Fixed: Only PR if prod infra changes
+      - 'infra/workloads/dev/vstshop/**'
+      - 'infra/workloads/dev/iam/**'
+      - 'infra/workloads/dev/networking/**'
+      - 'infra/management/identity/**'
+      - 'services/vstshop/**'
+      - '.github/workflows/vstshop-deploy-dev.yml'
+
   workflow_dispatch:
 
 permissions:
