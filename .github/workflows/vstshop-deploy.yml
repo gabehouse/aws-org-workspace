@@ -42,7 +42,7 @@ jobs:
           echo "mgmt_account=$(yq '.accounts.mgmt' config.yaml)" >> $GITHUB_OUTPUT
           echo "dev_account=$(yq '.accounts.dev' config.yaml)" >> $GITHUB_OUTPUT
 
-# --- JOB 2: PLAN ---
+  # --- JOB 2: PLAN ---
   plan:
     name: "Terraform Plan"
     needs: setup
@@ -54,9 +54,8 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_wrapper: true # This must be true to capture stdout for the summary
+          terraform_wrapper: true
 
-      # AWS AUTHENTICATION (Double-Hop)
       - name: Configure Management Gateway Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -77,11 +76,9 @@ jobs:
       - name: Terraform Plan
         id: plan
         working-directory: ${{ env.TF_DIR }}
-        # Added the var-file back here so the plan is accurate
         run: terraform plan -no-color -input=false -var-file=../../../global.tfvars
-        continue-on-error: true
 
-      # NEW: This is where the Plan Summary lives so you can see it on Pull Requests
+      # This posts the plan to the PR comment section
       - name: Update Pull Request
         uses: actions/github-script@v7
         if: github.event_name == 'pull_request'
@@ -95,9 +92,7 @@ jobs:
 
             \`\`\`${process.env.PLAN}\`\`\`
 
-            </details>
-
-            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+            </details>`;
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
@@ -106,13 +101,65 @@ jobs:
               body: output
             })
 
-      # NEW: Job Summary (This makes the plan appear on the Actions page even without a PR)
+      # This makes the plan visible on the Summary page (Great for Master pushes)
       - name: Generate Job Summary
         run: |
-          echo "## Terraform Plan Output" >> $GITHUB_STEP_SUMMARY
-          echo "<details><summary>Click to expand</summary>" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Terraform Plan Summary" >> $GITHUB_STEP_SUMMARY
           echo '```terraform' >> $GITHUB_STEP_SUMMARY
           echo "${{ steps.plan.outputs.stdout }}" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "</details>" >> $GITHUB_STEP_SUMMARY
+
+  # --- JOB 3: APPLY ---
+  apply:
+    name: "Terraform Apply"
+    needs: [setup, plan]
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Configure Management Gateway Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.mgmt_account }}:role/${{ needs.setup.outputs.gateway_role }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Configure Dev Account Credentials (Role Hopping)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-chaining: true
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.dev_account }}:role/${{ needs.setup.outputs.dev_role }}
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init -backend-config=../../../backend.ci.hcl
+
+      - name: Terraform Apply
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform apply -auto-approve -input=false -var-file=../../../global.tfvars
+
+      - name: Get Infrastructure Details
+        id: infra
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
+          echo "DIST_ID=$(terraform output -raw distribution_id)" >> $GITHUB_OUTPUT
+
+      - name: S3 Sync
+        run: |
+          aws s3 sync "${{ env.SITE_DIR }}" s3://${{ steps.infra.outputs.BUCKET_NAME }} --delete
+
+      - name: Invalidate CloudFront Cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ steps.infra.outputs.DIST_ID }} \
+            --paths "/*" \
+            --region us-east-1
