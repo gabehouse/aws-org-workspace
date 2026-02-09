@@ -36,17 +36,6 @@ resource "aws_s3_bucket_versioning" "terraform_state" {
   }
 }
 
-# 4. THE LOCK (DynamoDB)
-resource "aws_dynamodb_table" "terraform_locks" {
-  name         = var.dynamodb_table_name
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "LockID"
-
-  attribute {
-    name = "LockID"
-    type = "S" # <--- FIXED: Must be "S", not "S3"
-  }
-}
 
 # 5. THE PUBLIC BLOCK
 resource "aws_s3_bucket_public_access_block" "terraform_state" {
@@ -82,31 +71,6 @@ resource "aws_s3_bucket_policy" "state_cross_account" {
           aws_s3_bucket.terraform_state.arn,
           "${aws_s3_bucket.terraform_state.arn}/*"
         ]
-      }
-    ]
-  })
-}
-
-# 2. NEW: DynamoDB Resource-Based Policy
-# This is the modern way (post-2024) to allow Dev/Prod to talk to your Management Lock Table
-resource "aws_dynamodb_resource_policy" "lock_table_policy" {
-  resource_arn = aws_dynamodb_table.terraform_locks.arn
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid    = "AllowCrossAccountLocking"
-        Effect = "Allow"
-        Principal = {
-          AWS = [for id in local.external_account_ids : "arn:aws:iam::${id}:root"]
-        }
-        Action = [
-          "dynamodb:GetItem",
-          "dynamodb:PutItem",
-          "dynamodb:DeleteItem",
-          "dynamodb:DescribeTable"
-        ]
-        Resource = aws_dynamodb_table.terraform_locks.arn
       }
     ]
   })
