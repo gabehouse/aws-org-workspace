@@ -6,6 +6,8 @@ on:
       - "master"
       - "feature/**"
     paths:
+      - 'infra/workloads/prod/iam/**'
+      - 'infra/workloads/prod/networking/**'
       - 'infra/workloads/prod/vstshop/**'
       - 'infra/management/identity/**'
       - 'services/vstshop/**'
