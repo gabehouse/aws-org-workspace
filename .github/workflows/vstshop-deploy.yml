@@ -1,4 +1,3 @@
-
 name: "VSTShop Deploy"
 
 on:
@@ -42,6 +41,7 @@ jobs:
           echo "dev_role=$(yq '.iam.dev_execution_role_name' config.yaml)" >> $GITHUB_OUTPUT
           echo "mgmt_account=$(yq '.accounts.mgmt' config.yaml)" >> $GITHUB_OUTPUT
           echo "dev_account=$(yq '.accounts.dev' config.yaml)" >> $GITHUB_OUTPUT
+
   # --- JOB 2: PLAN ---
   plan:
     name: "Terraform Plan"
@@ -56,7 +56,6 @@ jobs:
         with:
           terraform_wrapper: true
 
-      # AWS AUTHENTICATION (Double-Hop)
       - name: Configure Management Gateway Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -71,16 +70,13 @@ jobs:
           role-to-assume: arn:aws:iam::${{ needs.setup.outputs.dev_account }}:role/${{ needs.setup.outputs.dev_role }}
 
       - name: Terraform Init
-        id: init
         working-directory: ${{ env.TF_DIR }}
         run: terraform init -backend-config=../../../backend.ci.hcl
 
       - name: Terraform Plan
         id: plan
-        if: github.event_name == 'pull_request'
         working-directory: ${{ env.TF_DIR }}
         run: terraform plan -no-color -input=false
-        continue-on-error: true
 
       - name: Update Pull Request
         uses: actions/github-script@v7
@@ -90,15 +86,10 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const output = `#### Terraform Format and Style 🖌
-            #### Terraform Initialization ⚙️ \`${{ steps.init.outcome }}\`
-            #### Terraform Plan 📖 \`${{ steps.plan.outcome }}\`
-
+            const output = `#### Terraform Plan 📖
             <details><summary>Show Plan</summary>
 
-            \`\`\`\n
-            ${process.env.PLAN}
-            \`\`\`
+            \`\`\`${process.env.PLAN}\`\`\`
 
             </details>
 
@@ -116,7 +107,7 @@ jobs:
     name: "Terraform Apply"
     needs: [setup, plan]
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-    environment: production # Requires manual approval in GitHub UI
+    environment: production
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -127,7 +118,6 @@ jobs:
         with:
           terraform_wrapper: false
 
-      # AWS AUTHENTICATION (Must repeat the Double-Hop for the new runner)
       - name: Configure Management Gateway Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -149,16 +139,17 @@ jobs:
         working-directory: ${{ env.TF_DIR }}
         run: terraform apply -auto-approve -input=false
 
-      # --- POST-DEPLOY: CONTENT SYNC ---
       - name: Get Infrastructure Details
         id: infra
         working-directory: ${{ env.TF_DIR }}
         run: |
           echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
           echo "DIST_ID=$(terraform output -raw distribution_id)" >> $GITHUB_OUTPUT
+
       - name: S3 Sync
         run: |
           aws s3 sync "${{ env.SITE_DIR }}" s3://${{ steps.infra.outputs.BUCKET_NAME }} --delete
+
       - name: Invalidate CloudFront Cache
         run: |
           aws cloudfront create-invalidation \
