@@ -142,7 +142,7 @@ jobs:
           role-to-assume: arn:aws:iam::${{ needs.setup.outputs.mgmt_account }}:role/${{ needs.setup.outputs.gateway_role }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Configure Dev Account Credentials (Role Hopping)
+      - name: Configure Prod Account Credentials (Role Hopping)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
