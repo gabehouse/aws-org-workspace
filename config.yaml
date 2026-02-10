@@ -13,8 +13,5 @@ accounts:
   dev:  "195481994910"
   prod: "212984412001"
 
-# Automation
-iam:
-  prod_execution_role_name: "terraform-execution-role-prod"
-  dev_execution_role_name: "terraform-execution-role-dev"
-  gateway_role_name: "github-actions-oidc-role"
+# Organization User
+sso_admin_user: "Gabe"
