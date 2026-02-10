@@ -15,14 +15,7 @@ output "backend" {
   value = local.config.backend
 }
 
-output "dev_execution_role_name" {
-  value = local.config.iam.dev_execution_role_name
-}
-
-output "prod_execution_role_name" {
-  value = local.config.iam.prod_execution_role_name
-}
-
-output "github_gateway_role_name" {
-  value = local.config.iam.gateway_role_name
+output "sso_admin_user" {
+  description = "The username created manually in the AWS SSO Console"
+  value       = local.config.sso_admin_user
 }

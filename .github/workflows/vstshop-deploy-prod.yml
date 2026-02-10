@@ -54,7 +54,7 @@ jobs:
       - name: Auth Prod
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.mgmt_account }}:role/${{ needs.setup.outputs.gateway_role }}
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.mgmt_account }}:role/github-actions-oidc-role
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Role Chain to Prod
@@ -62,7 +62,7 @@ jobs:
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-chaining: true
-          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.prod_account }}:role/${{ needs.setup.outputs.prod_role }}
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.prod_account }}:role/terraform-execution-role-prod
 
       - name: Terraform Init & Plan
         working-directory: ${{ env.TF_DIR }}
@@ -85,7 +85,7 @@ jobs:
       - name: Auth Prod
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.mgmt_account }}:role/${{ needs.setup.outputs.gateway_role }}
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.mgmt_account }}:role/github-actions-oidc-role
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Role Chain to Prod
@@ -93,7 +93,7 @@ jobs:
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-chaining: true
-          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.prod_account }}:role/${{ needs.setup.outputs.prod_role }}
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.prod_account }}:role/terraform-execution-role-dev-prod
 
       - name: Terraform Init & Apply
         working-directory: ${{ env.TF_DIR }}

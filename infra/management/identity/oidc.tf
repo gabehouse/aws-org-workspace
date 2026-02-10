@@ -9,7 +9,7 @@ resource "aws_iam_openid_connect_provider" "github" {
 
 # 2. THE GATEWAY: The role GitHub "Logs Into" (Hub Account)
 resource "aws_iam_role" "github_actions" {
-  name = module.globals.github_gateway_role_name
+  name = "github-actions-oidc-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -52,8 +52,8 @@ resource "aws_iam_role_policy" "github_actions_permissions" {
         ]
         # Pointing to your Spoke account
         Resource = [
-          "arn:aws:iam::${module.globals.accounts.dev}:role/${module.globals.dev_execution_role_name}",
-          "arn:aws:iam::${module.globals.accounts.prod}:role/${module.globals.prod_execution_role_name}"
+          "arn:aws:iam::${module.globals.accounts.dev}:role/terraform-execution-role-dev",
+          "arn:aws:iam::${module.globals.accounts.prod}:role/terraform-execution-role-prod"
         ]
       }
     ]

@@ -31,8 +31,6 @@ jobs:
     name: "Scrape Config"
     runs-on: ubuntu-latest
     outputs:
-      gateway_role: ${{ steps.vars.outputs.gateway_role }}
-      dev_role: ${{ steps.vars.outputs.dev_role }}
       mgmt_account: ${{ steps.vars.outputs.mgmt_account }}
       dev_account: ${{ steps.vars.outputs.dev_account }}
     steps:
@@ -40,8 +38,6 @@ jobs:
       - name: Extract Variables
         id: vars
         run: |
-          echo "gateway_role=$(yq '.iam.gateway_role_name' config.yaml)" >> $GITHUB_OUTPUT
-          echo "dev_role=$(yq '.iam.dev_execution_role_name' config.yaml)" >> $GITHUB_OUTPUT
           echo "mgmt_account=$(yq '.accounts.mgmt' config.yaml)" >> $GITHUB_OUTPUT
           echo "dev_account=$(yq '.accounts.dev' config.yaml)" >> $GITHUB_OUTPUT
 
@@ -61,7 +57,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.mgmt_account }}:role/${{ needs.setup.outputs.gateway_role }}
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.mgmt_account }}:role/github-actions-oidc-role
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Role Chain to Dev
@@ -69,7 +65,7 @@ jobs:
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-chaining: true
-          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.dev_account }}:role/${{ needs.setup.outputs.dev_role }}
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.dev_account }}:role/terraform-execution-role-dev
 
       - name: Terraform Init
         working-directory: ${{ env.TF_DIR }}
@@ -115,7 +111,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.mgmt_account }}:role/${{ needs.setup.outputs.gateway_role }}
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.mgmt_account }}:role/github-actions-oidc-role
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Role Chain to Dev
@@ -123,7 +119,7 @@ jobs:
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-chaining: true
-          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.dev_account }}:role/${{ needs.setup.outputs.dev_role }}
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.dev_account }}:role/terraform-execution-role-dev
 
       - name: Terraform Init
         working-directory: ${{ env.TF_DIR }}
