@@ -93,7 +93,7 @@ jobs:
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-chaining: true
-          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.prod_account }}:role/terraform-execution-role-dev-prod
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.prod_account }}:role/terraform-execution-role-prod
 
       - name: Terraform Init & Apply
         working-directory: ${{ env.TF_DIR }}
