@@ -5,7 +5,7 @@ module "globals" {
 
 # 1. THE FRONTEND BUCKET
 resource "aws_s3_bucket" "frontend" {
-  bucket        = "${var.project_name}-frontend-${var.environment}"
+  bucket        = "${module.globals.project_name}-frontend-${var.environment}"
   force_destroy = true
 }
 
@@ -20,7 +20,7 @@ resource "aws_s3_bucket_public_access_block" "frontend" {
 
 # 2. ORIGIN ACCESS CONTROL
 resource "aws_cloudfront_origin_access_control" "default" {
-  name                              = "${var.project_name}-oac-${var.environment}"
+  name                              = "${module.globals.project_name}-oac-${var.environment}"
   origin_access_control_origin_type = "s3"
   signing_behavior                  = "always"
   signing_protocol                  = "sigv4"
@@ -50,8 +50,8 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
         Effect = "Allow"
         Principal = {
           AWS = [
-            "arn:aws:iam::${var.mgmt_account_id}:role/github-actions-oidc-role",
-            "arn:aws:iam::${var.workload_account_id}:root" # Dynamic per account
+            "arn:aws:iam::${module.globals.accounts.mgmt}:role/github-actions-oidc-role",
+            "arn:aws:iam::${lookup(module.globals.accounts, var.environment, "ERROR_ACCOUNT_NOT_FOUND")}:root"
           ]
         }
         Action   = ["s3:ListBucket", "s3:GetObject", "s3:PutObject", "s3:DeleteObject"]

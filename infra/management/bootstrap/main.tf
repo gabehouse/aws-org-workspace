@@ -11,7 +11,7 @@ locals {
 
 # 1. THE BUCKET
 resource "aws_s3_bucket" "terraform_state" {
-  bucket = var.state_bucket_name
+  bucket = module.globals.backend.bucket
 
   lifecycle {
     prevent_destroy = true

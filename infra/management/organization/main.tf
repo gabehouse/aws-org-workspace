@@ -17,7 +17,7 @@ resource "aws_organizations_organizational_unit" "workloads" {
 # THE DEV ACCOUNT (Admin Playground)
 resource "aws_organizations_account" "dev" {
   name              = "dev"
-  email             = var.dev_email
+  email             = module.globals.dev_email
   parent_id         = aws_organizations_organizational_unit.workloads.id
   close_on_deletion = true
 }
@@ -25,7 +25,7 @@ resource "aws_organizations_account" "dev" {
 # THE PROD ACCOUNT (Protected Observatory)
 resource "aws_organizations_account" "prod" {
   name              = "prod"
-  email             = var.prod_email
+  email             = module.globals.prod_email
   parent_id         = aws_organizations_organizational_unit.workloads.id
   close_on_deletion = true
 }
