@@ -3,15 +3,10 @@ module "globals" {
 }
 
 module "vstshop" {
-  source = "../../../modules/vstshop-frontend"
-
-  project_name        = "vstshop"
-  environment         = "dev"
-  mgmt_account_id     = module.globals.accounts.mgmt
-  workload_account_id = module.globals.accounts.dev
+  source      = "../../../modules/vstshop-frontend"
+  environment = "dev"
 }
 
-# These pass the module outputs to the GitHub Action
 output "s3_bucket_name" {
   value = module.vstshop.bucket_name
 }
@@ -22,5 +17,5 @@ output "distribution_id" {
 
 output "website_url" {
   description = "The CloudFront URL to access your shop"
-  value       = "https://${module.vstshop.cloudfront_domain_name}"
+  value       = module.vstshop.website_url
 }

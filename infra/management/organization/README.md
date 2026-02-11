@@ -31,10 +31,7 @@
 
 ## Inputs
 
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| <a name="input_dev_email"></a> [dev\_email](#input\_dev\_email) | n/a | `string` | n/a | yes |
-| <a name="input_prod_email"></a> [prod\_email](#input\_prod\_email) | n/a | `string` | n/a | yes |
+No inputs.
 
 ## Outputs
 

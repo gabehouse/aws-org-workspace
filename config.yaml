@@ -1,5 +1,5 @@
 # Global Project Settings
-project_name: "phoenix"
+platform_name: "phoenix"
 default_region: "us-east-2"
 
 # Infrastructure State Management (for backend.hcl)
@@ -13,5 +13,9 @@ accounts:
   dev:  "195481994910"
   prod: "212984412001"
 
-# Organization User
+# Account Emails
+dev_email: "gabriel.jsh+dev2@gmail.com"
+prod_email: "gabriel.jsh+prod2@gmail.com"
+
+# Organization user
 sso_admin_user: "Gabe"
