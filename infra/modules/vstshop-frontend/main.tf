@@ -5,7 +5,7 @@ module "globals" {
 
 # 1. THE FRONTEND BUCKET
 resource "aws_s3_bucket" "frontend" {
-  bucket        = "${module.globals.project_name}-frontend-${var.environment}"
+  bucket        = "${var.project_name}-frontend-${var.environment}123"
   force_destroy = true
 }
 
@@ -20,7 +20,7 @@ resource "aws_s3_bucket_public_access_block" "frontend" {
 
 # 2. ORIGIN ACCESS CONTROL
 resource "aws_cloudfront_origin_access_control" "default" {
-  name                              = "${module.globals.project_name}-oac-${var.environment}"
+  name                              = "${var.project_name}-oac-${var.environment}"
   origin_access_control_origin_type = "s3"
   signing_behavior                  = "always"
   signing_protocol                  = "sigv4"

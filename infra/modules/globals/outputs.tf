@@ -2,8 +2,8 @@ locals {
   config = yamldecode(file("${path.module}/../../../config.yaml"))
 }
 
-output "project_name" {
-  value = local.config.project_name
+output "platform_name" {
+  value = local.config.platform_name
 }
 
 output "accounts" {
