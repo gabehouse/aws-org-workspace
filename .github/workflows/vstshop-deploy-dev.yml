@@ -38,21 +38,8 @@ jobs:
       - name: Extract Variables
         id: vars
         run: |
-          get_val() {
-            local secret_val="$1"
-            local config_path="$2"
-            if [ -z "$secret_val" ] || [ "$secret_val" == "null" ]; then
-              yq "$config_path" config.yaml
-            else
-              echo "$secret_val"
-            fi
-          }
-
-          MGMT=$(get_val "${{ secrets.MGMT_ACCOUNT_ID }}" ".accounts.mgmt")
-          DEV=$(get_val "${{ secrets.DEV_ACCOUNT_ID }}" ".accounts.dev")
-
-          echo "mgmt_account=$MGMT" >> $GITHUB_OUTPUT
-          echo "dev_account=$DEV" >> $GITHUB_OUTPUT
+          echo "mgmt_account=$(yq '.accounts.mgmt' config.yaml)" >> $GITHUB_OUTPUT
+          echo "dev_account=$(yq '.accounts.dev' config.yaml)" >> $GITHUB_OUTPUT
 
   # --- JOB 2: PLAN ---
   plan:
@@ -68,4 +55,88 @@ jobs:
           terraform_wrapper: true
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.mgmt_account }}:role/github-actions-oidc-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Role Chain to Dev
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-chaining: true
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.dev_account }}:role/terraform-execution-role-dev
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init -backend-config=../../../backend.ci.hcl
+
+      - name: Terraform Plan
+        id: plan
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform plan -no-color -input=false
+
+      - name: Update Pull Request
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Dev Environment Plan 📖
+            <details><summary>Show Plan</summary>
+            \`\`\`${process.env.PLAN}\`\`\`
+            </details>`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+  # --- JOB 3: APPLY  ---
+  apply:
+    name: "Terraform Apply"
+    needs: [setup, plan]
+    # This ensures it applies on every push to your feature branches
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: true
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.mgmt_account }}:role/github-actions-oidc-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Role Chain to Dev
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-chaining: true
+          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.dev_account }}:role/terraform-execution-role-dev
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init -backend-config=../../../backend.ci.hcl
+
+      - name: Terraform Apply
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform apply -auto-approve -input=false
+
+      - name: Get Infra Outputs
+        id: infra
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
+          echo "DIST_ID=$(terraform output -raw distribution_id)" >> $GITHUB_OUTPUT
+
+      - name: Deploy Frontend to S3
+        run: |
+          aws s3 sync "${{ env.SITE_DIR }}" s3://${{ steps.infra.outputs.BUCKET_NAME }} --delete
+          aws cloudfront create-invalidation --distribution-id ${{ steps.infra.outputs.DIST_ID }} --paths "/*"
