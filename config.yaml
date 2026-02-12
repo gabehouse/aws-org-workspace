@@ -1,24 +1,21 @@
-# 🌐 Phoenix Platform Configuration
-
 # Global Project Settings
-platform_name: "phoenix"
+project_name: "phoenix"
 default_region: "us-east-2"
 
-# Infrastructure State Management
-# The bucket where your remote terraform.tfstate files will be stored.
+# Infrastructure State Management (for backend.hcl)
 backend:
-  bucket: "your-unique-state-bucket-name"
+  bucket: "gabriel-tf-state-2026"
   profile: "mgmt"
 
 # Organization Accounts
-# Replace with your 12-digit AWS Account IDs
 accounts:
-  mgmt: "123456789012"
-  dev:  "123456789012"
-  prod: "123456789012"
+  mgmt: "086739225244"
+  dev:  "195481994910"
+  prod: "212984412001"
 
-# Account Identity
-# Used for AWS Organization account creation and notifications
-dev_email: "your.email+dev@example.com"
-prod_email: "your.email+prod@example.com"
-sso_admin_user: "AdminUser"
+# Account Emails
+dev_email: "gabriel.jsh+dev2@gmail.com"
+prod_email: "gabriel.jsh+prod2@gmail.com"
+
+# Organization user
+sso_admin_user: "Gabe"
