@@ -61,6 +61,7 @@ jobs:
           role-to-assume: arn:aws:iam::${{ needs.setup.outputs.prod_account }}:role/terraform-execution-role-prod
 
       - name: Terraform Init & Plan
+        id: plan
         working-directory: ${{ env.TF_DIR }}
         run: |
           terraform init -backend-config=../../../backend.ci.hcl
@@ -74,7 +75,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const output = `#### Dev Environment Plan 📖
+            const output = `#### Prod Environment Plan 📖
             <details><summary>Show Plan</summary>
             \`\`\`${process.env.PLAN}\`\`\`
             </details>`;
