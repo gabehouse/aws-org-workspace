@@ -45,7 +45,28 @@ Phoenix uses a **hub-and-spoke** architecture to maximize isolation and security
    - The `GatewayRole` then assumes environment-specific `ExecutionRoles`
    - No direct GitHub access to workload accounts
 
+## 📂 Project Structure
 ---
+.
+├── config.yaml          # ⚙️ Global configuration (AWS IDs, Regions, Role names)
+├── setup_config.sh      # 🛠️ Script to generate backend and local .hcl files
+├── infra/
+│   ├── management/      # 🔐 Control Plane (Run these first)
+│   │   ├── bootstrap/   # Creates the S3 bucket for Terraform state
+│   │   ├── identity/    # Sets up GitHub OIDC and the GatewayRole
+│   │   └── organization/# (Optional) Manages AWS Organizations/Accounts
+│   ├── modules/         # 🧱 Reusable Infrastructure Blocks (DRY)
+│   │   ├── globals/     # Shared tags and project-wide variables
+│   │   ├── networking/  # VPC, Subnet, and Routing logic
+│   │   └── vstshop-frontend/ # S3, CloudFront, and OAC logic
+│   └── workloads/       # 🚀 Environment-Specific Deployments
+│       ├── dev/         # Sandbox environment (Automatic Deploys)
+│       └── prod/        # Production environment (Manual Approval Required)
+├── services/            # 💻 Application Source Code
+│   └── vstshop/         # Static assets (HTML/CSS/JS) for the frontend
+└── .github/workflows/   # 🤖 CI/CD Pipelines
+    ├── deploy-dev.yml   # Triggered on push to dev branch
+    └── deploy-prod.yml  # Triggered on merge to master branch
 
 ## 🛠️ Quick Start
 
@@ -119,7 +140,7 @@ The initial trust chain must be established in the following order. All bootstra
 |--------------|-------------|-------------------|----------------|-----------------------|
 | Pull Request | `feature/**`| `terraform plan`  | Dev / Prod     | Validation only       |
 | Push / Merge | `dev`       | `terraform apply` | Development    | Dev changes applied   |
-| Push / Merge | `master`    | `terraform apply` | Production     | Prod changes applied  |
+| Push / Merge | `master`    | `terraform apply` | Production     | Applied **after** Manual Approval |
 
 ## License
 

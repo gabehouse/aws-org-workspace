@@ -1,25 +1,18 @@
-# Ignore the entire directory, not just the contents
+# --- Terraform State (Recursively) ---
 **/.terraform/
-
-# Use a more aggressive glob for state files
 *.tfstate*
+.terraform.lock.hcl
 
-# Ignore the AWS CLI installer folder you downloaded earlier
-aws/
-awscliv2.zip
+# --- Generated Config (Recursively) ---
+# The **/ prefix tells Git to look in every subfolder
+**/backend.hcl
+**/backend.ci.hcl
+**/*.tfvars
 
-# Optional: Ignore the pre-commit cache if it's acting up
-.cache/pre-commit/
-
-# Ignore compressed archives
-*.tar.gz
-*.zip
-*.7z
-
-# Ignore binaries (like the ones we downloaded for tools)
+# --- Tooling & Binaries ---
 terraform-docs
 tflint
 trivy
-
-*.auto.tfvars
-backend.hcl
+aws/
+awscliv2.zip
+.cache/
