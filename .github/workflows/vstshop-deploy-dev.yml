@@ -100,7 +100,7 @@ jobs:
     name: "Terraform Apply"
     needs: [setup, plan]
     # This ensures it applies on every push to your feature branches
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
