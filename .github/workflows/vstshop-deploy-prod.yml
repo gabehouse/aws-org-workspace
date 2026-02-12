@@ -27,8 +27,6 @@ jobs:
     name: "Scrape Config"
     runs-on: ubuntu-latest
     outputs:
-      gateway_role: ${{ steps.vars.outputs.gateway_role }}
-      prod_role: ${{ steps.vars.outputs.prod_role }}
       mgmt_account: ${{ steps.vars.outputs.mgmt_account }}
       prod_account: ${{ steps.vars.outputs.prod_account }}
     steps:
@@ -36,8 +34,6 @@ jobs:
       - name: Extract Variables
         id: vars
         run: |
-          echo "gateway_role=$(yq '.iam.gateway_role_name' config.yaml)" >> $GITHUB_OUTPUT
-          echo "prod_role=$(yq '.iam.prod_execution_role_name' config.yaml)" >> $GITHUB_OUTPUT
           echo "mgmt_account=$(yq '.accounts.mgmt' config.yaml)" >> $GITHUB_OUTPUT
           echo "prod_account=$(yq '.accounts.prod' config.yaml)" >> $GITHUB_OUTPUT
 
@@ -69,6 +65,25 @@ jobs:
         run: |
           terraform init -backend-config=../../../backend.ci.hcl
           terraform plan -no-color -input=false
+
+      - name: Update Pull Request
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Dev Environment Plan 📖
+            <details><summary>Show Plan</summary>
+            \`\`\`${process.env.PLAN}\`\`\`
+            </details>`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
 
   apply:
     name: "Production Apply"
