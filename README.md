@@ -69,7 +69,7 @@ Phoenix uses a **hub-and-spoke** architecture to maximize isolation and security
 └── .github/workflows/        # 🤖 CI/CD Pipelines
     ├── deploy-dev.yml        # Triggered on push to dev branch
     └── deploy-prod.yml       # Triggered on merge to master branch
-
+```
 ## 🛠️ Quick Start
 
 ### Prerequisites
