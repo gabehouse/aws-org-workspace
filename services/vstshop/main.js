@@ -1,35 +1,34 @@
 // main.js
-import { Amplify } from 'https://api.cloud.answer.ai/v1/packages/aws-amplify/dist/aws-amplify.js';
-import { signIn, fetchAuthSession } from 'https://api.cloud.answer.ai/v1/packages/aws-amplify/auth/dist/aws-amplify-auth.js';
+const { Amplify, Auth } = aws_amplify;
 
 Amplify.configure({
     Auth: {
-        Cognito: {
-            userPoolId: 'us-east-2_V9hhjw2Y5',
-            userPoolClientId: '2p1utd8g6jkts9qp59n7b5k9le'
-        }
+        userPoolId: 'us-east-2_V9hhjw2Y5',
+        userPoolClientId: '2p1utd8g6jkts9qp59n7b5k9le',
+        region: 'us-east-2'
     }
 });
 
 async function testBackend() {
     const statusDiv = document.getElementById('status');
-    statusDiv.innerText = "Authenticating...";
+    statusDiv.innerText = "Processing...";
 
     try {
         // 1. Sign in
-        await signIn({
-            username: 'testuser@example.com',
-            password: 'YourStrongPassword123!'
-        });
-        console.log('Logged in successfully');
+        // We use the test user you created earlier
+        await Auth.signIn('testuser@example.com', 'YourStrongPassword123!');
+        console.log('Login Success');
 
-        // 2. Get the Token (Amplify v6 style)
-        const session = await fetchAuthSession();
-        const token = session.tokens.idToken.toString();
+        // 2. Get the Token
+        const session = await Auth.currentSession();
+        const token = session.getIdToken().getJwtToken();
 
-        // 3. Call your API
-        statusDiv.innerText = "Calling API...";
-        const response = await fetch('https://g6jnm33pu7.execute-api.us-east-2.amazonaws.com/dev/check-vst', {
+        // 3. Call your API Gateway
+        // REPLACE 'YOUR_API_ID' with the ID from your Terraform output
+        const apiId = 'g6jnm33pu7';
+        const apiUrl = `https://${apiId}.execute-api.us-east-2.amazonaws.com/dev/check-vst`;
+
+        const response = await fetch(apiUrl, {
             method: 'GET',
             headers: {
                 'Authorization': token
@@ -40,8 +39,8 @@ async function testBackend() {
         statusDiv.innerText = "API Success: " + JSON.stringify(data);
 
     } catch (error) {
-        console.error('Error detail:', error);
-        statusDiv.innerText = "Error: " + error.message;
+        console.error('Error:', error);
+        statusDiv.innerText = "Error: " + (error.message || "Check Console");
     }
 }
 
