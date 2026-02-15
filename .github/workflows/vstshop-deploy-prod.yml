@@ -6,11 +6,14 @@ on:
     paths:
       - 'infra/workloads/prod/**'
       - 'services/vstshop/**'
+      - 'infra/modules/**'
+
   push:
     branches: [ "master" ]
     paths:
       - 'infra/workloads/prod/**'
       - 'services/vstshop/**'
+      - 'infra/modules/**'
 
 permissions:
   id-token: write
