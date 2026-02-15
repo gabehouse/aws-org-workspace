@@ -7,6 +7,11 @@ module "vstshop_frontend" {
   environment = "dev"
 }
 
+moved {
+  from = module.vstshop
+  to   = module.vstshop_frontend
+}
+
 module "vstshop_auth" {
   source       = "../../../modules/vstshop-auth"
   environment  = "dev"
