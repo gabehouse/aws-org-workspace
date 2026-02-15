@@ -1,37 +1,47 @@
 // main.js
-const { Amplify, Auth } = aws_amplify; // Globals from CDN script
+import { Amplify } from 'https://api.cloud.answer.ai/v1/packages/aws-amplify/dist/aws-amplify.js';
+import { signIn, fetchAuthSession } from 'https://api.cloud.answer.ai/v1/packages/aws-amplify/auth/dist/aws-amplify-auth.js';
 
 Amplify.configure({
     Auth: {
-        userPoolId: 'us-east-2_V9hhjw2Y5',
-        userPoolClientId: '2p1utd8g6jkts9qp59n7b5k9le',
-        region: 'us-east-2'
+        Cognito: {
+            userPoolId: 'us-east-2_V9hhjw2Y5',
+            userPoolClientId: '2p1utd8g6jkts9qp59n7b5k9le'
+        }
     }
 });
 
 async function testBackend() {
+    const statusDiv = document.getElementById('status');
+    statusDiv.innerText = "Authenticating...";
+
     try {
-        // 1. Sign in (using the user we created earlier)
-        const user = await Auth.signIn('testuser@example.com', 'YourStrongPassword123!');
-        console.log('Logged in!', user);
+        // 1. Sign in
+        await signIn({
+            username: 'testuser@example.com',
+            password: 'YourStrongPassword123!'
+        });
+        console.log('Logged in successfully');
 
-        // 2. Get the token
-        const session = await Auth.currentSession();
-        const token = session.getIdToken().getJwtToken();
-        console.log('Token acquired');
+        // 2. Get the Token (Amplify v6 style)
+        const session = await fetchAuthSession();
+        const token = session.tokens.idToken.toString();
 
-        // 3. Call your API Gateway
-        const response = await fetch('https://<your-api-id>.execute-api.us-east-2.amazonaws.com/dev/check-vst', {
+        // 3. Call your API
+        statusDiv.innerText = "Calling API...";
+        const response = await fetch('https://g6jnm33pu7.execute-api.us-east-2.amazonaws.com/dev/check-vst', {
+            method: 'GET',
             headers: {
                 'Authorization': token
             }
         });
 
         const data = await response.json();
-        document.getElementById('status').innerText = "Success: " + JSON.stringify(data);
+        statusDiv.innerText = "API Success: " + JSON.stringify(data);
+
     } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('status').innerText = "Error: " + error.message;
+        console.error('Error detail:', error);
+        statusDiv.innerText = "Error: " + error.message;
     }
 }
 
