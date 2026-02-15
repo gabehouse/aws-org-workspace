@@ -24,7 +24,7 @@ permissions:
 
 env:
   TF_DIR: "infra/workloads/dev/vstshop"
-  SITE_DIR: "services/vstshop"
+  SITE_DIR: "services/vstshop-frontend"
   AWS_REGION: "us-east-2"
 
 jobs:
