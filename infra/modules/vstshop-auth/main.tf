@@ -22,9 +22,9 @@ resource "aws_cognito_user_pool_client" "client" {
   callback_urls = [var.callback_url]
 
   explicit_auth_flows = [
-    "ALLOW_USER_PASSWORD_AUTH",
-    "ADMIN_NO_SRP_AUTH", # Removed "ALLOW_" from this one!
-    "ALLOW_REFRESH_TOKEN_AUTH"
+    "USER_PASSWORD_AUTH",      # Correct (No ALLOW_)
+    "ADMIN_NO_SRP_AUTH",       # Correct (No ALLOW_)
+    "ALLOW_REFRESH_TOKEN_AUTH" # Correct (MUST have ALLOW_)
   ]
 }
 
