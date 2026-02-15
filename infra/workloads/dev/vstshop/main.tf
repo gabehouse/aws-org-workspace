@@ -3,8 +3,9 @@ module "globals" {
 }
 
 module "vstshop_frontend" {
-  source      = "../../../modules/vstshop-frontend"
-  environment = "dev"
+  source       = "../../../modules/vstshop-frontend"
+  project_name = "vstshop"
+  environment  = "dev"
 }
 
 moved {
@@ -20,4 +21,11 @@ module "vstshop_auth" {
 
   # Dynamically pass the CloudFront URL for Auth redirects
   callback_url = module.vstshop_frontend.website_url
+}
+
+module "vstshop_backend" {
+  source        = "../../../modules/vstshop-backend"
+  environment   = "dev"
+  project_name  = "vstshop"
+  user_pool_arn = module.vstshop_auth.user_pool_arn # Passing the ARN here
 }

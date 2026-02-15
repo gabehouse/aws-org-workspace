@@ -34,5 +34,10 @@ No modules.
 
 ## Outputs
 
-No outputs.
+| Name | Description |
+|------|-------------|
+| <a name="output_auth_domain"></a> [auth\_domain](#output\_auth\_domain) | n/a |
+| <a name="output_client_id"></a> [client\_id](#output\_client\_id) | n/a |
+| <a name="output_user_pool_arn"></a> [user\_pool\_arn](#output\_user\_pool\_arn) | The ARN of the Cognito User Pool for the API Gateway Authorizer |
+| <a name="output_user_pool_id"></a> [user\_pool\_id](#output\_user\_pool\_id) | n/a |
 <!-- END_TF_DOCS -->
