@@ -20,6 +20,12 @@ resource "aws_cognito_user_pool_client" "client" {
 
   # This uses the CloudFront domain from your other module later
   callback_urls = [var.callback_url]
+
+  explicit_auth_flows = [
+    "ALLOW_USER_PASSWORD_AUTH",
+    "ADMIN_NO_SRP_AUTH", # Removed "ALLOW_" from this one!
+    "ALLOW_REFRESH_TOKEN_AUTH"
+  ]
 }
 
 resource "aws_cognito_user_pool_domain" "main" {
