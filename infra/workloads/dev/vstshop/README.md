@@ -52,7 +52,9 @@ No providers.
 | Name | Source | Version |
 |------|--------|---------|
 | <a name="module_globals"></a> [globals](#module\_globals) | ../../../modules/globals | n/a |
-| <a name="module_vstshop"></a> [vstshop](#module\_vstshop) | ../../../modules/vstshop-frontend | n/a |
+| <a name="module_vstshop_auth"></a> [vstshop\_auth](#module\_vstshop\_auth) | ../../../modules/vstshop-auth | n/a |
+| <a name="module_vstshop_backend"></a> [vstshop\_backend](#module\_vstshop\_backend) | ../../../modules/vstshop-backend | n/a |
+| <a name="module_vstshop_frontend"></a> [vstshop\_frontend](#module\_vstshop\_frontend) | ../../../modules/vstshop-frontend | n/a |
 
 ## Resources
 
@@ -66,6 +68,8 @@ No inputs.
 
 | Name | Description |
 |------|-------------|
+| <a name="output_api_url"></a> [api\_url](#output\_api\_url) | n/a |
+| <a name="output_auth_config"></a> [auth\_config](#output\_auth\_config) | n/a |
 | <a name="output_distribution_id"></a> [distribution\_id](#output\_distribution\_id) | n/a |
 | <a name="output_s3_bucket_name"></a> [s3\_bucket\_name](#output\_s3\_bucket\_name) | n/a |
 | <a name="output_website_url"></a> [website\_url](#output\_website\_url) | The CloudFront URL to access your shop |
