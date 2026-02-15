@@ -7,9 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && aws s3 sync dist/ s3://vstshop-frontend-dev123 --delete && aws cloudfront create-invalidation --distribution-id E228GMNSTNHTAD --paths '/*'"
   },
   "dependencies": {
+    "@aws-amplify/ui-react": "^6.15.0",
+    "aws-amplify": "^6.16.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
