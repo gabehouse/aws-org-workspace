@@ -52,7 +52,8 @@ No providers.
 | Name | Source | Version |
 |------|--------|---------|
 | <a name="module_globals"></a> [globals](#module\_globals) | ../../../modules/globals | n/a |
-| <a name="module_vstshop"></a> [vstshop](#module\_vstshop) | ../../../modules/vstshop-frontend | n/a |
+| <a name="module_vstshop_auth"></a> [vstshop\_auth](#module\_vstshop\_auth) | ../../../modules/vstshop-auth | n/a |
+| <a name="module_vstshop_frontend"></a> [vstshop\_frontend](#module\_vstshop\_frontend) | ../../../modules/vstshop-frontend | n/a |
 
 ## Resources
 
