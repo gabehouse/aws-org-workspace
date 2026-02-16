@@ -99,46 +99,37 @@ jobs:
 
   # --- JOB 3: APPLY  ---
   apply:
-    name: "Terraform Apply"
+    name: "Terraform Apply & Deploy"
     needs: [setup, plan]
-    # This ensures it applies on every push to your feature branches
     if: github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_wrapper: true
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.mgmt_account }}:role/github-actions-oidc-role
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Role Chain to Dev
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ${{ env.AWS_REGION }}
-          role-chaining: true
-          role-to-assume: arn:aws:iam::${{ needs.setup.outputs.dev_account }}:role/terraform-execution-role-dev
-
-      - name: Terraform Init
-        working-directory: ${{ env.TF_DIR }}
-        run: terraform init -backend-config=../../../backend.ci.hcl
+      # ... [AWS Credentials & Terraform Init steps same as yours] ...
 
       - name: Terraform Apply
         working-directory: ${{ env.TF_DIR }}
         run: terraform apply -auto-approve -input=false
 
+      - name: Build Frontend
+        run: |
+          cd ${{ env.SITE_DIR }}
+          npm install
+          # Verify .env exists for peace of mind
+          ls -la .env
+          npm run build
+
       - name: Get Infra Outputs
         id: infra
         working-directory: ${{ env.TF_DIR }}
         run: |
+          # Use -raw to avoid quotes in the strings
           echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
           echo "DIST_ID=$(terraform output -raw distribution_id)" >> $GITHUB_OUTPUT
 
       - name: Deploy Frontend to S3
         run: |
-          aws s3 sync "${{ env.SITE_DIR }}" s3://${{ steps.infra.outputs.BUCKET_NAME }} --delete
+          # Sync the 'dist' folder, not the source root
+          aws s3 sync "${{ env.SITE_DIR }}/dist" s3://${{ steps.infra.outputs.BUCKET_NAME }} --delete
           aws cloudfront create-invalidation --distribution-id ${{ steps.infra.outputs.DIST_ID }} --paths "/*"
