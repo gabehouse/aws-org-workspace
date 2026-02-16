@@ -58,10 +58,10 @@ To run Terraform locally for debugging (not recommended for deployment):
 
 | Name | Source | Version |
 |------|--------|---------|
+| <a name="module_auth"></a> [auth](#module\_auth) | ../../../modules/vstshop/auth | n/a |
+| <a name="module_backend"></a> [backend](#module\_backend) | ../../../modules/vstshop/backend | n/a |
+| <a name="module_frontend"></a> [frontend](#module\_frontend) | ../../../modules/vstshop/frontend | n/a |
 | <a name="module_globals"></a> [globals](#module\_globals) | ../../../modules/globals | n/a |
-| <a name="module_vstshop_auth"></a> [vstshop\_auth](#module\_vstshop\_auth) | ../../../modules/vstshop-auth | n/a |
-| <a name="module_vstshop_backend"></a> [vstshop\_backend](#module\_vstshop\_backend) | ../../../modules/vstshop-backend | n/a |
-| <a name="module_vstshop_frontend"></a> [vstshop\_frontend](#module\_vstshop\_frontend) | ../../../modules/vstshop-frontend | n/a |
 
 ## Resources
 

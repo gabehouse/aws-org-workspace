@@ -7,14 +7,14 @@ on:
       - 'infra/workloads/dev/**'
       - 'infra/modules/**'
       - 'infra/management/identity/**'
-      - 'services/vstshop/**'
+      - 'services/vstshop-frontend/**'
       - '.github/workflows/vstshop-deploy-dev.yml'
   pull_request:
     branches: [ "dev" ]
     paths:
       - 'infra/workloads/dev/**'
       - 'infra/modules/**'
-      - 'services/vstshop/**'
+      - 'services/vstshop-frontend/**'
   workflow_dispatch:
 
 permissions:

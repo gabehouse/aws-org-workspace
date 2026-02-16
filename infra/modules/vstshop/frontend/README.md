@@ -15,7 +15,7 @@ No requirements.
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_globals"></a> [globals](#module\_globals) | ../globals | n/a |
+| <a name="module_globals"></a> [globals](#module\_globals) | ../../globals | n/a |
 
 ## Resources
 
