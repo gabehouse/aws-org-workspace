@@ -2,7 +2,6 @@ module "globals" {
   source = "../../globals"
 }
 
-
 # 1. THE FRONTEND BUCKET
 resource "aws_s3_bucket" "frontend" {
   bucket        = "${var.project_name}-frontend-${var.environment}123"

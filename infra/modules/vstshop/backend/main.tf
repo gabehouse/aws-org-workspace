@@ -1,3 +1,23 @@
+resource "aws_iam_policy" "s3_access" {
+  name        = "vstshop-s3-access-${var.environment}"
+  description = "Allows Lambda to sign S3 URLs"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action   = ["s3:GetObject"]
+        Effect   = "Allow"
+        Resource = "arn:aws:s3:::${var.vst_bucket_name}/*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_s3" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.s3_access.arn
+}
 
 ### --- 1. CORE INFRASTRUCTURE (The "Missing" Resources) --- ###
 
@@ -117,7 +137,8 @@ resource "aws_lambda_function" "vst_checker" {
 
   environment {
     variables = {
-      TABLE_NAME = aws_dynamodb_table.users.name
+      TABLE_NAME      = aws_dynamodb_table.users.name
+      VST_BUCKET_NAME = var.vst_bucket_name
     }
   }
 }

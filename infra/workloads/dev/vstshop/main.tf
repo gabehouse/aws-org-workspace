@@ -29,15 +29,22 @@ moved {
 }
 
 module "backend" {
-  source        = "../../../modules/vstshop/backend"
-  environment   = var.environment
-  project_name  = "vstshop"
-  user_pool_arn = module.auth.user_pool_arn # Passing the ARN here
+  source          = "../../../modules/vstshop/backend"
+  environment     = var.environment
+  project_name    = "vstshop"
+  user_pool_arn   = module.auth.user_pool_arn # Passing the ARN here
+  vst_bucket_name = module.storage.vst_bucket_name
 }
 
 moved {
   from = module.vstshop_backend
   to   = module.backend
+}
+
+module "storage" {
+  source      = "../../../modules/vstshop/storage"
+  domain_name = module.frontend.website_url
+  environment = var.environment
 }
 
 # This tells Terraform to write a file on your local machine
