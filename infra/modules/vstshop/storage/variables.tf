@@ -3,5 +3,6 @@ variable "project_name" {
   type    = string
   default = "vstshop"
 }
-variable "user_pool_arn" { type = string }
-variable "vst_bucket_name" { type = string }
+variable "domain_name" {
+  type = string
+}
