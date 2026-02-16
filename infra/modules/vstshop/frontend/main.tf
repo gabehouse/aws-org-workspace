@@ -1,5 +1,5 @@
 module "globals" {
-  source = "../globals"
+  source = "../../globals"
 }
 
 

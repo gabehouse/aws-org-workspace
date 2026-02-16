@@ -5,7 +5,7 @@ on:
     branches: [ "master" ]
     paths:
       - 'infra/workloads/prod/**'
-      - 'services/vstshop/**'
+      - 'services/vstshop-frontend/**'
       - 'infra/modules/**'
       - '.github/workflows/vstshop-deploy-prod.yml'
 
@@ -13,7 +13,7 @@ on:
     branches: [ "master" ]
     paths:
       - 'infra/workloads/prod/**'
-      - 'services/vstshop/**'
+      - 'services/vstshop-frontend/**'
       - 'infra/modules/**'
       - '.github/workflows/vstshop-deploy-prod.yml'
   workflow_dispatch:
