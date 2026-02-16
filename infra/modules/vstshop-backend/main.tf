@@ -37,8 +37,20 @@ module "api_cors" {
 
   api_id          = aws_api_gateway_rest_api.api.id
   api_resource_id = aws_api_gateway_resource.check_vst.id
-}
 
+  # This module only accepts a SINGLE string, not a list.
+  # For development, "*" is easiest. For production, use your CloudFront URL.
+  allow_origin = "*"
+
+  # Ensure these headers match what your frontend/Amplify sends
+  allow_headers = [
+    "Authorization",
+    "Content-Type",
+    "X-Amz-Date",
+    "X-Amz-Security-Token",
+    "X-Api-Key"
+  ]
+}
 resource "aws_api_gateway_resource" "check_vst" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   parent_id   = aws_api_gateway_rest_api.api.root_resource_id

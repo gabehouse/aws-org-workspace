@@ -31,3 +31,6 @@ rm terraform-docs.tar.gz
 # 4. Initialize pre-commit
 # Using 'python3 -m' is the safest way to call pip-installed tools in a script
 python3 -m pre_commit install
+
+# Install dependencies if a package.json is found
+find . -name "package.json" -not -path "**/node_modules/**" -execdir npm install \;
