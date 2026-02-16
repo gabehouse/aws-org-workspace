@@ -49,7 +49,7 @@ module "storage" {
 
 # This tells Terraform to write a file on your local machine
 resource "local_file" "env_file" {
-  filename = "${path.module}/../../../../services/vstshop/frontend/.env"
+  filename = "${path.module}/../../../../services/vstshop-frontend/.env"
   content  = <<-EOT
     VITE_AWS_REGION=${module.globals.region}
     VITE_USER_POOL_ID=${module.auth.user_pool_id}

@@ -62,6 +62,7 @@ To run Terraform locally for debugging (not recommended for deployment):
 | <a name="module_backend"></a> [backend](#module\_backend) | ../../../modules/vstshop/backend | n/a |
 | <a name="module_frontend"></a> [frontend](#module\_frontend) | ../../../modules/vstshop/frontend | n/a |
 | <a name="module_globals"></a> [globals](#module\_globals) | ../../../modules/globals | n/a |
+| <a name="module_storage"></a> [storage](#module\_storage) | ../../../modules/vstshop/storage | n/a |
 
 ## Resources
 
@@ -73,7 +74,7 @@ To run Terraform locally for debugging (not recommended for deployment):
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_env"></a> [env](#input\_env) | n/a | `string` | `"prod"` | no |
+| <a name="input_environment"></a> [environment](#input\_environment) | n/a | `string` | `"prod"` | no |
 
 ## Outputs
 
