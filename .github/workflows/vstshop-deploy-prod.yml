@@ -120,6 +120,14 @@ jobs:
           terraform init -backend-config=../../../backend.ci.hcl
           terraform apply -auto-approve -input=false
 
+      - name: Build Frontend
+        run: |
+          cd ${{ env.SITE_DIR }}
+          npm install
+          # This confirms Terraform successfully wrote the .env file here
+          ls -la .env
+          npm run build
+
       - name: Get Infra Outputs
         id: infra
         working-directory: ${{ env.TF_DIR }}

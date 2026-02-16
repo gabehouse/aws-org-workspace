@@ -5,7 +5,7 @@ module "globals" {
 module "vstshop_frontend" {
   source       = "../../../modules/vstshop-frontend"
   project_name = "vstshop"
-  environment  = "dev"
+  environment  = var.env
 }
 
 moved {
@@ -15,7 +15,7 @@ moved {
 
 module "vstshop_auth" {
   source       = "../../../modules/vstshop-auth"
-  environment  = "dev"
+  environment  = var.env
   project_name = "vstshop"
   unique_id    = "vst-dev-123" # To ensure unique Cognito domain
 
@@ -25,7 +25,7 @@ module "vstshop_auth" {
 
 module "vstshop_backend" {
   source        = "../../../modules/vstshop-backend"
-  environment   = "dev"
+  environment   = var.env
   project_name  = "vstshop"
   user_pool_arn = module.vstshop_auth.user_pool_arn # Passing the ARN here
 }

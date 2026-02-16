@@ -66,7 +66,9 @@ To test infrastructure changes locally:
 
 ## Inputs
 
-No inputs.
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| <a name="input_env"></a> [env](#input\_env) | n/a | `string` | `"dev"` | no |
 
 ## Outputs
 
