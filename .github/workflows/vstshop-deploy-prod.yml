@@ -135,7 +135,8 @@ jobs:
           echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
           echo "DIST_ID=$(terraform output -raw distribution_id)" >> $GITHUB_OUTPUT
 
-      - name: Deploy Frontend
+      - name: Deploy Frontend to S3
         run: |
-          aws s3 sync "${{ env.SITE_DIR }}" s3://${{ steps.infra.outputs.BUCKET_NAME }} --delete
+          # Sync the compiled 'dist' folder
+          aws s3 sync "${{ env.SITE_DIR }}/dist" s3://${{ steps.infra.outputs.BUCKET_NAME }} --delete
           aws cloudfront create-invalidation --distribution-id ${{ steps.infra.outputs.DIST_ID }} --paths "/*"
