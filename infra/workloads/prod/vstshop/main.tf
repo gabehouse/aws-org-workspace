@@ -67,5 +67,6 @@ resource "local_file" "env_file" {
     VITE_AWS_REGION=${module.globals.region}
     VITE_USER_POOL_ID=${module.auth.user_pool_id}
     VITE_USER_POOL_CLIENT_ID=${module.auth.client_id}
+    VITE_API_URL=${module.backend.api_url}
   EOT
 }
