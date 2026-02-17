@@ -55,6 +55,7 @@ To test infrastructure changes locally:
 |------|--------|---------|
 | <a name="module_auth"></a> [auth](#module\_auth) | ../../../modules/vstshop/auth | n/a |
 | <a name="module_backend"></a> [backend](#module\_backend) | ../../../modules/vstshop/backend | n/a |
+| <a name="module_database"></a> [database](#module\_database) | ../../../modules/vstshop/database | n/a |
 | <a name="module_frontend"></a> [frontend](#module\_frontend) | ../../../modules/vstshop/frontend | n/a |
 | <a name="module_globals"></a> [globals](#module\_globals) | ../../../modules/globals | n/a |
 | <a name="module_storage"></a> [storage](#module\_storage) | ../../../modules/vstshop/storage | n/a |
@@ -70,6 +71,7 @@ To test infrastructure changes locally:
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_environment"></a> [environment](#input\_environment) | n/a | `string` | `"dev"` | no |
+| <a name="input_project_name"></a> [project\_name](#input\_project\_name) | n/a | `string` | `"vstshop"` | no |
 
 ## Outputs
 
