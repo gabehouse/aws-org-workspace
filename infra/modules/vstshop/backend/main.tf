@@ -1,25 +1,4 @@
-resource "aws_iam_policy" "s3_access" {
-  name        = "vstshop-s3-access-${var.environment}"
-  description = "Allows Lambda to sign S3 URLs"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action   = ["s3:GetObject"]
-        Effect   = "Allow"
-        Resource = "arn:aws:s3:::${var.vst_bucket_name}/*"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "lambda_s3" {
-  role       = aws_iam_role.lambda_role.name
-  policy_arn = aws_iam_policy.s3_access.arn
-}
-
-### --- 1. CORE INFRASTRUCTURE (The "Missing" Resources) --- ###
+### --- 1. API GATEWAY CORE --- ###
 
 resource "aws_api_gateway_rest_api" "api" {
   name        = "${var.project_name}-api-${var.environment}"
@@ -30,48 +9,13 @@ resource "aws_api_gateway_rest_api" "api" {
   }
 }
 
-resource "aws_dynamodb_table" "users" {
-  name         = "${var.project_name}-users-${var.environment}"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "userId"
-
-  attribute {
-    name = "userId"
-    type = "S"
-  }
-}
-
-### --- 2. SECURITY (Cognito Authorizer) --- ###
-
 resource "aws_api_gateway_authorizer" "cognito" {
   name          = "vstshop-cognito-authorizer"
   rest_api_id   = aws_api_gateway_rest_api.api.id
   type          = "COGNITO_USER_POOLS"
-  provider_arns = [var.user_pool_arn] # Passed from the auth module via root main.tf
+  provider_arns = [var.user_pool_arn]
 }
 
-### --- 3. API ROUTES & CORS --- ###
-
-module "api_cors" {
-  source  = "squidfunk/api-gateway-enable-cors/aws"
-  version = "0.3.3"
-
-  api_id          = aws_api_gateway_rest_api.api.id
-  api_resource_id = aws_api_gateway_resource.check_vst.id
-
-  # This module only accepts a SINGLE string, not a list.
-  # For development, "*" is easiest. For production, use your CloudFront URL.
-  allow_origin = "*"
-
-  # Ensure these headers match what your frontend/Amplify sends
-  allow_headers = [
-    "Authorization",
-    "Content-Type",
-    "X-Amz-Date",
-    "X-Amz-Security-Token",
-    "X-Api-Key"
-  ]
-}
 resource "aws_api_gateway_resource" "check_vst" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   parent_id   = aws_api_gateway_rest_api.api.root_resource_id
@@ -95,7 +39,57 @@ resource "aws_api_gateway_integration" "lambda_integration" {
   uri                     = aws_lambda_function.vst_checker.invoke_arn
 }
 
-### --- 4. DEPLOYMENT --- ###
+### --- 2. CORS CONFIGURATION --- ###
+
+module "api_cors" {
+  source  = "squidfunk/api-gateway-enable-cors/aws"
+  version = "0.3.3"
+
+  api_id          = aws_api_gateway_rest_api.api.id
+  api_resource_id = aws_api_gateway_resource.check_vst.id
+  allow_origin    = "*"
+  allow_headers = [
+    "Authorization",
+    "Content-Type",
+    "X-Amz-Date",
+    "X-Amz-Security-Token",
+    "X-Api-Key"
+  ]
+}
+
+### --- 3. COMPUTE (Lambda) --- ###
+
+data "archive_file" "lambda_zip" {
+  type        = "zip"
+  source_file = "${path.module}/lambda/lambda_function.py"
+  output_path = "${path.module}/lambda/lambda_function.zip"
+}
+
+resource "aws_lambda_function" "vst_checker" {
+  function_name    = "${var.project_name}-vst-checker-${var.environment}"
+  role             = aws_iam_role.lambda_role.arn
+  handler          = "lambda_function.lambda_handler"
+  runtime          = "python3.12"
+  filename         = data.archive_file.lambda_zip.output_path
+  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+
+  environment {
+    variables = {
+      TABLE_NAME      = var.purchases_table_name
+      VST_BUCKET_NAME = var.vst_bucket_name
+    }
+  }
+}
+
+resource "aws_lambda_permission" "apigw_lambda" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.vst_checker.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
+}
+
+### --- 4. DEPLOYMENT & STAGE --- ###
 
 resource "aws_api_gateway_deployment" "deployment" {
   rest_api_id = aws_api_gateway_rest_api.api.id
@@ -119,39 +113,7 @@ resource "aws_api_gateway_stage" "this" {
   stage_name    = var.environment
 }
 
-### --- 5. COMPUTE (Lambda) --- ###
-
-data "archive_file" "lambda_zip" {
-  type        = "zip"
-  source_file = "${path.module}/lambda/lambda_function.py"
-  output_path = "${path.module}/lambda/lambda_function.zip"
-}
-
-resource "aws_lambda_function" "vst_checker" {
-  function_name    = "${var.project_name}-vst-checker-${var.environment}"
-  role             = aws_iam_role.lambda_role.arn
-  handler          = "lambda_function.lambda_handler"
-  runtime          = "python3.12"
-  filename         = data.archive_file.lambda_zip.output_path
-  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
-
-  environment {
-    variables = {
-      TABLE_NAME      = aws_dynamodb_table.users.name
-      VST_BUCKET_NAME = var.vst_bucket_name
-    }
-  }
-}
-
-resource "aws_lambda_permission" "apigw_lambda" {
-  statement_id  = "AllowExecutionFromAPIGateway"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.vst_checker.function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
-}
-
-### --- 6. IAM PERMISSIONS --- ###
+### --- 5. IAM ROLES & POLICIES (Consolidated) --- ###
 
 resource "aws_iam_role" "lambda_role" {
   name = "${var.project_name}-lambda-role-${var.environment}"
@@ -166,24 +128,36 @@ resource "aws_iam_role" "lambda_role" {
   })
 }
 
-resource "aws_iam_policy" "lambda_policy" {
-  name = "${var.project_name}-lambda-policy-${var.environment}"
+resource "aws_iam_policy" "lambda_combined_policy" {
+  name        = "${var.project_name}-lambda-combined-policy-${var.environment}"
+  description = "Permissions for CloudWatch, DynamoDB (Purchases), and S3 Presigning"
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+      # 1. CloudWatch Logs
       {
         Effect   = "Allow"
         Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
         Resource = "arn:aws:logs:*:*:*"
       },
+      # 2. DynamoDB Access
       {
         Effect = "Allow"
-        Action = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:Query", "dynamodb:UpdateItem"]
-        Resource = [
-          aws_dynamodb_table.users.arn,
-          "${aws_dynamodb_table.users.arn}/index/*"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:Query"
         ]
+        Resource = [
+          var.purchases_table_arn,
+          "${var.purchases_table_arn}/index/*"
+        ]
+      },
+      # 3. S3 GetObject (for Presigning)
+      {
+        Action   = ["s3:GetObject"]
+        Effect   = "Allow"
+        Resource = "arn:aws:s3:::${var.vst_bucket_name}/*"
       }
     ]
   })
@@ -191,5 +165,5 @@ resource "aws_iam_policy" "lambda_policy" {
 
 resource "aws_iam_role_policy_attachment" "lambda_attach" {
   role       = aws_iam_role.lambda_role.name
-  policy_arn = aws_iam_policy.lambda_policy.arn
+  policy_arn = aws_iam_policy.lambda_combined_policy.arn
 }

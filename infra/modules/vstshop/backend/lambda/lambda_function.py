@@ -1,47 +1,48 @@
 import json
 import boto3
 import os
-from botocore.config import Config
 
-# Initialize S3 client with Signature Version 4 (required for modern regions)
-s3_client = boto3.client(
-    's3',
-    region_name=os.environ['AWS_REGION'],
-    config=Config(signature_version='s3v4')
-)
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('vstshop-purchases')
+s3 = boto3.client('s3')
 
 
 def lambda_handler(event, context):
-    try:
-        user_email = event['requestContext']['authorizer']['claims']['email']
-        bucket_name = os.environ['VST_BUCKET_NAME']
-        # This key would eventually be dynamic based on the VST requested
-        object_key = "cool-synth-plugin.zip"
+    # 1. Get User ID from Cognito Context
+    user_id = event['requestContext']['authorizer']['claims']['sub']
+    # Hardcoded for now, but eventually this comes from the frontend
+    product_id = "cool-synth-v1"
 
-        # Generate the temporary download link
-        presigned_url = s3_client.generate_presigned_url(
+    try:
+        # 2. Check DynamoDB for a purchase record
+        response = table.get_item(
+            Key={
+                'user_id': user_id,
+                'product_id': product_id
+            }
+        )
+
+        if 'Item' not in response:
+            return {
+                'statusCode': 403,
+                'headers': {"Access-Control-Allow-Origin": "*"},
+                'body': json.dumps({'message': 'Access Denied: Product not purchased.'})
+            }
+
+        # 3. If they paid, generate the S3 URL
+        url = s3.generate_presigned_url(
             'get_object',
-            Params={'Bucket': bucket_name, 'Key': object_key},
-            ExpiresIn=300  # Link valid for 5 minutes
+            Params={'Bucket': os.environ['BUCKET_NAME'],
+                    'Key': 'cool-synth-plugin.zip'},
+            ExpiresIn=3600
         )
 
         return {
             'statusCode': 200,
-            'headers': {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-                'Access-Control-Allow-Methods': 'GET,OPTIONS'
-            },
-            'body': json.dumps({
-                'message': f"Authorized for {user_email}",
-                'downloadUrl': presigned_url
-            })
+            'headers': {"Access-Control-Allow-Origin": "*"},
+            'body': json.dumps({'downloadUrl': url})
         }
 
     except Exception as e:
-        print(f"Error: {str(e)}")
-        return {
-            'statusCode': 500,
-            'headers': {'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps({'error': 'Could not generate download link'})
-        }
+        print(e)
+        return {'statusCode': 500, 'body': json.dumps({'message': 'Internal Server Error'})}
