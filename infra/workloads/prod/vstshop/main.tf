@@ -28,12 +28,24 @@ moved {
   to   = module.auth
 }
 
+# 1. Create the Database
+module "database" {
+  source       = "../../../modules/vstshop/database"
+  project_name = var.project_name
+  environment  = var.environment
+}
+
+# 2. Pass database outputs into the Backend
 module "backend" {
   source          = "../../../modules/vstshop/backend"
+  project_name    = var.project_name
   environment     = var.environment
-  project_name    = "vstshop"
-  user_pool_arn   = module.auth.user_pool_arn # Passing the ARN here
   vst_bucket_name = module.storage.vst_bucket_name
+  user_pool_arn   = module.auth.user_pool_arn
+
+  # These link the modules together:
+  purchases_table_name = module.database.table_name
+  purchases_table_arn  = module.database.table_arn
 }
 
 moved {
