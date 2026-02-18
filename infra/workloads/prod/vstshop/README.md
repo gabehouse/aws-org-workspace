@@ -77,6 +77,8 @@ To run Terraform locally for debugging (not recommended for deployment):
 |------|-------------|------|---------|:--------:|
 | <a name="input_environment"></a> [environment](#input\_environment) | n/a | `string` | `"prod"` | no |
 | <a name="input_project_name"></a> [project\_name](#input\_project\_name) | n/a | `string` | `"vstshop"` | no |
+| <a name="input_stripe_secret_key"></a> [stripe\_secret\_key](#input\_stripe\_secret\_key) | n/a | `string` | n/a | yes |
+| <a name="input_stripe_webhook_secret"></a> [stripe\_webhook\_secret](#input\_stripe\_webhook\_secret) | n/a | `string` | n/a | yes |
 
 ## Outputs
 

@@ -26,8 +26,8 @@ permissions:
 env:
   TF_DIR: "infra/workloads/prod/vstshop"
   SITE_DIR: "services/vstshop-frontend"
-  TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY }}
-  TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+  TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY_PROD }}
+  TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET_PROD }}
   AWS_REGION: "us-east-2"
 
 jobs:
