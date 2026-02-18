@@ -15,7 +15,7 @@ resource "aws_dynamodb_table" "purchases" {
   }
 
   tags = {
-    Name        = "${var.project_name}-purchases"
+    Name        = "${var.project_name}-purchases-${var.environment}"
     Environment = var.environment
   }
 }
