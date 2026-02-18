@@ -173,6 +173,9 @@ resource "aws_api_gateway_deployment" "deployment" {
       aws_api_gateway_resource.check_vst.id,
       aws_api_gateway_method.check_vst_get.id,
       aws_api_gateway_integration.lambda_integration.id,
+      aws_api_gateway_resource.webhook.id,
+      aws_api_gateway_method.webhook_post.id,
+      aws_api_gateway_integration.webhook_integration.id,
     ]))
   }
 
@@ -220,6 +223,8 @@ resource "aws_iam_policy" "lambda_combined_policy" {
         Effect = "Allow"
         Action = [
           "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
           "dynamodb:Query"
         ]
         Resource = [
