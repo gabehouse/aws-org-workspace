@@ -2,6 +2,7 @@ import json
 import os
 import boto3
 import stripe
+import base64
 
 # Initialize clients
 dynamodb = boto3.resource('dynamodb')
@@ -10,37 +11,38 @@ stripe.api_key = os.environ['STRIPE_SECRET_KEY']
 
 
 def lambda_handler(event, context):
-    # 1. Get the RAW body and signature
-    payload = event['body']
-    # Use .get() to handle potential case sensitivity in headers
+    # 1. Get the signature from headers (check both casings)
     sig_header = event['headers'].get(
         'stripe-signature') or event['headers'].get('Stripe-Signature')
     endpoint_secret = os.environ['STRIPE_WEBHOOK_SECRET']
 
-    stripe_event = None
+    # 2. Get the RAW body
+    payload = event['body']
+
+    # 3. Handle Base64 encoding (The most likely culprit)
+    if event.get('isBase64Encoded'):
+        payload = base64.b64decode(payload).decode('utf-8')
 
     try:
-        # 2. Verify the webhook event (MUST use raw payload string)
+        # 4. Verify the webhook event
         stripe_event = stripe.Webhook.construct_event(
             payload, sig_header, endpoint_secret
         )
-    except ValueError as e:
-        print("Invalid payload")
-        return {'statusCode': 400, 'body': json.dumps({'message': 'Invalid payload'})}
-    except stripe.error.SignatureVerificationError as e:
-        print(f"Signature verification failed: {e}")
-        return {'statusCode': 400, 'body': json.dumps({'message': 'Invalid signature'})}
+        print(f"✅ Signature Verified! Event Type: {stripe_event['type']}")
 
-    # 3. Handle the checkout.session.completed event
+    except stripe.error.SignatureVerificationError as e:
+        print(f"❌ Verification Failed: {e}")
+        # Final debug: Is the payload empty or weird?
+        print(f"Payload Preview: {str(payload)[:50]}")
+        return {'statusCode': 400, 'body': 'Invalid Signature'}
+
+    # 5. Handle the event
     if stripe_event['type'] == 'checkout.session.completed':
         session = stripe_event['data']['object']
-
         user_id = session.get('client_reference_id')
         product_id = session.get('metadata', {}).get('productId')
 
         if user_id and product_id:
-            print(f"✅ Success: User {user_id} bought {product_id}")
-
             table.put_item(
                 Item={
                     'userId': user_id,
@@ -48,8 +50,6 @@ def lambda_handler(event, context):
                     'purchaseDate': session['created']
                 }
             )
-        else:
-            print("❌ Error: Missing user_id or product_id in metadata")
+            print(f"📂 DynamoDB Updated for {user_id}")
 
-    # Always return 200 to Stripe for other event types so it stops retrying
-    return {'statusCode': 200, 'body': json.dumps({'message': 'Success'})}
+    return {'statusCode': 200, 'body': 'Success'}
