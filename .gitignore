@@ -16,3 +16,8 @@ trivy
 aws/
 awscliv2.zip
 .cache/
+
+# Ignore the local install of the layer libraries
+infra/modules/vstshop/backend/layer/python/
+# Ignore the generated zips
+infra/modules/vstshop/backend/*.zip
