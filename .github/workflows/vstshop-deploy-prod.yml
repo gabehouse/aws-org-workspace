@@ -26,6 +26,8 @@ permissions:
 env:
   TF_DIR: "infra/workloads/prod/vstshop"
   SITE_DIR: "services/vstshop-frontend"
+  TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY }}
+  TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
   AWS_REGION: "us-east-2"
 
 jobs:
@@ -116,6 +118,12 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           role-chaining: true
           role-to-assume: arn:aws:iam::${{ needs.setup.outputs.prod_account }}:role/terraform-execution-role-prod
+
+      - name: Install Lambda Layer Dependencies
+        # This creates the missing 'layer/python' directory on the runner
+        run: |
+          mkdir -p infra/modules/vstshop/backend/layer/python
+          pip install -r infra/modules/vstshop/backend/requirements.txt -t infra/modules/vstshop/backend/layer/python/
 
       - name: Terraform Init & Apply
         working-directory: ${{ env.TF_DIR }}

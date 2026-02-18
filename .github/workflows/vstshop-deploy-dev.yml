@@ -25,6 +25,8 @@ permissions:
 env:
   TF_DIR: "infra/workloads/dev/vstshop"
   SITE_DIR: "services/vstshop-frontend"
+  TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY }}
+  TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
   AWS_REGION: "us-east-2"
 
 jobs:
@@ -43,10 +45,28 @@ jobs:
           echo "mgmt_account=$(yq '.accounts.mgmt' config.yaml)" >> $GITHUB_OUTPUT
           echo "dev_account=$(yq '.accounts.dev' config.yaml)" >> $GITHUB_OUTPUT
 
+  # --- JOB 2: BUILD LAYERS ---
+  build-layers:
+    name: "Build Lambda Layers"
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Dependencies
+        run: |
+          mkdir -p infra/modules/vstshop/backend/layer/python
+          pip install -r infra/modules/vstshop/backend/requirements.txt -t infra/modules/vstshop/backend/layer/python/
+      - name: Upload Layer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-layer
+          path: infra/modules/vstshop/backend/layer/python/
+
+
   # --- JOB 2: PLAN ---
   plan:
     name: "Terraform Plan"
-    needs: setup
+    needs: [setup, build-layers]
     runs-on: ubuntu-latest
     outputs:
       plan_stdout: ${{ steps.plan.outputs.stdout }}
@@ -55,6 +75,12 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: true
+
+      - name: Download Layer Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-layer
+          path: infra/modules/vstshop/backend/layer/python/
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -99,18 +125,25 @@ jobs:
 
   apply:
     name: "Terraform Apply & Deploy"
-    needs: [setup, plan]
+    needs: [setup, plan, build-layers]
     # Only run on pushes to dev or main
     if: github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
+      - name: Download Layer Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-layer
+          path: infra/modules/vstshop/backend/layer/python/
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.14.5" # Latest stable as of Feb 2026
           terraform_wrapper: false
+
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -131,6 +164,9 @@ jobs:
 
       - name: Terraform Apply
         working-directory: ${{ env.TF_DIR }}
+        env:
+          TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY }}
+          TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
         run: terraform apply -auto-approve -input=false
 
       # --- NEW: Build Frontend (Now that .env exists) ---
