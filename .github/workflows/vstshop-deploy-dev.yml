@@ -114,6 +114,12 @@ jobs:
           terraform_version: "1.14.5" # Latest stable as of Feb 2026
           terraform_wrapper: false
 
+      - name: Install Lambda Layer Dependencies
+        # This creates the missing 'layer/python' directory on the runner
+        run: |
+          mkdir -p infra/modules/vstshop/backend/layer/python
+          pip install -r infra/modules/vstshop/backend/requirements.txt -t infra/modules/vstshop/backend/layer/python/
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
