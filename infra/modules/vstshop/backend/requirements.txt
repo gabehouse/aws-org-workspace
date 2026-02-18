@@ -1,1 +1,1 @@
-stripe
+stripe==11.3.0
