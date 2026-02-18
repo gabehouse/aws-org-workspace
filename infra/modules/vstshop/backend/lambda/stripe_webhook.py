@@ -17,7 +17,7 @@ def lambda_handler(event, context):
     sig_header = event['headers'].get('stripe-signature')
     endpoint_secret = os.environ['STRIPE_WEBHOOK_SECRET']
 
-    event = None
+    event = json.loads(payload)
 
     try:
         # 1. Verify the webhook event came from Stripe
