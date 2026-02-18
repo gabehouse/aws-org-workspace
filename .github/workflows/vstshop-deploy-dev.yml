@@ -45,7 +45,7 @@ jobs:
           echo "mgmt_account=$(yq '.accounts.mgmt' config.yaml)" >> $GITHUB_OUTPUT
           echo "dev_account=$(yq '.accounts.dev' config.yaml)" >> $GITHUB_OUTPUT
 
-# --- JOB 2: BUILD LAYERS ---
+  # --- JOB 2: BUILD LAYERS ---
   build-layers:
     name: "Build Lambda Layers"
     needs: setup
@@ -62,7 +62,8 @@ jobs:
           name: lambda-layer
           path: infra/modules/vstshop/backend/layer/python/
 
-  # --- JOB 3: PLAN ---
+
+  # --- JOB 2: PLAN ---
   plan:
     name: "Terraform Plan"
     needs: [setup, build-layers]
@@ -71,6 +72,9 @@ jobs:
       plan_stdout: ${{ steps.plan.outputs.stdout }}
     steps:
       - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: true
 
       - name: Download Layer Artifact
         uses: actions/download-artifact@v4
@@ -119,8 +123,6 @@ jobs:
               body: output
             })
 
-# --- JOB 4: APPLY ---
-
   apply:
     name: "Terraform Apply & Deploy"
     needs: [setup, plan, build-layers]
@@ -130,18 +132,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Download Layer Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-layer
+          path: infra/modules/vstshop/backend/layer/python/
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.14.5" # Latest stable as of Feb 2026
           terraform_wrapper: false
 
-      - uses: actions/checkout@v4
-      - name: Download Layer Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: lambda-layer
-          path: infra/modules/vstshop/backend/layer/python/
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
