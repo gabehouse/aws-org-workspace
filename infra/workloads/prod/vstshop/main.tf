@@ -46,6 +46,9 @@ module "backend" {
   # These link the modules together:
   purchases_table_name = module.database.table_name
   purchases_table_arn  = module.database.table_arn
+
+  stripe_secret_key     = var.stripe_secret_key
+  stripe_webhook_secret = var.stripe_webhook_secret
 }
 
 moved {
