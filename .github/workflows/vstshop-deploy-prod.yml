@@ -26,10 +26,13 @@ permissions:
 env:
   TF_DIR: "infra/workloads/prod/vstshop"
   SITE_DIR: "services/vstshop-frontend"
+  TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY }}
+  TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
   AWS_REGION: "us-east-2"
 
 jobs:
   setup:
+  # --- JOB 1: SCRAPE ---
     name: "Scrape Config"
     runs-on: ubuntu-latest
     outputs:
@@ -43,7 +46,25 @@ jobs:
           echo "mgmt_account=$(yq '.accounts.mgmt' config.yaml)" >> $GITHUB_OUTPUT
           echo "prod_account=$(yq '.accounts.prod' config.yaml)" >> $GITHUB_OUTPUT
 
+ # --- JOB 2: BUILD LAYERS ---
+  build-layers:
+    name: "Build Lambda Layers"
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Dependencies
+        run: |
+          mkdir -p infra/modules/vstshop/backend/layer/python
+          pip install -r infra/modules/vstshop/backend/requirements.txt -t infra/modules/vstshop/backend/layer/python/
+      - name: Upload Layer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-layer
+          path: infra/modules/vstshop/backend/layer/python/
+
   plan:
+  # --- JOB 3: BUILD LAYERS ---
     name: "Production Plan"
     needs: setup
     runs-on: ubuntu-latest
@@ -52,6 +73,12 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: true
+
+      - name: Download Layer Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-layer
+          path: infra/modules/vstshop/backend/layer/python/
 
       - name: Auth Prod
         uses: aws-actions/configure-aws-credentials@v4
@@ -93,6 +120,7 @@ jobs:
             })
 
   apply:
+  # --- JOB 4: APPLY---
     name: "Production Apply"
     needs: [setup, plan]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
@@ -103,6 +131,13 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: true
+
+      - name: Download Layer Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-layer
+          path: infra/modules/vstshop/backend/layer/python/
+
 
       - name: Auth Prod
         uses: aws-actions/configure-aws-credentials@v4

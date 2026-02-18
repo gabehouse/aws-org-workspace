@@ -1,3 +1,77 @@
+# --- 1. Zip the layer folder ---
+data "archive_file" "stripe_layer_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/layer"
+  output_path = "${path.module}/stripe_layer.zip"
+}
+
+# --- 2. Create the Layer ---
+resource "aws_lambda_layer_version" "stripe_layer" {
+  filename            = data.archive_file.stripe_layer_zip.output_path
+  layer_name          = "${var.project_name}-stripe-layer-${var.environment}"
+  source_code_hash    = data.archive_file.stripe_layer_zip.output_base64sha256
+  compatible_runtimes = ["python3.12"]
+}
+
+### --- STRIPE WEBHOOK LAMBDA --- ###
+
+data "archive_file" "webhook_zip" {
+  type        = "zip"
+  source_file = "${path.module}/lambda/stripe_webhook.py"
+  output_path = "${path.module}/lambda/stripe_webhook.zip"
+}
+
+resource "aws_lambda_function" "stripe_webhook" {
+  function_name    = "${var.project_name}-stripe-webhook-${var.environment}"
+  role             = aws_iam_role.lambda_role.arn
+  handler          = "stripe_webhook.lambda_handler"
+  runtime          = "python3.12"
+  filename         = data.archive_file.webhook_zip.output_path
+  source_code_hash = data.archive_file.webhook_zip.output_base64sha256
+  layers           = [aws_lambda_layer_version.stripe_layer.arn]
+
+  environment {
+    variables = {
+      TABLE_NAME            = var.purchases_table_name
+      STRIPE_SECRET_KEY     = var.stripe_secret_key
+      STRIPE_WEBHOOK_SECRET = var.stripe_webhook_secret
+    }
+  }
+}
+
+### --- API GATEWAY ROUTE (/webhook) --- ###
+
+resource "aws_api_gateway_resource" "webhook" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  path_part   = "webhook"
+}
+
+resource "aws_api_gateway_method" "webhook_post" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.webhook.id
+  http_method   = "POST"
+  authorization = "NONE" # CRITICAL: Stripe needs public access
+}
+
+resource "aws_api_gateway_integration" "webhook_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.webhook.id
+  http_method             = aws_api_gateway_method.webhook_post.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.stripe_webhook.invoke_arn
+}
+
+resource "aws_lambda_permission" "apigw_webhook" {
+  statement_id  = "AllowExecutionFromAPIGatewayWebhook"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.stripe_webhook.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
+}
+
+
 ### --- 1. API GATEWAY CORE --- ###
 
 resource "aws_api_gateway_rest_api" "api" {
