@@ -15,13 +15,20 @@ function DownloadDashboard() {
     try {
       const session = await fetchAuthSession();
       const token = session.tokens?.idToken?.toString();
+      if (!token) throw new Error("No ID Token found");
 
       // We call the same endpoint. If it returns 200/URL, they own it.
       const response = await fetch(`${import.meta.env.VITE_API_URL}/check-vst`, {
         method: 'GET',
-        headers: { 'Authorization': token }
+        headers: {
+          // We add 'Bearer ' before the token string
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
-
+      if (response.status === 403) {
+        console.error("Still getting a 403. This is now a backend config issue.");
+      }
       if (response.ok) {
         setIsPurchased(true);
       }
