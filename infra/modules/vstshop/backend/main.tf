@@ -169,10 +169,11 @@ resource "aws_api_gateway_rest_api" "api" {
 }
 
 resource "aws_api_gateway_authorizer" "cognito" {
-  name          = "vstshop-cognito-authorizer"
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  type          = "COGNITO_USER_POOLS"
-  provider_arns = [var.user_pool_arn]
+  name            = "vstshop-cognito-authorizer"
+  rest_api_id     = aws_api_gateway_rest_api.api.id
+  type            = "COGNITO_USER_POOLS"
+  provider_arns   = [var.user_pool_arn]
+  identity_source = "method.request.header.Authorization"
 }
 
 resource "aws_api_gateway_resource" "check_vst" {
@@ -264,6 +265,7 @@ resource "aws_api_gateway_deployment" "deployment" {
       aws_api_gateway_resource.checkout.id,
       aws_api_gateway_method.checkout_post.id,
       aws_api_gateway_integration.checkout_integration.id,
+      timestamp()
     ]))
   }
 
