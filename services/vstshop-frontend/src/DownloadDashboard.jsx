@@ -39,7 +39,7 @@ function DownloadDashboard() {
       const token = session.tokens?.idToken?.toString();
 
       // Call your (yet to be created) Checkout Lambda
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/create-checkout`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/checkout`, {
         method: 'POST',
         headers: { 'Authorization': token }
       });

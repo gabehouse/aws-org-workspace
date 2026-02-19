@@ -37,6 +37,16 @@ resource "aws_lambda_function" "checkout" {
   }
 }
 
+resource "aws_lambda_permission" "apigw_checkout" {
+  statement_id  = "AllowExecutionFromAPIGatewayCheckout"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.checkout.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  # This allows any stage/method in this API to call this Lambda
+  source_arn = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
+}
+
 ### --- API GATEWAY ROUTE (/checkout) --- ###
 
 resource "aws_api_gateway_resource" "checkout" {
