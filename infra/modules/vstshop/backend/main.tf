@@ -1,22 +1,32 @@
+resource "aws_api_gateway_gateway_response" "default_4xx" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  response_type = "DEFAULT_4XX"
+
+  response_parameters = {
+    "gatewayresponse.header.Access-Control-Allow-Origin"  = "'*'"
+    "gatewayresponse.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "gatewayresponse.header.Access-Control-Allow-Methods" = "'GET,POST,OPTIONS'"
+  }
+}
+
 ### --- CREATE CHECKOUT LAMBDA --- ###
 
 # A. Zip the checkout code
 data "archive_file" "checkout_zip" {
   type        = "zip"
-  source_file = "${path.module}/lambda/create_checkout.py"
+  source_file = "${path.module}/lambda/checkout.py" # UPDATED
   output_path = "${path.module}/lambda/create_checkout.zip"
 }
 
-# B. The Lambda Function (Fixed with Layer and Filename)
+# B. The Lambda Function
 resource "aws_lambda_function" "create_checkout" {
   function_name    = "${var.project_name}-create-checkout-${var.environment}"
   role             = aws_iam_role.lambda_role.arn
-  handler          = "create_checkout.handler" # filename.function
+  handler          = "checkout.handler" # UPDATED (filename.function)
   runtime          = "python3.12"
   filename         = data.archive_file.checkout_zip.output_path
   source_code_hash = data.archive_file.checkout_zip.output_base64sha256
 
-  # CRITICAL: Don't forget the Stripe layer!
   layers = [aws_lambda_layer_version.stripe_layer.arn]
 
   environment {
@@ -305,6 +315,16 @@ resource "aws_iam_policy" "lambda_combined_policy" {
         Action   = ["s3:GetObject"]
         Effect   = "Allow"
         Resource = "arn:aws:s3:::${var.vst_bucket_name}/*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["s3:GetObject"]
+        Resource = "arn:aws:s3:::${var.vst_bucket_name}/*" # Objects inside
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket"]
+        Resource = "arn:aws:s3:::${var.vst_bucket_name}" # The Bucket itself (No /*)
       }
     ]
   })
