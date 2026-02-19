@@ -49,6 +49,8 @@ module "backend" {
 
   stripe_secret_key     = var.stripe_secret_key
   stripe_webhook_secret = var.stripe_webhook_secret
+
+  cloudfront_url = module.frontend.website_url
 }
 
 moved {
