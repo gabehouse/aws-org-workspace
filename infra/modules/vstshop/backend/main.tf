@@ -15,12 +15,12 @@ resource "aws_api_gateway_gateway_response" "default_4xx" {
 data "archive_file" "checkout_zip" {
   type        = "zip"
   source_file = "${path.module}/lambda/checkout.py" # UPDATED
-  output_path = "${path.module}/lambda/create_checkout.zip"
+  output_path = "${path.module}/lambda/checkout.zip"
 }
 
 # B. The Lambda Function
-resource "aws_lambda_function" "create_checkout" {
-  function_name    = "${var.project_name}-create-checkout-${var.environment}"
+resource "aws_lambda_function" "checkout" {
+  function_name    = "${var.project_name}-checkout-${var.environment}"
   role             = aws_iam_role.lambda_role.arn
   handler          = "checkout.handler" # UPDATED (filename.function)
   runtime          = "python3.12"
@@ -59,7 +59,7 @@ resource "aws_api_gateway_integration" "checkout_integration" {
   http_method             = aws_api_gateway_method.checkout_post.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.create_checkout.invoke_arn
+  uri                     = aws_lambda_function.checkout.invoke_arn
 }
 
 # C. Enable CORS for /checkout
@@ -315,11 +315,6 @@ resource "aws_iam_policy" "lambda_combined_policy" {
         Action   = ["s3:GetObject"]
         Effect   = "Allow"
         Resource = "arn:aws:s3:::${var.vst_bucket_name}/*"
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["s3:GetObject"]
-        Resource = "arn:aws:s3:::${var.vst_bucket_name}/*" # Objects inside
       },
       {
         Effect   = "Allow"
