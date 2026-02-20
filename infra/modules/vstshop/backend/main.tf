@@ -1,3 +1,88 @@
+resource "aws_api_gateway_gateway_response" "default_4xx" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  response_type = "DEFAULT_4XX"
+
+  response_parameters = {
+    "gatewayresponse.header.Access-Control-Allow-Origin"  = "'*'"
+    "gatewayresponse.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "gatewayresponse.header.Access-Control-Allow-Methods" = "'GET,POST,OPTIONS'"
+  }
+}
+
+### --- CREATE CHECKOUT LAMBDA --- ###
+
+# A. Zip the checkout code
+data "archive_file" "checkout_zip" {
+  type        = "zip"
+  source_file = "${path.module}/lambda/checkout.py" # UPDATED
+  output_path = "${path.module}/lambda/checkout.zip"
+}
+
+# B. The Lambda Function
+resource "aws_lambda_function" "checkout" {
+  function_name    = "${var.project_name}-checkout-${var.environment}"
+  role             = aws_iam_role.lambda_role.arn
+  handler          = "checkout.handler" # UPDATED (filename.function)
+  runtime          = "python3.12"
+  filename         = data.archive_file.checkout_zip.output_path
+  source_code_hash = data.archive_file.checkout_zip.output_base64sha256
+
+  layers = [aws_lambda_layer_version.stripe_layer.arn]
+
+  environment {
+    variables = {
+      STRIPE_SECRET_KEY = var.stripe_secret_key
+      FRONTEND_URL      = var.cloudfront_url
+    }
+  }
+}
+
+resource "aws_lambda_permission" "apigw_checkout" {
+  statement_id  = "AllowExecutionFromAPIGatewayCheckout"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.checkout.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  # This allows any stage/method in this API to call this Lambda
+  source_arn = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
+}
+
+### --- API GATEWAY ROUTE (/checkout) --- ###
+
+resource "aws_api_gateway_resource" "checkout" {
+  rest_api_id = aws_api_gateway_rest_api.api.id # Changed from .main to .api to match your file
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  path_part   = "checkout"
+}
+
+resource "aws_api_gateway_method" "checkout_post" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.checkout.id
+  http_method   = "POST"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "checkout_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.checkout.id
+  http_method             = aws_api_gateway_method.checkout_post.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.checkout.invoke_arn
+}
+
+# C. Enable CORS for /checkout
+module "checkout_cors" {
+  source  = "squidfunk/api-gateway-enable-cors/aws"
+  version = "0.3.3"
+
+  api_id          = aws_api_gateway_rest_api.api.id
+  api_resource_id = aws_api_gateway_resource.checkout.id
+  allow_origin    = "*" # Or your specific Vercel/S3 URL
+  allow_headers   = ["Authorization", "Content-Type"]
+}
+
 # --- 1. Zip the layer folder ---
 data "archive_file" "stripe_layer_zip" {
   type        = "zip"
@@ -84,10 +169,11 @@ resource "aws_api_gateway_rest_api" "api" {
 }
 
 resource "aws_api_gateway_authorizer" "cognito" {
-  name          = "vstshop-cognito-authorizer"
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  type          = "COGNITO_USER_POOLS"
-  provider_arns = [var.user_pool_arn]
+  name            = "vstshop-cognito-authorizer"
+  rest_api_id     = aws_api_gateway_rest_api.api.id
+  type            = "COGNITO_USER_POOLS"
+  provider_arns   = [var.user_pool_arn]
+  identity_source = "method.request.header.Authorization"
 }
 
 resource "aws_api_gateway_resource" "check_vst" {
@@ -176,6 +262,10 @@ resource "aws_api_gateway_deployment" "deployment" {
       aws_api_gateway_resource.webhook.id,
       aws_api_gateway_method.webhook_post.id,
       aws_api_gateway_integration.webhook_integration.id,
+      aws_api_gateway_resource.checkout.id,
+      aws_api_gateway_method.checkout_post.id,
+      aws_api_gateway_integration.checkout_integration.id,
+      timestamp()
     ]))
   }
 
@@ -237,6 +327,11 @@ resource "aws_iam_policy" "lambda_combined_policy" {
         Action   = ["s3:GetObject"]
         Effect   = "Allow"
         Resource = "arn:aws:s3:::${var.vst_bucket_name}/*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket"]
+        Resource = "arn:aws:s3:::${var.vst_bucket_name}" # The Bucket itself (No /*)
       }
     ]
   })

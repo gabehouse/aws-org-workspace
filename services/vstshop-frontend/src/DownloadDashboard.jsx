@@ -1,9 +1,63 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { fetchAuthSession } from 'aws-amplify/auth'; // Modular v6 import
 
 function DownloadDashboard() {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start loading to check status
+  const [isPurchased, setIsPurchased] = useState(false);
   const [error, setError] = useState('');
+
+  // 1. Check purchase status on mount
+  useEffect(() => {
+    checkStatus();
+  }, []);
+
+  const checkStatus = async () => {
+    try {
+      const session = await fetchAuthSession();
+      const token = session.tokens?.idToken?.toString();
+      if (!token) throw new Error("No ID Token found");
+
+      // We call the same endpoint. If it returns 200/URL, they own it.
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/check-vst`, {
+        method: 'GET',
+        headers: {
+          // We add 'Bearer ' before the token string
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.status === 403) {
+        console.error("Still getting a 403. This is now a backend config issue.");
+      }
+      if (response.ok) {
+        setIsPurchased(true);
+      }
+    } catch (err) {
+      console.log("Not purchased or error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBuy = async () => {
+    setLoading(true);
+    try {
+      const session = await fetchAuthSession();
+      const token = session.tokens?.idToken?.toString();
+
+      // Call your (yet to be created) Checkout Lambda
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/checkout`, {
+        method: 'POST',
+        headers: { 'Authorization': token }
+      });
+
+      const { checkoutUrl } = await response.json();
+      window.location.href = checkoutUrl; // Redirect to Stripe
+    } catch (err) {
+      setError("Failed to start checkout. " + err);
+      setLoading(false);
+    }
+  };
 
   const triggerDownload = async () => {
     setLoading(true);
@@ -50,63 +104,39 @@ function DownloadDashboard() {
       setLoading(false);
     }
   };
+if (loading && !isPurchased) return <p>Loading your library...</p>;
 
   return (
-    <div style={{
-      margin: '20px auto',
-      maxWidth: '450px',
-      padding: '20px',
-      backgroundColor: '#ffffff',
-      borderRadius: '12px',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-      border: '1px solid #eee'
-    }}>
+    <div style={cardStyle}>
       <h3 style={{ marginTop: 0 }}>🎵 My VST Library</h3>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        background: '#f9f9f9',
-        padding: '15px',
-        borderRadius: '8px',
-        border: '1px solid #ececec'
-      }}>
+      <div style={itemRowStyle}>
         <div style={{ textAlign: 'left' }}>
           <div style={{ fontWeight: 'bold' }}>Cool Synth Plugin</div>
-          <div style={{ fontSize: '12px', color: '#666' }}>Format: .zip (VST3/AU)</div>
+          <div style={{ fontSize: '12px', color: '#666' }}>
+            {isPurchased ? "Owned ✅" : "$29.99"}
+          </div>
         </div>
-        <button
-          onClick={triggerDownload}
-          disabled={loading}
-          style={{
-            backgroundColor: loading ? '#ccc' : '#ff9900',
-            color: 'white',
-            border: 'none',
-            padding: '10px 20px',
-            borderRadius: '6px',
-            fontWeight: 'bold',
-            transition: '0.2s',
-            cursor: loading ? 'not-allowed' : 'pointer'
-          }}
-        >
-          {loading ? 'Verifying...' : 'Download'}
-        </button>
-      </div>
 
-      {error && (
-        <p style={{
-          color: '#d9534f',
-          fontSize: '13px',
-          marginTop: '15px',
-          backgroundColor: '#fdf7f7',
-          padding: '8px',
-          borderRadius: '4px'
-        }}>
-          ⚠️ {error}
-        </p>
-      )}
+        {isPurchased ? (
+          <button onClick={triggerDownload} style={downloadBtnStyle}>
+            Download
+          </button>
+        ) : (
+          <button onClick={handleBuy} style={buyBtnStyle}>
+            Buy Now
+          </button>
+        )}
+      </div>
+      {error && <p style={errorStyle}>⚠️ {error}</p>}
     </div>
   );
 }
+
+// --- Styles ---
+const cardStyle = { margin: '20px auto', maxWidth: '450px', padding: '20px', backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', border: '1px solid #eee' };
+const itemRowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f9f9f9', padding: '15px', borderRadius: '8px', border: '1px solid #ececec' };
+const downloadBtnStyle = { backgroundColor: '#ff9900', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' };
+const buyBtnStyle = { backgroundColor: '#007bff', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' };
+const errorStyle = { color: '#d9534f', fontSize: '13px', marginTop: '15px' };
 
 export default DownloadDashboard;

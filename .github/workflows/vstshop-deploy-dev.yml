@@ -164,9 +164,6 @@ jobs:
 
       - name: Terraform Apply
         working-directory: ${{ env.TF_DIR }}
-        env:
-          TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY }}
-          TF_VAR_stripe_webhook_secret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
         run: terraform apply -auto-approve -input=false
 
       # --- NEW: Build Frontend (Now that .env exists) ---

@@ -47,7 +47,7 @@ To test infrastructure changes locally:
 
 | Name | Version |
 |------|---------|
-| <a name="provider_local"></a> [local](#provider\_local) | 2.6.2 |
+| <a name="provider_local"></a> [local](#provider\_local) | 2.7.0 |
 
 ## Modules
 
