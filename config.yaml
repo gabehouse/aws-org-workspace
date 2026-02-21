@@ -19,3 +19,10 @@ prod_email: "gabriel.jsh+prod2@gmail.com"
 
 # Organization user
 sso_admin_user: "Gabe"
+
+# Service: VST Shop
+vst_shop:
+  frontend:
+    user_pool_id: "us-east-2_V9hhjw2Y5"
+    client_id: "2p1utd8g6jkts9qp59n7b5k9le"
+    api_url: "https://g6jnm33pu7.execute-api.us-east-2.amazonaws.com/dev"
