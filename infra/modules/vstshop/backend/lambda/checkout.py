@@ -14,7 +14,7 @@ def handler(event, context):
     fallback_url = os.environ.get('FRONTEND_URL')
 
     frontend_url = browser_origin or fallback_url or "http://localhost:5173"
-
+    product_id = "cool-synth-vst-01"
     try:
         user_id = event['requestContext']['authorizer']['claims']['sub']
 
@@ -29,6 +29,9 @@ def handler(event, context):
                 'quantity': 1,
             }],
             mode='payment',
+            metadata={
+                'productId': product_id
+            },
             client_reference_id=user_id,
             success_url=f"{frontend_url}/success?session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{frontend_url}/cancel",
