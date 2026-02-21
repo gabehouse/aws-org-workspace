@@ -1,3 +1,13 @@
+terraform {
+  required_providers {
+    stripe = {
+      source = "stripe/stripe"
+    }
+    aws = {
+      source = "hashicorp/aws"
+    }
+  }
+}
 
 ### --- DOWNLOAD LAMBDA (Secure Proxy) --- ###
 
@@ -21,6 +31,9 @@ resource "aws_lambda_function" "download" {
     variables = {
       TABLE_NAME     = var.purchases_table_name
       STORAGE_BUCKET = var.vst_bucket_name
+      S3_KEY_MAP = jsonencode({
+        for k, v in local.vst_catalog : k => v.s3_key
+      })
     }
   }
 }
@@ -105,6 +118,9 @@ resource "aws_lambda_function" "checkout" {
       STRIPE_SECRET_KEY     = var.stripe_secret_key
       STRIPE_WEBHOOK_SECRET = var.stripe_webhook_secret
       FRONTEND_URL          = var.cloudfront_url
+      STRIPE_PRODUCT_MAP = jsonencode({
+        for k, v in stripe_price.vst_price : k => v.id
+      })
     }
   }
 }
