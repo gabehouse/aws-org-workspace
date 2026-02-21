@@ -31,8 +31,9 @@ resource "aws_lambda_function" "checkout" {
 
   environment {
     variables = {
-      STRIPE_SECRET_KEY = var.stripe_secret_key
-      FRONTEND_URL      = var.cloudfront_url
+      STRIPE_SECRET_KEY     = var.stripe_secret_key
+      STRIPE_WEBHOOK_SECRET = var.stripe_webhook_secret
+      FRONTEND_URL          = var.cloudfront_url
     }
   }
 }
