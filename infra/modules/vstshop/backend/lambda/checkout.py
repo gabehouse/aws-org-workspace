@@ -14,7 +14,7 @@ def handler(event, context):
     fallback_url = os.environ.get('FRONTEND_URL')
 
     frontend_url = browser_origin or fallback_url or "http://localhost:5173"
-    product_id = "cool-synth-vst-01"
+    product_id = "cool-synth-v1"
     try:
         user_id = event['requestContext']['authorizer']['claims']['sub']
 
