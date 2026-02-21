@@ -29,6 +29,9 @@ def handler(event, context):
                 'quantity': 1,
             }],
             mode='payment',
+            metadata={
+                'productId': product_id
+            },
             client_reference_id=user_id,
             success_url=f"{frontend_url}/success?session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{frontend_url}/cancel",
