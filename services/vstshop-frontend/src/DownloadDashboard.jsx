@@ -11,26 +11,27 @@ function DownloadDashboard() {
     checkStatus();
   }, []);
 
+  const [downloadUrl, setDownloadUrl] = useState('');
+
   const checkStatus = async () => {
+    const productId = "cool-synth-v1";
     try {
       const session = await fetchAuthSession();
       const token = session.tokens?.idToken?.toString();
       if (!token) throw new Error("No ID Token found");
 
       // We call the same endpoint. If it returns 200/URL, they own it.
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/check-vst`, {
-        method: 'GET',
-        headers: {
-          // We add 'Bearer ' before the token string
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/download?productId=${productId}`, {
+              method: 'GET',
+              headers: { 'Authorization': token }
+          });
       if (response.status === 403) {
         console.error("Still getting a 403. This is now a backend config issue.");
       }
       if (response.ok) {
+        const data = await response.json();
         setIsPurchased(true);
+        setDownloadUrl(data.downloadUrl);
       }
     } catch (err) {
       console.log("Not purchased or error:", err);
@@ -59,51 +60,40 @@ function DownloadDashboard() {
     }
   };
 
-  const triggerDownload = async () => {
-    setLoading(true);
-    setError('');
+const triggerDownload = async (productId) => {
+  // 1. Check if we already have a fresh URL in state from checkStatus
+  if (downloadUrl) {
+    console.log("Using pre-fetched secure link...");
+    window.location.assign(downloadUrl);
+    return;
+  }
 
-    try {
-      // 1. Get the session (v6 pattern)
-      // fetchAuthSession handles token refreshing automatically!
-      const session = await fetchAuthSession();
-      const token = session.tokens?.idToken?.toString();
+  // 2. FALLBACK: If downloadUrl is empty, fetch it now (Double-safety)
+  setLoading(true);
+  setError('');
+  try {
+    const session = await fetchAuthSession();
+    const token = session.tokens?.idToken?.toString();
+    const apiUrl = `${import.meta.env.VITE_API_URL}/download?productId=${productId}`;
 
-      if (!token) throw new Error("No active session found. Please log in again.");
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: { 'Authorization': token }
+    });
 
-      // 2. Call your API Gateway
-      const apiUrl = `${import.meta.env.VITE_API_URL}/check-vst`;
+    if (!response.ok) throw new Error("Could not verify purchase.");
 
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': token,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Server error: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      // 3. Trigger S3 Download
-      if (data.downloadUrl) {
-        console.log("Redirecting to secure S3 link...");
-        window.location.href = data.downloadUrl;
-      } else {
-        throw new Error("Download link not found in response.");
-      }
-
-    } catch (err) {
-      console.error("Download Error:", err);
-      setError(err.message || "Failed to get download link");
-    } finally {
-      setLoading(false);
+    const data = await response.json();
+    if (data.downloadUrl) {
+      setDownloadUrl(data.downloadUrl);
+      window.location.assign(data.downloadUrl);
     }
-  };
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 if (loading && !isPurchased) return <p>Loading your library...</p>;
 
   return (
@@ -118,7 +108,7 @@ if (loading && !isPurchased) return <p>Loading your library...</p>;
         </div>
 
         {isPurchased ? (
-          <button onClick={triggerDownload} style={downloadBtnStyle}>
+          <button onClick={() => triggerDownload("cool-synth-v1")} style={downloadBtnStyle}>
             Download
           </button>
         ) : (

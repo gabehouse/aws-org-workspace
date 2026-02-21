@@ -1,3 +1,38 @@
+
+### --- DOWNLOAD LAMBDA (Secure Proxy) --- ###
+
+# A. Zip the download code
+data "archive_file" "download_zip" {
+  type        = "zip"
+  source_file = "${path.module}/lambda/download.py"
+  output_path = "${path.module}/lambda/download.zip"
+}
+
+# B. The Lambda Function
+resource "aws_lambda_function" "download" {
+  function_name    = "${var.project_name}-download-${var.environment}"
+  role             = aws_iam_role.lambda_role.arn
+  handler          = "download.handler"
+  runtime          = "python3.12"
+  filename         = data.archive_file.download_zip.output_path
+  source_code_hash = data.archive_file.download_zip.output_base64sha256
+
+  environment {
+    variables = {
+      TABLE_NAME     = var.purchases_table_name
+      STORAGE_BUCKET = var.vst_bucket_name
+    }
+  }
+}
+
+resource "aws_lambda_permission" "apigw_download" {
+  statement_id  = "AllowExecutionFromAPIGatewayDownload"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.download.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
+}
+
 resource "aws_api_gateway_gateway_response" "default_4xx" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   response_type = "DEFAULT_4XX"
@@ -7,6 +42,42 @@ resource "aws_api_gateway_gateway_response" "default_4xx" {
     "gatewayresponse.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
     "gatewayresponse.header.Access-Control-Allow-Methods" = "'GET,POST,OPTIONS'"
   }
+}
+
+### --- API GATEWAY ROUTE (/download) --- ###
+
+resource "aws_api_gateway_resource" "download" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  path_part   = "download"
+}
+
+resource "aws_api_gateway_method" "download_get" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.download.id
+  http_method   = "GET"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "download_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.download.id
+  http_method             = aws_api_gateway_method.download_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.download.invoke_arn
+}
+
+# Enable CORS for /download
+module "download_cors" {
+  source  = "squidfunk/api-gateway-enable-cors/aws"
+  version = "0.3.3"
+
+  api_id          = aws_api_gateway_rest_api.api.id
+  api_resource_id = aws_api_gateway_resource.download.id
+  allow_origin    = "*"
+  allow_headers   = ["Authorization", "Content-Type"]
 }
 
 ### --- CREATE CHECKOUT LAMBDA --- ###
@@ -266,6 +337,9 @@ resource "aws_api_gateway_deployment" "deployment" {
       aws_api_gateway_resource.checkout.id,
       aws_api_gateway_method.checkout_post.id,
       aws_api_gateway_integration.checkout_integration.id,
+      aws_api_gateway_resource.download.id,
+      aws_api_gateway_method.download_get.id,
+      aws_api_gateway_integration.download_integration.id,
       timestamp()
     ]))
   }
