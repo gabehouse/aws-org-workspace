@@ -9,6 +9,16 @@ terraform {
   }
 }
 
+resource "aws_api_gateway_gateway_response" "default_5xx" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  response_type = "DEFAULT_5XX"
+
+  response_parameters = {
+    "gatewayresponse.header.Access-Control-Allow-Origin"  = "'*'"
+    "gatewayresponse.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "gatewayresponse.header.Access-Control-Allow-Methods" = "'GET,POST,OPTIONS'"
+  }
+}
 
 data "archive_file" "my_purchases_zip" {
   type        = "zip"
@@ -23,7 +33,8 @@ resource "aws_lambda_function" "my_purchases" {
   runtime          = "python3.12"
   filename         = data.archive_file.my_purchases_zip.output_path
   source_code_hash = data.archive_file.my_purchases_zip.output_base64sha256
-
+  timeout          = 20 # Increased from 3s
+  memory_size      = 256
   environment {
     variables = {
       TABLE_NAME = var.purchases_table_name
@@ -280,6 +291,8 @@ resource "aws_lambda_function" "stripe_webhook" {
   filename         = data.archive_file.webhook_zip.output_path
   source_code_hash = data.archive_file.webhook_zip.output_base64sha256
   layers           = [aws_lambda_layer_version.stripe_layer.arn]
+  timeout          = 20
+  memory_size      = 256
 
   environment {
     variables = {
