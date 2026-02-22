@@ -17,7 +17,7 @@ module "auth" {
   source       = "../../../modules/vstshop/auth"
   environment  = var.environment
   project_name = var.project_name
-  unique_id    = "vst-dev-123" # To ensure unique Cognito domain
+  unique_id    = "vst-${var.environment}-123" # To ensure unique Cognito domain
 
   # Dynamically pass the CloudFront URL for Auth redirects
   callback_url = module.frontend.website_url

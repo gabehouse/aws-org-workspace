@@ -21,3 +21,24 @@ awscliv2.zip
 infra/modules/vstshop/backend/layer/python/
 # Ignore the generated zips
 infra/modules/vstshop/backend/*.zip
+
+# --- Python Bytecode ---
+# Prevents __pycache__ folders from cluttering your Lambda modules
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+
+# --- Environment Secrets ---
+# Sometimes developers create .env files inside module folders
+**/.env
+**/.env.*
+
+# --- Terraform Crash Logs ---
+# If Terraform crashes, it writes a huge trace file
+crash.log
+**/terraform.debug
+
+# --- OS Specific Junk ---
+# Especially important if you collaborate with Mac/Windows users
+.DS_Store
+Thumbs.db

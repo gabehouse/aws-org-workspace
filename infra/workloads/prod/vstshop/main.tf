@@ -16,8 +16,8 @@ moved {
 module "auth" {
   source       = "../../../modules/vstshop/auth"
   environment  = var.environment
-  project_name = "vstshop"
-  unique_id    = "vst-prod-123" # To ensure unique Cognito domain
+  project_name = var.project_name
+  unique_id    = "vst-${var.environment}-123" # To ensure unique Cognito domain
 
   # Dynamically pass the CloudFront URL for Auth redirects
   callback_url = module.frontend.website_url
@@ -62,16 +62,4 @@ module "storage" {
   source      = "../../../modules/vstshop/storage"
   domain_name = module.frontend.website_url
   environment = var.environment
-}
-
-
-# This tells Terraform to write a file on your local machine
-resource "local_file" "env_file" {
-  filename = "${path.module}/../../../../services/vstshop-frontend/.env"
-  content  = <<-EOT
-    VITE_AWS_REGION=${module.globals.region}
-    VITE_USER_POOL_ID=${module.auth.user_pool_id}
-    VITE_USER_POOL_CLIENT_ID=${module.auth.client_id}
-    VITE_API_URL=${module.backend.api_url}
-  EOT
 }

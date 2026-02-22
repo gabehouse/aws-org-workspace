@@ -47,12 +47,11 @@ To run Terraform locally for debugging (not recommended for deployment):
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 6.0 |
+| <a name="requirement_stripe"></a> [stripe](#requirement\_stripe) | 0.1.3 |
 
 ## Providers
 
-| Name | Version |
-|------|---------|
-| <a name="provider_local"></a> [local](#provider\_local) | 2.7.0 |
+No providers.
 
 ## Modules
 
@@ -67,9 +66,7 @@ To run Terraform locally for debugging (not recommended for deployment):
 
 ## Resources
 
-| Name | Type |
-|------|------|
-| [local_file.env_file](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
+No resources.
 
 ## Inputs
 
