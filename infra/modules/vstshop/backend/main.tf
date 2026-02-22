@@ -233,11 +233,27 @@ module "checkout_cors" {
   allow_headers   = ["Authorization", "Content-Type"]
 }
 
+# NEW: This ensures the 'stripe' library actually exists before zipping
+resource "null_resource" "install_dependencies" {
+  provisioner "local-exec" {
+    command = "mkdir -p ${path.module}/layer/python && pip install stripe -t ${path.module}/layer/python"
+  }
+
+  # This makes it only run once, unless you manually delete the folder
+  triggers = {
+    always_run = "${path.module}/layer/python/stripe"
+  }
+}
+
+
 # --- 1. Zip the layer folder ---
 data "archive_file" "stripe_layer_zip" {
   type        = "zip"
   source_dir  = "${path.module}/layer"
   output_path = "${path.module}/stripe_layer.zip"
+
+  # CRITICAL: Ensures pip install finishes before we try to zip it!
+  depends_on = [null_resource.install_dependencies]
 }
 
 # --- 2. Create the Layer ---
