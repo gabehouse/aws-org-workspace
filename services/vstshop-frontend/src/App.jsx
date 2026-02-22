@@ -1,9 +1,8 @@
 import { Amplify } from 'aws-amplify';
 import { Authenticator } from '@aws-amplify/ui-react';
-import '@aws-amplify/ui-react/styles.css'; // Essential for styling the forms
+import '@aws-amplify/ui-react/styles.css';
 import DownloadDashboard from './DownloadDashboard';
 
-// --- AMPLIFY CONFIGURATION ---
 Amplify.configure({
   Auth: {
     Cognito: {
@@ -16,43 +15,68 @@ Amplify.configure({
 
 function App() {
   return (
-    <div style={{ fontFamily: 'sans-serif', textAlign: 'center', padding: '20px' }}>
-      {/* The Authenticator component manages its own loading and user state.
-          It will show the Login/Signup forms automatically if no user is found.
-      */}
+    <div style={appContainerStyle}>
       <Authenticator>
         {({ signOut, user }) => (
-          <main style={{ marginTop: '20px' }}>
-            <header style={{ background: '#232f3e', color: 'white', padding: '10px', borderRadius: '8px' }}>
-              <h1>VST Shop 🔒 Secure Area</h1>
-            </header>
+          <>
+            {/* TOP NAVIGATION BAR */}
+            <nav style={navStyle}>
+              <div style={logoStyle}>VST Shop</div>
+              <div style={navRightStyle}>
+                <span style={userLabelStyle}>
+                  {user.signInDetails?.loginId || user.username}
+                </span>
+                <button onClick={signOut} style={signOutBtnStyle}>Sign Out</button>
+              </div>
+            </nav>
 
-            <div style={{ padding: '40px' }}>
-              <p>Welcome, <strong>{user.signInDetails?.loginId || user.username}</strong></p>
-
-              {/* Your existing Dashboard logic */}
+            <main style={mainContentStyle}>
               <DownloadDashboard />
-
-              <button
-                onClick={signOut}
-                style={{
-                  marginTop: '20px',
-                  color: 'red',
-                  cursor: 'pointer',
-                  background: 'none',
-                  border: '1px solid red',
-                  padding: '5px 10px',
-                  borderRadius: '4px'
-                }}
-              >
-                Sign Out
-              </button>
-            </div>
-          </main>
+            </main>
+          </>
         )}
       </Authenticator>
     </div>
   );
 }
+
+// --- App Styles ---
+// --- Updated App Styles ---
+const appContainerStyle = {
+  backgroundColor: '#f4f7f6',
+  minHeight: '100vh',
+  width: '100vw',           // Force full viewport width
+  display: 'flex',          // Ensure we can control the children
+  flexDirection: 'column',  // Stack nav and main vertically
+  fontFamily: '"Inter", sans-serif',
+  margin: 0,
+  padding: 0
+};
+
+const navStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  padding: '0 40px',
+  height: '70px',
+  backgroundColor: '#fff',
+  borderBottom: '1px solid #e0e0e0',
+  width: '100%',            // Ensure nav stretches across
+  boxSizing: 'border-box'   // Prevents padding from pushing it past 100%
+};
+
+const mainContentStyle = {
+  flex: 1,                  // Take up remaining vertical space
+  padding: '60px 20px',
+  display: 'flex',
+  flexDirection: 'column',  // Stack cards vertically
+  alignItems: 'center',     // Center the cards horizontally
+  width: '100%',            // Ensure main stretches across
+  boxSizing: 'border-box'
+};
+const logoStyle = { fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px', color: '#1a1a1a' };
+const navRightStyle = { display: 'flex', alignItems: 'center', gap: '20px' };
+const userLabelStyle = { fontSize: '14px', color: '#666' };
+const signOutBtnStyle = { backgroundColor: 'transparent', color: '#d9534f', border: '1px solid #d9534f', padding: '6px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' };
 
 export default App;

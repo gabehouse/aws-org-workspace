@@ -21,7 +21,7 @@ resource "stripe_price" "vst_price" {
 }
 
 # This creates a file your React app can import!
-resource "local_file" "vst_config" {
+resource "local_file" "product_config" {
   filename = "${path.module}/../../../../services/vstshop-frontend/src/product_config.json"
   content = jsonencode([
     for k, v in local.vst_catalog : {
