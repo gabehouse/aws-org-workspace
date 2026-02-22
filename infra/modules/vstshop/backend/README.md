@@ -11,6 +11,7 @@ No requirements.
 |------|---------|
 | <a name="provider_archive"></a> [archive](#provider\_archive) | 2.7.1 |
 | <a name="provider_aws"></a> [aws](#provider\_aws) | 6.32.1 |
+| <a name="provider_local"></a> [local](#provider\_local) | 2.7.0 |
 | <a name="provider_stripe"></a> [stripe](#provider\_stripe) | 0.1.6 |
 
 ## Modules
@@ -54,6 +55,7 @@ No requirements.
 | [aws_lambda_permission.apigw_download](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_permission) | resource |
 | [aws_lambda_permission.apigw_lambda](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_permission) | resource |
 | [aws_lambda_permission.apigw_webhook](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_permission) | resource |
+| [local_file.vst_config](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
 | [stripe_price.vst_price](https://registry.terraform.io/providers/stripe/stripe/latest/docs/resources/price) | resource |
 | [stripe_product.vst](https://registry.terraform.io/providers/stripe/stripe/latest/docs/resources/product) | resource |
 | [archive_file.checkout_zip](https://registry.terraform.io/providers/hashicorp/archive/latest/docs/data-sources/file) | data source |
