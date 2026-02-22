@@ -1,14 +1,17 @@
 import os
 import json
-import stripe
+import logging
 
-# Initialize Stripe
-stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+# Setup logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
-# Global map
-PRODUCT_MAP = json.loads(os.environ.get('STRIPE_PRODUCT_MAP', '{}'))
+try:
+    import stripe
+    STRIPE_IMPORTED = True
+except ImportError:
+    STRIPE_IMPORTED = False
 
-# Standard CORS headers for every response
 CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
@@ -17,40 +20,47 @@ CORS_HEADERS = {
 
 
 def handler(event, context):
-    # 1. Get the requested product ID
+    # 1. Check if the Layer actually worked
+    if not STRIPE_IMPORTED:
+        return {
+            'statusCode': 500,
+            'headers': CORS_HEADERS,
+            'body': json.dumps({'error': 'Stripe library not found in Lambda Layer.'})
+        }
+
+    stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+    PRODUCT_MAP = json.loads(os.environ.get('STRIPE_PRODUCT_MAP', '{}'))
+
     params = event.get('queryStringParameters') or {}
     requested_id = params.get('id')
-
-    # 2. Look up the Price ID
     price_id = PRODUCT_MAP.get(requested_id)
 
     if not price_id:
         return {
             'statusCode': 400,
             'headers': CORS_HEADERS,
-            'body': json.dumps({'error': f'Product {requested_id} not found.'})
+            'body': json.dumps({'error': f'Product {requested_id} not found in map: {list(PRODUCT_MAP.keys())}'})
         }
 
-    # 3. Dynamic Origin Handling
+    # 2. Get Origin
     headers = event.get('headers', {})
     browser_origin = headers.get('origin') or headers.get('Origin')
-    fallback_url = os.environ.get('FRONTEND_URL')
-    frontend_url = browser_origin or fallback_url or "http://localhost:5173"
+    frontend_url = browser_origin or os.environ.get(
+        'FRONTEND_URL', "http://localhost:5173")
 
     try:
-        # 4. Identity
-        # Ensure we catch cases where authorizer might be missing
+        # 3. Identity check
         authorizer = event.get('requestContext', {}).get('authorizer', {})
         user_id = authorizer.get('claims', {}).get('sub') or "guest"
 
-        # 5. Create Session
+        logger.info(f"Creating session for {user_id} product {requested_id}")
+
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{'price': price_id, 'quantity': 1}],
             mode='payment',
             metadata={'productId': requested_id},
             client_reference_id=user_id,
-            # Use f-string but keep the double braces for Stripe
             success_url=f"{frontend_url}/success?session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{frontend_url}/cancel",
         )
@@ -62,10 +72,9 @@ def handler(event, context):
         }
 
     except Exception as e:
-        print(f"Checkout Error: {str(e)}")
+        logger.error(f"Stripe Error: {str(e)}")
         return {
-            'statusCode': 400,  # Using 400 instead of 500 often avoids API Gateway "panic" 502s
+            'statusCode': 400,
             'headers': CORS_HEADERS,
-            # Return real error so you can see it in console
             'body': json.dumps({'error': str(e)})
         }
