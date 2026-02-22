@@ -3,7 +3,7 @@ locals {
     "cool-synth-v1" = {
       name   = "Cool Synth VST"
       price  = 2999
-      s3_key = "vsts/cool-synth-v1.zip"
+      s3_key = "cool-synth-v1.zip"
     }
   }
 }
