@@ -63,23 +63,37 @@ Python 3.12 installed (for Lambda dependency packaging).
 A Stripe account (API keys).
 
 2. Configuration
-Create a secrets.auto.tfvars in your environment folder:
+The Stripe Webhook is manually managed to ensure infrastructure stability.
+
+Create a secrets.auto.tfvars in your workload folder (e.g., infra/workloads/dev/):
 
 Terraform
 stripe_secret_key      = "sk_test_..."
-stripe_webhook_secret  = "whsec_..."
+stripe_webhook_secret  = "whsec_..." # Leave empty for first apply
+The Handshake: * Run the initial deployment (Step 3).
+
+Copy the api_url from the Terraform Outputs.
+
+In your Stripe Dashboard, create a Webhook pointing to ${api_url}/webhook.
+
+Copy the Signing Secret (whsec_...) and update your secrets.auto.tfvars.
+
+Re-run terraform apply.
+
 3. Deploy
 Bash
 # Initialize and Apply
 terraform init
-terraform apply -var-file="environments/dev/secrets.auto.tfvars"
+terraform apply
 The deployment will automatically:
 
 Provision all AWS resources.
 
-Sync products to Stripe.
+Sync Products: Inject your local VST catalog into Stripe.
 
-Generate a .env and product_config.json directly into the React source folder.
+Frontend Setup: Generate product_config.json and .env directly into the React source folder.
+
+Security: Attach the stripe_webhook_secret to your Lambda environment variables.
 
 🔒 Security
 Protected Downloads: Users cannot access S3 files directly. The /download API verifies the user's purchase in DynamoDB before generating a short-lived (15 min) signed URL.
