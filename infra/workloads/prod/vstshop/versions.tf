@@ -6,5 +6,9 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 6.0" # Fixes 'terraform_required_providers'
     }
+    stripe = {
+      source  = "stripe/stripe"
+      version = "0.1.3"
+    }
   }
 }
