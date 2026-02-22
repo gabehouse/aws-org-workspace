@@ -12,16 +12,17 @@ stripe.api_key = os.environ['STRIPE_SECRET_KEY']
 
 def lambda_handler(event, context):
     # 1. Get the signature from headers (check both casings)
-    sig_header = event['headers'].get(
-        'stripe-signature') or event['headers'].get('Stripe-Signature')
+    sig_header = (event['headers'].get('stripe-signature') or
+                  event['headers'].get('Stripe-Signature') or "").strip()
     endpoint_secret = os.environ['STRIPE_WEBHOOK_SECRET']
 
     # 2. Get the RAW body
     payload = event['body']
-
-    # 3. Handle Base64 encoding (The most likely culprit)
+# Change Section 2 & 3 to this:
     if event.get('isBase64Encoded'):
-        payload = base64.b64decode(payload).decode('utf-8')
+        payload = base64.b64decode(event['body'])  # Keep as bytes!
+    else:
+        payload = event['body'].encode('utf-8')  # Convert string to bytes
 
     try:
         # 4. Verify the webhook event
