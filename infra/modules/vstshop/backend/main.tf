@@ -9,69 +9,6 @@ terraform {
   }
 }
 
-### --- 1. MY PURCHASES (The Librarian) --- ###
-
-data "archive_file" "my_purchases_zip" {
-  type        = "zip"
-  source_file = "${path.module}/lambdas/my_purchases.py" # Ensure this path is correct
-  output_path = "${path.module}/lambdas/my_purchases.zip"
-}
-
-resource "aws_lambda_function" "my_purchases" {
-  filename      = data.archive_file.my_purchases_zip.output_path
-  function_name = "${var.project_name}-my-purchases-${var.environment}"
-  role          = aws_iam_role.lambda_role.arn
-  handler       = "my_purchases.handler"
-  runtime       = "python3.12"
-
-  source_code_hash = data.archive_file.my_purchases_zip.output_base64sha256
-
-  environment {
-    variables = {
-      TABLE_NAME = var.purchases_table_name
-    }
-  }
-}
-
-resource "aws_api_gateway_resource" "my_purchases" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
-  path_part   = "my-purchases"
-}
-
-resource "aws_api_gateway_method" "my_purchases_get" {
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.my_purchases.id
-  http_method   = "GET"
-  authorization = "COGNITO_USER_POOLS"
-  authorizer_id = aws_api_gateway_authorizer.cognito.id
-}
-
-resource "aws_api_gateway_integration" "my_purchases_int" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.my_purchases.id
-  http_method = aws_api_gateway_method.my_purchases_get.http_method
-  type        = "AWS_PROXY"
-  uri         = aws_lambda_function.my_purchases.invoke_arn
-}
-
-module "my_purchases_cors" {
-  source          = "squidfunk/api-gateway-enable-cors/aws"
-  version         = "0.3.3"
-  api_id          = aws_api_gateway_rest_api.api.id
-  api_resource_id = aws_api_gateway_resource.my_purchases.id
-  allow_origin    = "*"
-  allow_headers   = ["Authorization", "Content-Type"]
-}
-
-resource "aws_lambda_permission" "api_gw_my_purchases" {
-  statement_id  = "AllowExecutionFromAPIGatewayPurchases"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.my_purchases.function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
-}
-
 ### --- DOWNLOAD LAMBDA (Secure Proxy) --- ###
 
 # A. Zip the download code
@@ -327,79 +264,6 @@ resource "aws_api_gateway_authorizer" "cognito" {
   identity_source = "method.request.header.Authorization"
 }
 
-resource "aws_api_gateway_resource" "check_vst" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
-  path_part   = "check-vst"
-}
-
-resource "aws_api_gateway_method" "check_vst_get" {
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.check_vst.id
-  http_method   = "GET"
-  authorization = "COGNITO_USER_POOLS"
-  authorizer_id = aws_api_gateway_authorizer.cognito.id
-}
-
-resource "aws_api_gateway_integration" "lambda_integration" {
-  rest_api_id             = aws_api_gateway_rest_api.api.id
-  resource_id             = aws_api_gateway_resource.check_vst.id
-  http_method             = aws_api_gateway_method.check_vst_get.http_method
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.vst_checker.invoke_arn
-}
-
-### --- 2. CORS CONFIGURATION --- ###
-
-module "api_cors" {
-  source  = "squidfunk/api-gateway-enable-cors/aws"
-  version = "0.3.3"
-
-  api_id          = aws_api_gateway_rest_api.api.id
-  api_resource_id = aws_api_gateway_resource.check_vst.id
-  allow_origin    = "*"
-  allow_headers = [
-    "Authorization",
-    "Content-Type",
-    "X-Amz-Date",
-    "X-Amz-Security-Token",
-    "X-Api-Key"
-  ]
-}
-
-### --- 3. COMPUTE (Lambda) --- ###
-
-data "archive_file" "lambda_zip" {
-  type        = "zip"
-  source_file = "${path.module}/lambda/lambda_function.py"
-  output_path = "${path.module}/lambda/lambda_function.zip"
-}
-
-resource "aws_lambda_function" "vst_checker" {
-  function_name    = "${var.project_name}-vst-checker-${var.environment}"
-  role             = aws_iam_role.lambda_role.arn
-  handler          = "lambda_function.lambda_handler"
-  runtime          = "python3.12"
-  filename         = data.archive_file.lambda_zip.output_path
-  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
-
-  environment {
-    variables = {
-      TABLE_NAME      = var.purchases_table_name
-      VST_BUCKET_NAME = var.vst_bucket_name
-    }
-  }
-}
-
-resource "aws_lambda_permission" "apigw_lambda" {
-  statement_id  = "AllowExecutionFromAPIGateway"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.vst_checker.function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
-}
-
 ### --- 4. DEPLOYMENT & STAGE --- ###
 
 resource "aws_api_gateway_deployment" "deployment" {
@@ -407,9 +271,6 @@ resource "aws_api_gateway_deployment" "deployment" {
 
   triggers = {
     redeployment = sha1(jsonencode([
-      aws_api_gateway_resource.check_vst.id,
-      aws_api_gateway_method.check_vst_get.id,
-      aws_api_gateway_integration.lambda_integration.id,
       aws_api_gateway_resource.webhook.id,
       aws_api_gateway_method.webhook_post.id,
       aws_api_gateway_integration.webhook_integration.id,
