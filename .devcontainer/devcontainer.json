@@ -26,7 +26,12 @@
         "terraform.languageServer.enable": true,
         "terraform.validation.enableLocalCodeCheck": true,
         "editor.formatOnSave": true,
-        "editor.defaultFormatter": "hashicorp.terraform"
+        "editor.defaultFormatter": "hashicorp.terraform",
+        "files.exclude": {
+          "JUCE/": true,
+          "**/Builds/": true,
+          "**/.vs/": true
+        }
       },
       "extensions": [
         "hashicorp.terraform",
