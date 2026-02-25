@@ -31,7 +31,7 @@ for dir in $TARGET_DIRS; do
 
     # Link Local Config
     REL_LOCAL=$(realpath --relative-to="$dir" "infra/backend.hcl")
-    ln -sf "$REL_LOCAL" "$dir/backend.hcl"
+    ln -f "$REL_LOCAL" "$dir/backend.hcl"
   fi
 done
 

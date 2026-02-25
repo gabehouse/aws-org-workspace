@@ -38,14 +38,19 @@
         "anton-prazdnichnykh.tflint",
         "ms-python.python",
         "amazonwebservices.aws-toolkit-vscode",
-        "usernamehw.errorlens"
+        "usernamehw.errorlens",
+        "github.vscode-github-actions"
       ]
     }
+  },
+  "containerEnv": {
+    "WAYLAND_DISPLAY": "",
+    "DISPLAY": ""
   },
 
   "mounts": [
     {
-      "source": "${localEnv:HOME}/.aws",
+      "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.aws",
       "target": "/home/vscode/.aws",
       "type": "bind"
     }
