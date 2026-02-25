@@ -38,7 +38,8 @@
         "anton-prazdnichnykh.tflint",
         "ms-python.python",
         "amazonwebservices.aws-toolkit-vscode",
-        "usernamehw.errorlens"
+        "usernamehw.errorlens",
+        "github.vscode-github-actions"
       ]
     }
   },

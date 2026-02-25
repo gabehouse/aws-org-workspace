@@ -9,14 +9,12 @@ on:
       - 'infra/management/identity/**'
       - 'services/vstshop-frontend/**'
       - '.github/workflows/vstshop-deploy-dev.yml'
-      - 'services/AcidSaturator/Source/**'
   pull_request:
     branches: [ "dev" ]
     paths:
       - 'infra/workloads/dev/**'
       - 'infra/modules/**'
       - 'services/vstshop-frontend/**'
-      - 'services/AcidSaturator/Source/**'
   workflow_dispatch:
 
 permissions:
@@ -46,57 +44,6 @@ jobs:
         run: |
           echo "mgmt_account=$(yq '.accounts.mgmt' config.yaml)" >> $GITHUB_OUTPUT
           echo "dev_account=$(yq '.accounts.dev' config.yaml)" >> $GITHUB_OUTPUT
-
-# --- BUILD WINDOWS ---
-  build-vst-win:
-    name: "Build Windows VST3"
-    needs: setup
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v2
-      - name: Build Plugin (Release)
-        run: msbuild Builds/VisualStudio2022/AcidSaturator.sln /p:Configuration=Release /p:Platform=x64
-      - name: Package Windows ZIP
-        shell: powershell
-        run: |
-          mkdir staging
-          copy "Builds/VisualStudio2022/x64/Release/VST3/AcidSaturator.vst3" "staging/"
-          copy "README.txt" "staging/"
-          copy "LICENSE.txt" "staging/"
-          Compress-Archive -Path staging/* -DestinationPath AcidSaturator_Win.zip
-      - name: Upload Windows Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: vst-win-binary # Match this name in the apply job
-          path: AcidSaturator_Win.zip
-
-  # --- BUILD MAC ---
-  build-vst-mac:
-    name: "Build Mac VST3/AU"
-    needs: setup
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Build VST3 & AU
-        run: xcodebuild -project Builds/MacOSX/AcidSaturator.xcodeproj -configuration Release
-      - name: Package Mac ZIP
-        run: |
-          mkdir staging
-          cp -R "Builds/MacOSX/build/Release/AcidSaturator.vst3" "staging/"
-          cp -R "Builds/MacOSX/build/Release/AcidSaturator.component" "staging/"
-          cp "README.txt" "staging/"
-          zip -r AcidSaturator_Mac.zip staging/
-      - name: Upload Mac Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: vst-mac-binary # Match this name in the apply job
-          path: AcidSaturator_Mac.zip
 
   # --- JOB 2: BUILD LAYERS ---
   build-layers:
@@ -178,13 +125,26 @@ jobs:
 
   apply:
     name: "Terraform Apply & Deploy"
-    needs: [setup, plan, build-layers, build-vst-win, build-vst-mac]
+    needs: [setup, plan, build-layers]
+    # Only run on pushes to dev or main
     if: github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # --- CRUCIAL: Add AWS Auth back into the Apply job ---
+      - name: Download Layer Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-layer
+          path: infra/modules/vstshop/backend/layer/python/
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.14.5" # Latest stable as of Feb 2026
+          terraform_wrapper: false
+
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -198,10 +158,6 @@ jobs:
           role-chaining: true
           role-to-assume: arn:aws:iam::${{ needs.setup.outputs.dev_account }}:role/terraform-execution-role-dev
 
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.14.5"
-
       - name: Terraform Init
         working-directory: ${{ env.TF_DIR }}
         run: terraform init -backend-config=../../../backend.ci.hcl
@@ -210,41 +166,14 @@ jobs:
         working-directory: ${{ env.TF_DIR }}
         run: terraform apply -auto-approve -input=false
 
-      # --- DOWNLOADS (Corrected) ---
-      - name: Download Windows VST
-        uses: actions/download-artifact@v4
-        with:
-          name: vst-win-binary
-          path: binaries/windows
-
-      - name: Download Mac VST
-        uses: actions/download-artifact@v4
-        with:
-          name: vst-mac-binary
-          path: binaries/osx
-
-      - name: Get S3 Bucket Names
-        id: infra_vars
-        working-directory: ${{ env.TF_DIR }}
-        run: |
-          echo "DOWNLOADS_BUCKET=$(terraform output -raw downloads_s3_bucket_name)" >> $GITHUB_OUTPUT
-          echo "SITE_BUCKET=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
-          echo "DIST_ID=$(terraform output -raw distribution_id)" >> $GITHUB_OUTPUT
-
-      # --- DEPLOY BINARIES ---
-      - name: Deploy Binaries to S3
-        run: |
-          aws s3 cp binaries/windows/AcidSaturator_Win.zip s3://${{ steps.infra_vars.outputs.DOWNLOADS_BUCKET }}/releases/latest/AcidSaturator_Win.zip --acl public-read
-          aws s3 cp binaries/osx/AcidSaturator_Mac.zip s3://${{ steps.infra_vars.outputs.DOWNLOADS_BUCKET }}/releases/latest/AcidSaturator_Mac.zip --acl public-read
-
-      # --- FRONTEND BUILD ---
-      - name: Build and Deploy Frontend
+      # --- NEW: Build Frontend (Now that .env exists) ---
+      - name: Build Frontend
         run: |
           cd ${{ env.SITE_DIR }}
           npm install
+          # This confirms Terraform successfully wrote the .env file here
+          ls -la .env
           npm run build
-          aws s3 sync dist/ s3://${{ steps.infra_vars.outputs.SITE_BUCKET }} --delete
-          aws cloudfront create-invalidation --distribution-id ${{ steps.infra_vars.outputs.DIST_ID }} --paths "/*"
 
       - name: Get Infra Outputs
         id: infra
