@@ -1,0 +1,23 @@
+# Ignore Visual Studio & C++ Build Artifacts
+.vs/
+Builds/
+bin/
+obj/
+*.sln
+*.vcxproj
+*.user
+
+# Ignore the heavy JUCE library (The container doesn't need to see this)
+JUCE/
+
+# Ignore local Dev Container history
+.devcontainer/.vh/
+
+# Ignore standard Git/OS bloat
+.git/
+.gitignore
+.DS_Store
+thumbs.db
+
+# Ignore Node.js bloat (if you have a React frontend in here)
+node_modules/

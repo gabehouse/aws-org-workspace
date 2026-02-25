@@ -1,9 +1,9 @@
 locals {
   vst_catalog = {
     "cool-synth-v1" = {
-      name   = "Cool Synth VST"
-      price  = 2999
-      s3_key = "cool-synth-v1.zip"
+      name   = "Acid Saturator"
+      price  = 500
+      s3_key = "AcidSaturator.zip"
     }
   }
 }
