@@ -1,0 +1,18 @@
+{
+  "name": "phoenix-monorepo",
+  "private": true,
+  "description": "VST Store & Plugin Monorepo",
+  "scripts": {
+    "setup": "bash setup_config.sh",
+    "dev:shop": "pnpm --filter vstshop-frontend dev",
+    "install:all": "pnpm install"
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "react",
+        "react-dom"
+      ]
+    }
+  }
+}
