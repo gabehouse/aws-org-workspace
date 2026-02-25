@@ -157,7 +157,7 @@ jobs:
               body: output
             })
 
-apply:
+  apply:
     name: "Terraform Apply & Deploy"
     # MUST include all build jobs here
     needs: [setup, plan, build-layers, build-vst-win, build-vst-mac]
