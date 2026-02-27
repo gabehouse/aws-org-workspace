@@ -178,3 +178,22 @@ jobs:
           # Sync the compiled 'dist' folder
           aws s3 sync "${{ env.SITE_DIR }}/dist" s3://${{ steps.infra.outputs.BUCKET_NAME }} --delete
           aws cloudfront create-invalidation --distribution-id ${{ steps.infra.outputs.DIST_ID }} --paths "/*"
+          # --- NEW: Sync Product Media (GUI Images) ---
+
+      - name: Sync Product Media to S3
+        run: |
+          # We check if the local images folder exists first
+          if [ -d "${{ env.SITE_DIR }}/src/images/products" ]; then
+            echo "Syncing VST GUI images to product-media/ folder..."
+            aws s3 sync "${{ env.SITE_DIR }}/src/images/products" \
+              s3://${{ steps.infra.outputs.BUCKET_NAME }}/product-media \
+              --content-type image/png \
+              --delete
+          else
+            echo "No product images found in src/images/products, skipping sync."
+          fi
+
+      - name: Invalidate CloudFront Cache
+        run: |
+          # This ensures the new images and the new index.html show up immediately
+          aws cloudfront create-invalidation --distribution-id ${{ steps.infra.outputs.DIST_ID }} --paths "/*"
