@@ -8,11 +8,6 @@ module "frontend" {
   environment  = var.environment
 }
 
-moved {
-  from = module.vstshop_frontend
-  to   = module.frontend
-}
-
 module "auth" {
   source       = "../../../modules/vstshop/auth"
   environment  = var.environment
@@ -21,11 +16,6 @@ module "auth" {
 
   # Dynamically pass the CloudFront URL for Auth redirects
   callback_url = module.frontend.website_url
-}
-
-moved {
-  from = module.vstshop_auth
-  to   = module.auth
 }
 
 # 1. Create the Database
@@ -51,11 +41,6 @@ module "backend" {
   stripe_webhook_secret = var.stripe_webhook_secret
 
   cloudfront_url = module.frontend.website_url
-}
-
-moved {
-  from = module.vstshop_backend
-  to   = module.backend
 }
 
 module "storage" {

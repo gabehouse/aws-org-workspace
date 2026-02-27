@@ -108,15 +108,28 @@ resource "aws_acm_certificate_validation" "cert_verify" {
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 }
 
-# 6. POINT DOMAIN TO CLOUDFRONT
-resource "aws_route53_record" "www" {
+# The IPv4 Record
+resource "aws_route53_record" "apex_a" {
   zone_id = data.aws_route53_zone.main.zone_id
   name    = "houseaudio.net"
   type    = "A"
 
   alias {
     name                   = module.frontend.cloudfront_domain_name
-    zone_id                = module.frontend.cloudfront_hosted_zone_id
+    zone_id                = "Z2FDTNDATAQYW2"
+    evaluate_target_health = false
+  }
+}
+
+# The IPv6 Record
+resource "aws_route53_record" "apex_aaaa" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = "houseaudio.net"
+  type    = "AAAA"
+
+  alias {
+    name                   = module.frontend.cloudfront_domain_name
+    zone_id                = "Z2FDTNDATAQYW2"
     evaluate_target_health = false
   }
 }
