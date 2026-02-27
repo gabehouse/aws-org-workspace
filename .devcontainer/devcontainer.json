@@ -45,10 +45,14 @@
       ]
     }
   },
+  "containerEnv": {
+    "WAYLAND_DISPLAY": "",
+    "DISPLAY": ""
+  },
 
   "mounts": [
     {
-      "source": "${localEnv:HOME}/.aws",
+      "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.aws",
       "target": "/home/vscode/.aws",
       "type": "bind"
     }
