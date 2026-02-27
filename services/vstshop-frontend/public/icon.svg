@@ -1,0 +1,11 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="112" fill="#1A1A1A"/>
+
+  <path d="M120 220V400H220V320H292V400H392V220" stroke="#FFD700" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <path d="M80 240L140 180L200 240L256 120L312 240L372 180L432 240" stroke="#FFD700" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <rect x="244" y="220" width="24" height="60" rx="12" fill="#FFD700">
+    <animate attributeName="height" values="60;30;60" dur="2s" repeatCount="indefinite" />
+  </rect>
+</svg>

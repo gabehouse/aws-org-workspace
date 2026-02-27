@@ -100,11 +100,11 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   aliases = var.aliases
 
   viewer_certificate {
-    acm_certificate_arn      = var.acm_certificate_arn
-    ssl_support_method       = "sni-only"
-    minimum_protocol_version = "TLSv1.2_2021"
-    # MUST be false when using a custom domain
-    cloudfront_default_certificate = false
+    # If no ARN is passed (Dev), use the default CloudFront cert
+    acm_certificate_arn            = var.acm_certificate_arn
+    ssl_support_method             = var.acm_certificate_arn != null ? "sni-only" : null
+    minimum_protocol_version       = var.acm_certificate_arn != null ? "TLSv1.2_2021" : "TLSv1"
+    cloudfront_default_certificate = var.acm_certificate_arn == null ? true : false
   }
 
   custom_error_response {
