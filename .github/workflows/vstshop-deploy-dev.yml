@@ -186,9 +186,7 @@ jobs:
         run: |
           # Sync the compiled 'dist' folder
           aws s3 sync "${{ env.SITE_DIR }}/dist" s3://${{ steps.infra.outputs.BUCKET_NAME }} --delete
-          aws cloudfront create-invalidation --distribution-id ${{ steps.infra.outputs.DIST_ID }} --paths "/*"
 
-          # --- NEW: Sync Product Media (GUI Images) ---
       - name: Sync Product Media to S3
         run: |
           # We check if the local images folder exists first

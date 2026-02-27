@@ -11,11 +11,23 @@ const ProductCard = ({ product, isOwned, isUserLoggedIn, isProcessing, onBuy, on
   const fullImageUrl = `${cloudfrontBase}/${product.imagePath}`;
 
   // Local changelog data - in a real app, this would come from the JSON/DB
-  const changelog = [
-    { version: "v1.0.4", date: "Feb 2026", note: "Improved CPU efficiency by 15%." },
-    { version: "v1.0.2", date: "Jan 2026", note: "Added 20 new 'House Essentials' presets." },
-    { version: "v1.0.0", date: "Dec 2025", note: "Initial Release." }
-  ];
+const changelog = [
+  {
+    version: "v1.1.0",
+    date: "Feb 2026",
+    note: "Major 'Acid' DSP Update: Re-engineered saturation engine with Asymmetric Bias for even-harmonic warmth. Improved Output knob resolution via internal gain-compensation and added 0.93 skew factor for perfect 0dB centering."
+  },
+  {
+    version: "v1.0.5",
+    date: "Feb 2026",
+    note: "Added state persistence support for Ableton Live and other DAW hosts via XML serialization. Improved UI responsiveness with specialized text-to-value formatting for dB and percentage units."
+  },
+  {
+    version: "v1.0.0",
+    date: "Jan 2026",
+    note: "Initial Release: Stereo oversampling saturator with 'Auto-Makeup' logic and 4x aliasing protection."
+  }
+];
 
   return (
     <div style={featuredCardStyle}>
@@ -37,6 +49,7 @@ const ProductCard = ({ product, isOwned, isUserLoggedIn, isProcessing, onBuy, on
         />
         <button
           style={watchDemoBtnStyle}
+          className="watch-demo-btn"
           onClick={() => onShowVideo(product)}
         >
           <span style={{ fontSize: '18px' }}>▶</span> Watch Demo
@@ -78,13 +91,14 @@ const ProductCard = ({ product, isOwned, isUserLoggedIn, isProcessing, onBuy, on
             {isUserLoggedIn && isOwned ? (
               <button
                 onClick={() => onDownload(product.id)}
+                className="download-btn"
                 style={isProcessing ? disabledBtnStyle : downloadBtnStyle}
                 disabled={isProcessing}
               >
                 {isProcessing ? "Preparing..." : "Download"}
               </button>
             ) : (
-              <button onClick={() => onBuy(product.id)} style={buyBtnStyle}>
+              <button onClick={() => onBuy(product.id)} className="buy-btn" style={buyBtnStyle}>
                 Purchase
               </button>
             )}
@@ -210,7 +224,7 @@ function DownloadDashboard({ isUserLoggedIn, onTriggerLogin }) {
       {activeVideoProduct && (
         <div style={modalOverlayStyle} onClick={() => setActiveVideoProduct(null)}>
           <div style={modalContentStyle} onClick={e => e.stopPropagation()}>
-            <button style={closeModalStyle} onClick={() => setActiveVideoProduct(null)}>X</button>
+            <button style={closeModalStyle} className="close-modal-btn" onClick={() => setActiveVideoProduct(null)}>X</button>
             <iframe
               width="100%" height="100%"
               src={`https://www.youtube.com/embed/${activeVideoProduct.youtubeId}?autoplay=1`}
@@ -259,6 +273,53 @@ if (typeof document !== 'undefined') {
       from { transform: scale(0.95); opacity: 0; }
       to { transform: scale(1); opacity: 1; }
     }
+      @keyframes pulse {
+      0% { opacity: 0.3; }
+      50% { opacity: 0.6; }
+      100% { opacity: 0.3; }
+    }
+    @keyframes popIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    /* ADD THESE FOR YOUR HOVERS */
+    .watch-demo-btn:hover {
+      background-color: rgba(255, 255, 255, 0.15) !important;
+      transform: translateX(-50%) scale(1.05) !important;
+    }
+    .close-modal-btn:hover {
+      color: #fff !important;
+      transform: scale(1.2);
+    }
+    .buy-btn:hover {
+      background-color: #1d4ed8 !important; /* Slightly darker blue */
+    }
+    .download-btn:hover {
+      background-color: #0f172a !important; /* Slightly darker slate */
+    }
+
+    /* Global button reset */
+    button:focus {
+      outline: none !important;
+      box-shadow: none !important;
+    }
+
+    /* Tactile "Push" effect for standard buttons */
+    button:active {
+      transform: scale(0.96) !important;
+      filter: brightness(0.8) !important;
+      transition: transform 0.05s ease;
+    }
+
+    /* Special case: Keep the Watch Demo button centered while pushing */
+    .watch-demo-btn:active {
+      transform: translateX(-50%) scale(0.96) !important;
+    }
+
+    /* Your existing hover classes */
+    .watch-demo-btn:hover { ... }
+    .buy-btn:hover { ... }
   `;
   document.head.appendChild(style);
 }

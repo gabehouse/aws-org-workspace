@@ -7,7 +7,7 @@ output "cloudfront_id" {
 }
 
 output "website_url" {
-  value = "https://${aws_cloudfront_distribution.s3_distribution.domain_name}"
+  value = length(var.aliases) > 0 ? "https://${var.aliases[0]}" : "https://${aws_cloudfront_distribution.s3_distribution.domain_name}"
 }
 
 output "cloudfront_domain_name" {
