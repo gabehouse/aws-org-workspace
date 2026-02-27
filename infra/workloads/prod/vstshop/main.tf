@@ -3,10 +3,14 @@ module "globals" {
 }
 
 module "frontend" {
-  source       = "../../../modules/vstshop/frontend"
-  project_name = "vstshop"
-  environment  = var.environment
+  source              = "../../../modules/vstshop/frontend"
+  project_name        = "vstshop"
+  environment         = var.environment
+  aliases             = ["houseaudio.net"]
+  acm_certificate_arn = aws_acm_certificate_validation.cert_verify.certificate_arn
+  depends_on          = [aws_acm_certificate_validation.cert_verify]
 }
+
 module "auth" {
   source       = "../../../modules/vstshop/auth"
   environment  = var.environment

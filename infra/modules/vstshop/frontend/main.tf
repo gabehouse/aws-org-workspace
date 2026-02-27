@@ -2,6 +2,7 @@ module "globals" {
   source = "../../globals"
 }
 
+
 # 1. THE FRONTEND BUCKET
 resource "aws_s3_bucket" "frontend" {
   bucket        = "${var.project_name}-frontend-${var.environment}123"
@@ -96,8 +97,14 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     }
   }
 
+  aliases = var.aliases
+
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn      = var.acm_certificate_arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
+    # MUST be false when using a custom domain
+    cloudfront_default_certificate = false
   }
 
   custom_error_response {
