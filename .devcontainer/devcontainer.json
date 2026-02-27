@@ -16,9 +16,11 @@
     "ghcr.io/devcontainers/features/python:1": {},
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/node:1": {
-      "version": "lts" // Installs the Long Term Support version
+      "version": "lts",
+      "pnpmVersion": "latest"
     }
   },
+
 
   "customizations": {
     "vscode": {

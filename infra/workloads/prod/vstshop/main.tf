@@ -7,12 +7,6 @@ module "frontend" {
   project_name = "vstshop"
   environment  = var.environment
 }
-
-moved {
-  from = module.vstshop_frontend
-  to   = module.frontend
-}
-
 module "auth" {
   source       = "../../../modules/vstshop/auth"
   environment  = var.environment
@@ -23,10 +17,6 @@ module "auth" {
   callback_url = module.frontend.website_url
 }
 
-moved {
-  from = module.vstshop_auth
-  to   = module.auth
-}
 
 # 1. Create the Database
 module "database" {
@@ -53,10 +43,6 @@ module "backend" {
   cloudfront_url = module.frontend.website_url
 }
 
-moved {
-  from = module.vstshop_backend
-  to   = module.backend
-}
 
 module "storage" {
   source      = "../../../modules/vstshop/storage"
@@ -72,5 +58,61 @@ resource "local_file" "env_file" {
     VITE_USER_POOL_ID=${module.auth.user_pool_id}
     VITE_USER_POOL_CLIENT_ID=${module.auth.client_id}
     VITE_API_URL=${module.backend.api_url}
+    VITE_CLOUDFRONT_URL=https://houseaudio.net
   EOT
+}
+
+# 2. GET YOUR HOSTED ZONE
+data "aws_route53_zone" "main" {
+  name         = "houseaudio.net"
+  private_zone = false
+}
+
+# 3. CREATE SSL CERTIFICATE (Using your existing alias)
+resource "aws_acm_certificate" "cert" {
+  provider          = aws.us_east_1 # Updated to match your provider alias
+  domain_name       = "houseaudio.net"
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# 4. AUTOMATIC DNS VALIDATION
+resource "aws_route53_record" "cert_validation" {
+  for_each = {
+    for dvo in aws_acm_certificate.cert.domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      record = dvo.resource_record_value
+      type   = dvo.resource_record_type
+    }
+  }
+
+  allow_overwrite = true
+  name            = each.value.name
+  records         = [each.value.record]
+  ttl             = 60
+  type            = each.value.type
+  zone_id         = data.aws_route53_zone.main.zone_id
+}
+
+# 5. WAIT FOR VALIDATION TO FINISH
+resource "aws_acm_certificate_validation" "cert_verify" {
+  provider                = aws.us_east_1 # Updated to match your provider alias
+  certificate_arn         = aws_acm_certificate.cert.arn
+  validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
+}
+
+# 6. POINT DOMAIN TO CLOUDFRONT
+resource "aws_route53_record" "www" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = "houseaudio.net"
+  type    = "A"
+
+  alias {
+    name                   = module.frontend.cloudfront_domain_name
+    zone_id                = module.frontend.cloudfront_hosted_zone_id
+    evaluate_target_health = false
+  }
 }

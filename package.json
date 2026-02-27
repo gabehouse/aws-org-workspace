@@ -1,0 +1,17 @@
+{
+  "name": "aws-org-workspace",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev:frontend": "pnpm --filter vstshop-frontend dev",
+    "plan:dev": "cd infra/workloads/dev/vstshop && terraform plan",
+    "install:all": "pnpm install -r"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.30.1"
+}

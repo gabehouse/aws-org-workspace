@@ -3,12 +3,15 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "scripts": {
+"scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy": "npm run build && aws s3 sync dist/ s3://vstshop-frontend-dev123 --delete && aws cloudfront create-invalidation --distribution-id E228GMNSTNHTAD --paths '/*'"
+    "deploy-site": "aws s3 sync dist/ s3://vstshop-frontend-dev123 --delete",
+    "deploy-assets": "aws s3 sync src/images/products s3://vstshop-frontend-dev123/product-media --content-type image/png",
+    "invalidate": "aws cloudfront create-invalidation --distribution-id E228GMNSTNHTAD --paths '/*'",
+    "deploy": "npm run build && npm run deploy-site && npm run deploy-assets && npm run invalidate"
   },
   "dependencies": {
     "@aws-amplify/ui-react": "^6.15.0",
