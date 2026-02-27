@@ -53,6 +53,8 @@ To run Terraform locally for debugging (not recommended for deployment):
 
 | Name | Version |
 |------|---------|
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.33.0 |
+| <a name="provider_aws.us_east_1"></a> [aws.us\_east\_1](#provider\_aws.us\_east\_1) | 6.33.0 |
 | <a name="provider_local"></a> [local](#provider\_local) | 2.7.0 |
 
 ## Modules
@@ -70,7 +72,12 @@ To run Terraform locally for debugging (not recommended for deployment):
 
 | Name | Type |
 |------|------|
+| [aws_acm_certificate.cert](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/acm_certificate) | resource |
+| [aws_acm_certificate_validation.cert_verify](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/acm_certificate_validation) | resource |
+| [aws_route53_record.cert_validation](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_record) | resource |
+| [aws_route53_record.www](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_record) | resource |
 | [local_file.env_file](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
+| [aws_route53_zone.main](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/route53_zone) | data source |
 
 ## Inputs
 
@@ -87,6 +94,8 @@ To run Terraform locally for debugging (not recommended for deployment):
 |------|-------------|
 | <a name="output_api_url"></a> [api\_url](#output\_api\_url) | n/a |
 | <a name="output_auth_config"></a> [auth\_config](#output\_auth\_config) | n/a |
+| <a name="output_cloudfront_domain_name"></a> [cloudfront\_domain\_name](#output\_cloudfront\_domain\_name) | n/a |
+| <a name="output_cloudfront_hosted_zone_id"></a> [cloudfront\_hosted\_zone\_id](#output\_cloudfront\_hosted\_zone\_id) | n/a |
 | <a name="output_distribution_id"></a> [distribution\_id](#output\_distribution\_id) | n/a |
 | <a name="output_s3_bucket_name"></a> [s3\_bucket\_name](#output\_s3\_bucket\_name) | n/a |
 | <a name="output_website_url"></a> [website\_url](#output\_website\_url) | The CloudFront URL to access your shop |

@@ -1,18 +1,17 @@
 {
-  "name": "phoenix-monorepo",
+  "name": "aws-org-workspace",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
   "private": true,
-  "description": "VST Store & Plugin Monorepo",
   "scripts": {
-    "setup": "bash setup_config.sh",
-    "dev:shop": "pnpm --filter vstshop-frontend dev",
-    "install:all": "pnpm install"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev:frontend": "pnpm --filter vstshop-frontend dev",
+    "plan:dev": "cd infra/workloads/dev/vstshop && terraform plan",
+    "install:all": "pnpm install -r"
   },
-  "pnpm": {
-    "peerDependencyRules": {
-      "ignoreMissing": [
-        "react",
-        "react-dom"
-      ]
-    }
-  }
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.30.1"
 }

@@ -1,7 +1,4 @@
 packages:
-  - apps/*
-  - services/*
-  - infra
-
-onlyBuiltDependencies:
-  - esbuild
+  - 'services/*'
+  - 'infra/workloads/**'
+  # Add any other folders that contain a package.json

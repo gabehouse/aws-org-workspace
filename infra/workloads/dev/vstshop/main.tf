@@ -72,5 +72,6 @@ resource "local_file" "env_file" {
     VITE_USER_POOL_ID=${module.auth.user_pool_id}
     VITE_USER_POOL_CLIENT_ID=${module.auth.client_id}
     VITE_API_URL=${module.backend.api_url}
+    VITE_CLOUDFRONT_URL=${module.frontend.website_url}
   EOT
 }

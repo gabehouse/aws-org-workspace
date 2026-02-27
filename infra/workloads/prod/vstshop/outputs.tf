@@ -22,3 +22,11 @@ output "auth_config" {
 output "api_url" {
   value = module.backend.api_url
 }
+
+output "cloudfront_domain_name" {
+  value = module.frontend.cloudfront_domain_name
+}
+
+output "cloudfront_hosted_zone_id" {
+  value = module.frontend.cloudfront_hosted_zone_id
+}
