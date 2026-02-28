@@ -32,21 +32,18 @@ const changelog = [
   return (
     <div style={featuredCardStyle}>
       {/* LEFT: GUI IMAGE & SKELETON */}
-      <div style={imageSectionStyle}>
+<div
+  className="image-section-container"
+  style={imageSectionStyle}
+  onClick={() => onShowVideo(product)}
+>
         {!imgLoaded && <div style={skeletonStyle} />}
-        <img
-          src={fullImageUrl}
-          alt={`${product.name} Interface`}
-          style={{
-            ...guiImageStyle,
-            opacity: imgLoaded ? 1 : 0,
-            transition: 'opacity 0.5s ease, transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
-          }}
-          onLoad={() => setImgLoaded(true)}
-          onMouseEnter={(e) => imgLoaded && (e.target.style.transform = 'scale(1.03)')}
-          onMouseLeave={(e) => imgLoaded && (e.target.style.transform = 'scale(1)')}
-          onError={(e) => { e.target.src = 'https://via.placeholder.com/600x400?text=Image+Not+Found'; }}
-        />
+<img
+    className="vst-gui-image"
+    src={fullImageUrl}
+    style={guiImageStyle} // Remove the inline onMouseEnter/Leave from here
+    onLoad={() => setImgLoaded(true)}
+  />
         <button
           style={watchDemoBtnStyle}
           className="watch-demo-btn"
@@ -133,6 +130,11 @@ function DownloadDashboard({ isUserLoggedIn, onTriggerLogin }) {
   const [downloadingId, setDownloadingId] = useState(null);
   const [activeVideoProduct, setActiveVideoProduct] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
+const [showSandboxBanner, setShowSandboxBanner] = useState(true);
+
+const handleDismissBanner = () => {
+  setShowSandboxBanner(false);
+};
 
   useEffect(() => {
     if (isUserLoggedIn) {
@@ -207,6 +209,22 @@ function DownloadDashboard({ isUserLoggedIn, onTriggerLogin }) {
 
   return (
     <div style={containerStyle}>
+{showSandboxBanner && (
+  <div style={testModeBannerStyle}>
+    {/* This span takes up all available space, pushing the X to the edge */}
+    <span style={{ flex: 1, textAlign: 'center', paddingLeft: '26px' }}>
+      🛠️ <strong>DEMO MODE:</strong> Use card <code>4242 4242 4242 4242</code> for test purchases.
+    </span>
+
+    <button
+      onClick={handleDismissBanner}
+      style={closeBannerBtnStyle}
+      className="close-banner-btn"
+    >
+      ✕
+    </button>
+  </div>
+)}
       {productConfig.map((product) => (
         <ProductCard
           key={product.id}
@@ -264,62 +282,104 @@ function DownloadDashboard({ isUserLoggedIn, onTriggerLogin }) {
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
   style.innerHTML = `
-    @keyframes pulse {
-      0% { opacity: 0.3; }
-      50% { opacity: 0.6; }
-      100% { opacity: 0.3; }
-    }
-    @keyframes popIn {
-      from { transform: scale(0.95); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-      @keyframes pulse {
-      0% { opacity: 0.3; }
-      50% { opacity: 0.6; }
-      100% { opacity: 0.3; }
-    }
-    @keyframes popIn {
-      from { transform: scale(0.95); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
+/* --- 1. ANIMATIONS --- */
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
 
-    /* ADD THESE FOR YOUR HOVERS */
-    .watch-demo-btn:hover {
-      background-color: rgba(255, 255, 255, 0.15) !important;
-      transform: translateX(-50%) scale(1.05) !important;
-    }
-    .close-modal-btn:hover {
-      color: #fff !important;
-      transform: scale(1.2);
-    }
-    .buy-btn:hover {
-      background-color: #1d4ed8 !important; /* Slightly darker blue */
-    }
-    .download-btn:hover {
-      background-color: #0f172a !important; /* Slightly darker slate */
-    }
+@keyframes popIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
 
-    /* Global button reset */
-    button:focus {
-      outline: none !important;
-      box-shadow: none !important;
-    }
+/* --- 2. THE RACK (CONTAINER) --- */
+.image-section-container {
+  position: relative;
+  z-index: 1;
+  background: #0F172A;
+  overflow: hidden;
+  display: flex; /* Ensures alignment stays centered */
+  align-items: center;
+  justify-content: center;
+}
 
-    /* Tactile "Push" effect for standard buttons */
-    button:active {
-      transform: scale(0.96) !important;
-      filter: brightness(0.8) !important;
-      transition: transform 0.05s ease;
-    }
+/* The "Dark Rack" - Base state */
+.image-section-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at center, #2d3a4f 0%, #0F172A 100%);
+  opacity: 0;
+  z-index: 0;
 
-    /* Special case: Keep the Watch Demo button centered while pushing */
-    .watch-demo-btn:active {
-      transform: translateX(-50%) scale(0.96) !important;
-    }
+  /* The Magic: This handles both the "Fade In" and "Fade Out" */
+  /* 0.6s to turn on, 0.8s to slowly fade back to black */
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-    /* Your existing hover classes */
-    .watch-demo-btn:hover { ... }
-    .buy-btn:hover { ... }
+/* THE LIGHT UP: When hovering gear or button */
+.image-section-container:has(.vst-gui-image:hover)::before,
+.image-section-container:has(.watch-demo-btn:hover)::before {
+  opacity: 1;
+  /* This creates the "Halo" that makes a black VST pop */
+  background-image: radial-gradient(circle at center, #334155 0%, #0F172A 100%);
+}
+
+/* Add a subtle reflection on the image itself */
+.vst-gui-image:hover,
+.image-section-container:has(.watch-demo-btn:hover) .vst-gui-image {
+  transform: scale(1.03);
+  /* This shadow acts as the "separation" from the new light background */
+  box-shadow: 0 40px 80px -15px rgba(0, 0, 0, 0.9);
+}
+
+/* --- 3. THE HARDWARE (VST IMAGE) --- */
+.vst-gui-image {
+  position: relative;
+  z-index: 2;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Grow Image when itself or the button is hovered */
+.vst-gui-image:hover,
+.image-section-container:has(.watch-demo-btn:hover) .vst-gui-image {
+  transform: scale(1.03);
+}
+
+/* --- 4. THE INTERFACE (BUTTONS) --- */
+.watch-demo-btn {
+  position: absolute;
+  z-index: 3;
+  /* Ensure smooth transition for all properties */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Unified Button Hover: Triggers via Image or direct touch */
+.vst-gui-image:hover ~ .watch-demo-btn,
+.watch-demo-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  transform: translateX(-50%) scale(1.05) !important;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  opacity: 1 !important;
+}
+
+/* --- 5. UTILITY & OTHER HOVERS --- */
+button:active {
+  transform: scale(0.96) !important;
+  filter: brightness(0.8) !important;
+  transition: transform 0.05s ease;
+}
+
+.watch-demo-btn:active {
+  transform: translateX(-50%) scale(0.96) !important;
+}
+
+.buy-btn:hover { background-color: #1d4ed8 !important; }
+.download-btn:hover { background-color: #0f172a !important; }
+.close-modal-btn:hover { color: #fff !important; transform: scale(1.2); }
+.close-banner-btn:hover { opacity: 1 !important; }
   `;
   document.head.appendChild(style);
 }
@@ -334,14 +394,34 @@ const skeletonStyle = {
 };
 
 // ... (Keep all your existing style constants here) ...
+const closeBannerBtnStyle = {
+  background: 'none',
+  border: 'none',
+  color: '#92400E',
+  fontSize: '16px',
+  cursor: 'pointer',
+  padding: '0 10px',
+  fontWeight: 'bold',
+  opacity: 0.6,
+  transition: 'opacity 0.2s'
+};
+
 const successContentStyle = { backgroundColor: '#fff', padding: '40px', borderRadius: '24px', textAlign: 'center', maxWidth: '400px', width: '90%', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', animation: 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)' };
 const successIconStyle = { width: '60px', height: '60px', backgroundColor: '#DCFCE7', color: '#166534', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '30px', margin: '0 auto 20px auto' };
 const containerStyle = { width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '30px', padding: '20px', boxSizing: 'border-box' };
 const loaderStyle = { textAlign: 'center', padding: '100px', color: '#64748B', fontWeight: '500' };
 const featuredCardStyle = { display: 'flex', flexDirection: 'row', backgroundColor: '#fff', width: '100%', maxWidth: '1100px', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.1)', border: '1px solid #E2E8F0', flexWrap: 'wrap' };
-const imageSectionStyle = { flex: '1.4', position: 'relative', backgroundColor: '#0F172A', backgroundImage: 'radial-gradient(circle at center, #1E293B 0%, #0F172A 100%)', minHeight: '450px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px', boxSizing: 'border-box', overflow: 'hidden' };
-const guiImageStyle = { maxWidth: '90%', maxHeight: '90%', objectFit: 'contain', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '4px', boxShadow: '0 50px 100px -20px rgba(0,0,0,0.7)', cursor: 'crosshair' };
-const watchDemoBtnStyle = { position: 'absolute', bottom: '25px', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: '30px', cursor: 'pointer', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' };
+const imageSectionStyle = {  flex: '1.4', position: 'relative', backgroundColor: '#0F172A', backgroundImage: 'radial-gradient(circle at center, #1E293B 0%, #0F172A 100%)', minHeight: '450px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px', boxSizing: 'border-box', overflow: 'hidden' };
+const guiImageStyle = {
+  maxWidth: '90%',
+  maxHeight: '90%',
+  objectFit: 'contain',
+  border: '1px solid rgba(255, 255, 255, 0.08)',
+  borderRadius: '4px',
+  boxShadow: '0 50px 100px -20px rgba(0,0,0,0.7)',
+  cursor: 'pointer', // Change from 'crosshair' to 'pointer'
+  transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)' // ADD THIS LINE
+};const watchDemoBtnStyle = { transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',  position: 'absolute', bottom: '25px', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: '30px', cursor: 'pointer', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' };
 const detailsSectionStyle = { flex: '1', padding: '30px', display: 'flex', flexDirection: 'column', width: '100%', flexBasis: '350px', boxSizing: 'border-box' };
 const topMetaRowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', width: '100%' };
 const productNameStyle = { fontSize: '32px', fontWeight: '800', margin: '0 0 15px 0', color: '#0F172A', letterSpacing: '-0.5px' };
@@ -368,5 +448,24 @@ const modalContentStyle = { width: '100%', maxWidth: '900px', aspectRatio: '16/9
 const closeModalStyle = { position: 'absolute', top: '-35px', right: '0', background: 'none', border: 'none', color: 'rgba(255, 255, 255, 0.5)', fontSize: '20px', cursor: 'pointer', zIndex: 3001 };
 const errorBannerStyle = { position: 'fixed', bottom: '30px', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#FFF1F2', color: '#BE123C', padding: '12px 24px', borderRadius: '12px', border: '1px solid #FDA4AF', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', display: 'flex', alignItems: 'center', zIndex: 2000, fontSize: '14px', fontWeight: '500' };
 const closeErrorBtnStyle = { background: 'none', border: 'none', color: '#BE123C', marginLeft: '15px', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold' };
+const testModeBannerStyle = {
+  width: '100%',
+  backgroundColor: '#FEF3C7', // Soft amber
+  color: '#92400E',           // Deep amber text
+  padding: '8px 0',
+  textAlign: 'center',
+  fontSize: '12px',
+  fontWeight: '500',
+  letterSpacing: '0.5px',
+  borderBottom: '1px solid #FDE68A',
+  position: 'sticky',
+  top: 0,
+  zIndex: 1000,
 
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '10px'
+};
 export default DownloadDashboard;
