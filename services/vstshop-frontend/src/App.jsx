@@ -29,25 +29,77 @@ useEffect(() => {
   }
 }, [isSorted, showAuthModal]);
 
-  return (
+return (
     <div style={appContainerStyle}>
       <style>{`
-      [data-amplify-authenticator] {
-        --amplify-colors-brand-primary-80: #1E293B;
-        --amplify-colors-brand-primary-90: #334155;
-        --amplify-colors-brand-primary-100: #0F172A;
-        --amplify-radii-medium: 12px;
-        --amplify-fonts-default-variable: 'Inter', -apple-system, sans-serif;
-      }
-      [data-amplify-router] {
-        border: none !important;
-        box-shadow: none !important;
-      }
-      .amplify-tabs__item--active {
-        border-color: #0F172A !important;
-        color: #0F172A !important;
-      }
-    `}</style>
+        [data-amplify-authenticator] {
+          --amplify-colors-brand-primary-80: #1E293B;
+          --amplify-colors-brand-primary-90: #334155;
+          --amplify-colors-brand-primary-100: #0F172A;
+          --amplify-radii-medium: 12px;
+        }
+        [data-amplify-router] { border: none !important; box-shadow: none !important; }
+
+        /* THE CLEAN AUTH BUTTON */
+        .auth-text-btn {
+          background: transparent !important;
+          border: none !important;
+          color: rgba(255, 255, 255, 0.7) !important;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 1px;
+          padding: 8px 16px;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+          border-radius: 8px;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .auth-text-btn:hover {
+          color: #FFFFFF !important;
+          background-color: rgba(255, 255, 255, 0.08) !important;
+          transform: translateY(-1px);
+        }
+
+        /* Pulsing Status Dot */
+        .status-dot-active {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background-color: #22C55E;
+          box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+          animation: status-pulse 2s infinite;
+        }
+
+        @keyframes status-pulse {
+          0% { box-shadow: 0 0 0 0px rgba(34, 197, 94, 0.4); }
+          70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+          100% { box-shadow: 0 0 0 0px rgba(34, 197, 94, 0); }
+        },
+        /* 1. Target the Amplify Authenticator specifically */
+[data-amplify-authenticator] button:focus,
+[data-amplify-authenticator] input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: #334155 !important; /* Subtle slate instead of glowing white */
+}
+
+/* 2. Global Reset for your custom buttons */
+button:focus,
+button:active {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent; /* Fixes the blue flash on mobile */
+}
+
+/* 3. If you want a "Pro" focus state, use a very faint inner glow instead */
+.auth-text-btn:focus-visible {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+}
+      `}</style>
+
       <nav style={navStyle}>
         <div style={logoStyle}>HOUSE AUDIO</div>
         <div style={navRightStyle}>
@@ -55,13 +107,12 @@ useEffect(() => {
             <>
               <div style={userInfoStyle}>
                 <span style={userLabelStyle}>{user?.signInDetails?.loginId || user?.username}</span>
-                <div style={statusDotStyle}></div>
+                <div className="status-dot-active"></div>
               </div>
-              <button onClick={signOut} style={signOutBtnStyle}>Sign Out</button>
+              <button onClick={signOut} className="auth-text-btn">Sign Out</button>
             </>
           ) : (
-            /* FIX: Change window.location to a state toggle */
-            <button onClick={() => setShowAuthModal(true)} style={signInBtnStyle}>Sign In</button>
+            <button onClick={() => setShowAuthModal(true)} className="auth-text-btn">Sign In</button>
           )}
         </div>
       </nav>
@@ -72,64 +123,37 @@ useEffect(() => {
           <p style={heroSubStyle}>Access your licenses and download the latest builds.</p>
         </header>
 
-        {/* Pass the auth status down so the dashboard knows what to do */}
         <DownloadDashboard
-  isUserLoggedIn={isSorted}
-  onTriggerLogin={() => setShowAuthModal(true)}
-/>
+          isUserLoggedIn={isSorted}
+          onTriggerLogin={() => setShowAuthModal(true)}
+        />
       </main>
-      {/* LOGIN MODAL OVERLAY */}
+
       {showAuthModal && (
         <div style={modalOverlayStyle} onClick={() => setShowAuthModal(false)}>
           <div style={authModalContentStyle} onClick={(e) => e.stopPropagation()}>
-            <button
-  style={closeModalStyle}
-  onClick={() => setShowAuthModal(false)}
-  onMouseOver={(e) => e.target.style.transform = 'scale(1.1)'}
-  onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
->
-  ✕
-</button>
-<Authenticator
-  components={{
-    Header: () => (
-      <div style={{ textAlign: 'center', padding: '20px 0' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#0F172A' }}>
-          HOUSE AUDIO
-        </h2>
-      </div>
-    ),
-    Footer: () => (
-      <div style={{ textAlign: 'center', padding: '10px 0' }}>
-        <p style={{ fontSize: '12px', color: '#64748B' }}>
-          Secure Authentication via AWS Cognito | Lifetime License Updates
-        </p>
-      </div>
-    )
-  }}
-/>
+            <button style={closeModalStyle} onClick={() => setShowAuthModal(false)}>✕</button>
+            <Authenticator
+              components={{
+                Header: () => (
+                  <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                    <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#0F172A' }}>HOUSE AUDIO</h2>
+                  </div>
+                )
+              }}
+            />
           </div>
         </div>
       )}
 
-<footer style={footerStyle}>
-  <div style={footerContentStyle}>
-    <div style={footerLeftStyle}>
-      © 2026 HOUSE AUDIO
-    </div>
-
-    <div style={footerRightStyle}>
-      <a
-        href="mailto:support@houseaudio.com"
-        style={footerLinkStyle}
-        onMouseOver={(e) => e.target.style.color = '#0F172A'}
-        onMouseOut={(e) => e.target.style.color = '#64748B'}
-      >
-        Contact Support
-      </a>
-    </div>
-  </div>
-</footer>
+      <footer style={footerStyle}>
+        <div style={footerContentStyle}>
+          <div style={footerLeftStyle}>© 2026 HOUSE AUDIO</div>
+          <div style={footerRightStyle}>
+            <a href="mailto:support@houseaudio.com" style={footerLinkStyle}>Contact Support</a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
@@ -172,17 +196,6 @@ const authModalContentStyle = {
   borderRadius: '16px',
   position: 'relative',
   boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-};
-
-const signInBtnStyle = {
-  backgroundColor: '#2563EB', // Blue to stand out
-  color: '#fff',
-  border: 'none',
-  padding: '8px 20px',
-  borderRadius: '8px',
-  fontSize: '13px',
-  fontWeight: '700',
-  cursor: 'pointer'
 };
 
 const footerContentStyle = {
@@ -267,19 +280,6 @@ const logoStyle = {
 const navRightStyle = { display: 'flex', alignItems: 'center', gap: '24px' };
 const userInfoStyle = { display: 'flex', alignItems: 'center', gap: '10px' };
 const userLabelStyle = { fontSize: '14px', color: '#94A3B8', fontWeight: '500' };
-const statusDotStyle = { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22C55E' };
-
-const signOutBtnStyle = {
-  backgroundColor: 'rgba(255,255,255,0.05)',
-  color: '#F1F5F9',
-  border: '1px solid rgba(255,255,255,0.2)',
-  padding: '8px 16px',
-  borderRadius: '8px',
-  fontSize: '13px',
-  fontWeight: '600',
-  cursor: 'pointer',
-  transition: 'all 0.2s'
-};
 
 const mainContentStyle = {
   flex: 1,

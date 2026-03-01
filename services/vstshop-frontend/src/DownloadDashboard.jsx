@@ -205,7 +205,7 @@ const handleDismissBanner = () => {
     finally { setDownloadingId(null); }
   };
 
-  if (loading) return <div style={loaderStyle}>Loading House Audio Library...</div>;
+  if (loading) return <div style={loaderStyle}>Loading Library...</div>;
 
   return (
     <div style={containerStyle}>
@@ -375,9 +375,50 @@ button:active {
 .watch-demo-btn:active {
   transform: translateX(-50%) scale(0.96) !important;
 }
+/* 1. PURCHASE BUTTON: Dark, Deep, and Solid */
+.buy-btn {
+  background-color: #0F172A !important; /* Deep Navy/Black */
+  color: #FFFFFF !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease !important;
+}
 
-.buy-btn:hover { background-color: #1d4ed8 !important; }
-.download-btn:hover { background-color: #0f172a !important; }
+.buy-btn:hover {
+  background-color: #1E293B !important; /* Subtle lighten */
+  transform: translateY(-1.5px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+}
+
+.download-btn {
+  background-color: transparent !important;
+  color: #0F172A !important;
+  /* Start with a subtle 'unpressed' shadow */
+  box-shadow: inset 0 0 0 2px #0F172A !important;
+  border: none !important;
+  font-weight: 800 !important;
+  transition: all 0.2s ease !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* NO TRANSFORM HERE - Keeps it from hitting the ceiling */
+  transform: none !important;
+}
+
+.download-btn:hover {
+  /* Fill the button instead of moving it */
+  background-color: #0F172A !important;
+  color: #FFFFFF !important;
+  /* Add a very subtle outer glow to show 'Focus' without moving pixels */
+  box-shadow: inset 0 0 0 2px #0F172A, 0 4px 12px rgba(15, 23, 42, 0.15) !important;
+}
+
+.download-btn:active {
+  /* Use brightness and a tiny scale-down to show the 'Click' */
+  /* Scale 0.98 is small enough that it won't trigger the clipping/squish */
+  transform: scale(0.98) !important;
+  filter: brightness(0.8);
+}
 .close-modal-btn:hover { color: #fff !important; transform: scale(1.2); }
 .close-banner-btn:hover { opacity: 1 !important; }
   `;
