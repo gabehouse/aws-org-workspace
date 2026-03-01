@@ -133,15 +133,46 @@ button:active {
         <div style={modalOverlayStyle} onClick={() => setShowAuthModal(false)}>
           <div style={authModalContentStyle} onClick={(e) => e.stopPropagation()}>
             <button style={closeModalStyle} onClick={() => setShowAuthModal(false)}>✕</button>
-            <Authenticator
-              components={{
-                Header: () => (
-                  <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                    <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#0F172A' }}>HOUSE AUDIO</h2>
-                  </div>
-                )
-              }}
-            />
+              <Authenticator
+                components={{
+                  Header: () => (
+                    <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                      <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#0F172A' }}>HOUSE AUDIO</h2>
+                    </div>
+                  ),
+                  // ADD THIS SECTION BELOW
+                  Footer: () => (
+                    <div style={{
+                      textAlign: 'center',
+                      padding: '16px',
+                      borderTop: '1px solid #E2E8F0',
+                      backgroundColor: '#F8FAFC',
+                      borderRadius: '0 0 12px 12px'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        color: '#64748B'
+                      }}>
+                        {/* Cloud-specific Lock Icon */}
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                        <span style={{
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          letterSpacing: '0.05em',
+                          textTransform: 'uppercase'
+                        }}>
+                          Identity Managed by AWS Cognito
+                        </span>
+                      </div>
+                    </div>
+                  )
+                }}
+              />
           </div>
         </div>
       )}
