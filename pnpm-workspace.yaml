@@ -1,4 +1,4 @@
 packages:
-  - 'services/*'
+  - 'services/**'
   - 'infra/workloads/**'
   # Add any other folders that contain a package.json
