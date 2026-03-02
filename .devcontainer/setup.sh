@@ -6,6 +6,9 @@ echo "🚀 Starting DevContainer Provisioning..."
 # 1. System Updates & Basics
 sudo apt-get update
 sudo apt-get install -y tree curl wget
+# Add tree alias to bash and zsh
+echo "alias tt=\"tree -d -L 3 -I 'node_modules|.git|.terraform|.vite'\"" >> ~/.bashrc
+echo "alias tt=\"tree -d -L 3 -I 'node_modules|.git|.terraform|.vite'\"" >> ~/.zshrc
 
 # 2. Install yq (Declarative Check)
 if ! command -v yq &> /dev/null; then

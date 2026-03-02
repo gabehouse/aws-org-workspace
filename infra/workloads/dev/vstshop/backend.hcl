@@ -1,1 +1,1 @@
-../../../backend.hcl
+/workspaces/aws-org-workspace/infra/backend.hcl

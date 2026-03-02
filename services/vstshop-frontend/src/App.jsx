@@ -181,7 +181,7 @@ button:active {
         <div style={footerContentStyle}>
           <div style={footerLeftStyle}>© 2026 HOUSE AUDIO</div>
           <div style={footerRightStyle}>
-            <a href="mailto:support@houseaudio.com" style={footerLinkStyle}>Contact Support</a>
+            <a href="mailto:support@houseaudio.net" style={footerLinkStyle}>Contact Support</a>
           </div>
         </div>
       </footer>

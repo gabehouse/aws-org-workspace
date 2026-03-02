@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="shortcut icon" href="assets/lionface.ico" />
+<title>Wilderchess</title>
+<link href='https://fonts.googleapis.com/css?family=Nunito' rel='stylesheet' type='text/css'>
+<link href='https://fonts.googleapis.com/css?family=Permanent+Marker' rel='stylesheet' type='text/css'>
+<link href='https://fonts.googleapis.com/css?family=Caesar+Dressing' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Chelsea+Market" rel="stylesheet">
+<link type="text/css" rel="stylesheet" href="assets/index.css" />
+</head>
+
+
+<body bgcolor="#704F50">
+
+
+
+<!--		</div> -->
+	<div id="enter">
+
+		<form id="enterpassword"  onsubmit = "return false;">
+        	<input name="password" type="text" id="password" autocomplete = "off"  spellcheck="false" />
+        	<input name="submitpassword" type="submit"  id="submitpassword" value="" onClick = "authenticate(this.form.password.value)"  />
+
+
+		</form>
+	</div>
+	<div id="block" onclick="blockClick()">
+	</div>
+
+	<div id="wrapper" style="visibility: hidden">
+
+
+
+
+     	<button id=chatlog type="button" onclick="chatLogButton()" disabled>Chat Log
+     	</button>
+
+     	<button id=actionlog type="button" onclick = "actionLogButton()">Action Log</button>
+
+	    <div class="scrollbar" id="style-4">
+     		<div class="force-overflow"></div>
+    	</div>
+    	<div id="chattextarea">
+    	</div>
+
+    	<div id="actiontextarea">
+    	</div>
+
+    	<div id="chatbox">
+    	</div>
+    	<form name="message"  onsubmit = "return false;">
+        	<input name="usermsg" style="width: 200px" type="text" id="usermsg" autocomplete = "off"  />
+        	<input name="submitmsg" type="submit"  id="submitmsg" value="uh" onClick = "test(this.form.usermsg.value);"  />
+
+
+
+       <div id = "wrap"></div>
+	</div>
+       <script type="text/javascript" src="assets/raphael.js"></script>
+       <script type="text/javascript" src="assets/index.js"></script>
+
+
+    </body>
+    	<br><br><br>
+	<div id="slideout">
+	  <img src="assets/howtoplay.png" alt="Feedback" />
+	  <div id="slideout_inner">
+		<h2> How to Play </h2>
+		<br><br>
+		<p>
+			<ul style="font-family: 'Nunito', sans-serif; font-size: 14px;">
+				<li>
+					To start playing, select four fighters and three items and press search for an opponent. If anyone else is searching, you will be matched with them. Drag the bar behind the fighter portraits to see the full fighter pool.
+        </li>
+        <li>
+          Set your initial position then press ready to start the match.
+        </li>
+        <li>
+          Each round consists of a 10 second sequence of actions each team performs simulteneously. Build your sequence by using your fighters' abilities and items. When you use an ability, you will notice a block appears. These blocks represent an ability that will be used during your sequence. You can edit your sequence by dragging blocks off the timeline or into a different position.
+        </li>
+        <li>
+          Once you have scheduled your turn, press ready to see how the battle plays out.
+        </li>
+				<li>
+					Each fighter has 4 unique abilities which each have a cast-time and energy cost.
+					<br>
+					Abilities fall under 3 types:
+					<ul style="margin-left:12px; font-size: 11px">
+						<li>
+							Block: Self-cast, usually increases the fighter's defence
+						</li>
+						<li>
+							Attack: If the target is behind another fighter, it hits the fighter in front instead
+						</li>
+						<li>
+							Support: Unrestricted
+						</li>
+					</ul>
+        </li>
+        <li>
+          Items are used instantly and can only be used once. Add them to your sequence by dragging them onto the timeline.
+        </li>
+        <li>
+          Team synergy and predicting then countering your opponents turn are key to win this game.
+        </li>
+			</ul>
+		</p>
+	  </div>
+	</div>
+		<div id="bugslide">
+	  <img src="assets/bugreport.png" alt="Feedback" />
+	  <div id="bugslide_inner">
+		<h2> Report a Bug </h2>
+		<br><br>
+		<form name="bugreport" style="font-family: 'Nunito', sans-serif; font-size: 14px;" onsubmit = "return false;">
+			<div class="col-md-6 footer-left">
+				<br>Name<br>
+				<input id="name" type="text" name="Name" maxlength="50" placeholder="" required="">
+				<br><br>Bug Description (Max 1000 char)<br>
+				<textarea id="message" name="Message" maxlength="1000" onfocus="this.value = '';" onblur="if (this.value == '') {this.value = 'Message';}" required="">
+				</textarea>
+				<br>
+				<input type="submit" name="submit" value="Report Bug" onClick = "reportBug(this.form.name.value,this.form.message.value);"  />
+			</div>
+		</form>
+	  </div>
+	</div>
+
+</html>

@@ -1,0 +1,21 @@
+.tooltip {
+    position: relative;
+    display: inline-block;
+    background-color: #333;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+
+  /* Arrow pointing down */
+  .tooltip::after {
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    left: 15%;
+    margin-left: -8px;
+    border-width: 8px;
+    border-style: solid;
+    border-color: transparent transparent #333 transparent;
+  }
