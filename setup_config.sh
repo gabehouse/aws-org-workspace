@@ -25,13 +25,17 @@ echo "✅ Generated Local and CI/CD backend configs."
 # 4. Symlink BOTH to the workload directories
 TARGET_DIRS=$(find infra/workloads infra/management -path "*/.terraform" -prune -o -type d -print)
 
-for dir in $TARGET_DIRS; do
-  if ls "$dir"/*.tf >/dev/null 2>&1; then
-    echo "🔗 Linking $dir..."
+# Get the ABSOLUTE path of the source file first
+SOURCE_FILE=$(realpath "infra/backend.hcl")
 
-    # Link Local Config
-    REL_LOCAL=$(realpath --relative-to="$dir" "infra/backend.hcl")
-    ln -f "$REL_LOCAL" "$dir/backend.hcl"
+for dir in $TARGET_DIRS; do
+  # Check if the directory contains .tf files
+  if ls "$dir"/*.tf >/dev/null 2>&1; then
+    echo "🔗 Linking to $dir..."
+
+    # Create the symlink using the absolute source path
+    # -s: symbolic, -f: force (overwrite existing), -n: treat symlink as normal file
+    ln -sf "$SOURCE_FILE" "$dir/backend.hcl"
   fi
 done
 

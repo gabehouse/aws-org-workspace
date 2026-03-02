@@ -53,3 +53,7 @@ node_modules
 **/Builds/
 **/Binaries/
 
+#wilderchess
+services/wilderchess/gamelogs/
+services/wilderchess/app*.zip
+services/wilderchess/target/

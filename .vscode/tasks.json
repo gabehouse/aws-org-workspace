@@ -1,0 +1,70 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Initialize Workspace Terminals",
+      "dependsOn": [
+        "Term: Root", "Term: Infra",
+        "Term: Dev Workload", "Term: Prod Workload",
+        "Term: Service A", "Term: Service B"
+      ],
+      "runOptions": { "runOn": "folderOpen" },
+      "problemMatcher": []
+    },
+    /* --- GROUP 1: CODE & INFRA --- */
+    {
+      "label": "Term: Root",
+      "type": "shell",
+      "isBackground": true,
+      "problemMatcher": [],
+      "command": "zsh",
+      "presentation": { "group": "grp-1", "panel": "new", "focus": true }
+    },
+    {
+      "label": "Term: Infra",
+      "type": "shell",
+            "isBackground": true,
+      "problemMatcher": [],
+      "command": "cd infra/modules && zsh",
+      "presentation": { "group": "grp-1", "panel": "new" }
+    },
+    /* --- GROUP 2: WORKLOADS (SSO) --- */
+    {
+      "label": "Term: Dev Workload",
+      "type": "shell",
+      "isBackground": true,
+      "problemMatcher": [],
+      "command": "cd infra/workloads/dev && aws sso login --profile dev && zsh",
+      "options": { "env": { "AWS_PROFILE": "dev" } },
+      "presentation": { "group": "grp-2", "panel": "new" }
+    },
+    {
+      "label": "Term: Prod Workload",
+      "type": "shell",
+            "isBackground": true,
+      "problemMatcher": [],
+      "command": "cd infra/workloads/prod && aws sso login --profile prod && zsh",
+      "options": { "env": { "AWS_PROFILE": "prod" } },
+      "presentation": { "group": "grp-2", "panel": "new" }
+    },
+    /* --- GROUP 3: SERVICES (SSO DEV) --- */
+    {
+      "label": "Term: Service A",
+      "type": "shell",
+            "isBackground": true,
+      "problemMatcher": [],
+      "command": "cd services && aws sso login --profile dev && zsh",
+      "options": { "env": { "AWS_PROFILE": "dev" } },
+      "presentation": { "group": "grp-3", "panel": "new" }
+    },
+    {
+      "label": "Term: Service B",
+      "type": "shell",
+            "isBackground": true,
+      "problemMatcher": [],
+      "command": "cd services && aws sso login --profile dev && zsh",
+      "options": { "env": { "AWS_PROFILE": "dev" } },
+      "presentation": { "group": "grp-3", "panel": "new" }
+    }
+  ]
+}
