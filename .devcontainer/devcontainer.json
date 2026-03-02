@@ -18,6 +18,10 @@
     "ghcr.io/devcontainers/features/node:1": {
       "version": "lts",
       "pnpmVersion": "latest"
+    }, "ghcr.io/devcontainers/features/java:1": {
+        "version": "17", // or "21" depending on your project
+        "installMaven": "true",
+        "jdkDistro": "amzn" // Amazon Corretto is a safe bet for AWS work
     }
   },
 
@@ -41,7 +45,8 @@
         "ms-python.python",
         "amazonwebservices.aws-toolkit-vscode",
         "usernamehw.errorlens",
-        "github.vscode-github-actions"
+        "github.vscode-github-actions",
+        "vscjava.vscode-java-pack"
       ]
     }
   },

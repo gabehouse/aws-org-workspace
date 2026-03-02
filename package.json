@@ -8,7 +8,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev:frontend": "pnpm --filter vstshop-frontend dev",
     "plan:dev": "cd infra/workloads/dev/vstshop && terraform plan",
-    "install:all": "pnpm install -r"
+    "install:all": "pnpm install -r",
+    "tree": "tree -d -L 4 -I 'node_modules|dist|.terraform|.git|amplify|src|assets|public|Source|JuceLibraryCode|__pycache__' -F"
   },
   "keywords": [],
   "author": "",

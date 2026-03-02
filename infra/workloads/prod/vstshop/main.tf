@@ -54,6 +54,16 @@ module "storage" {
   environment = var.environment
 }
 
+module "mail" {
+  source          = "../../../modules/mail" # Fixed Path
+  is_enabled      = var.environment == "prod"
+  domain_name     = "houseaudio.net"
+  route53_zone_id = data.aws_route53_zone.main.zone_id # Use the data source
+  project_name    = var.project_name
+  environment     = var.environment
+  personal_email  = "gabriel.jsh@gmail.com"
+}
+
 # This tells Terraform to write a file on your local machine
 resource "local_file" "env_file" {
   filename = "${path.module}/../../../../services/vstshop-frontend/.env"
