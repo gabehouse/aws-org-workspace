@@ -1,7 +1,6 @@
 {
   "name": "AWS-Master-Template-Workbench",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
-
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {
       "installZsh": true,
@@ -18,14 +17,16 @@
     "ghcr.io/devcontainers/features/node:1": {
       "version": "lts",
       "pnpmVersion": "latest"
-    }, "ghcr.io/devcontainers/features/java:1": {
-        "version": "17", // or "21" depending on your project
-        "installMaven": "true",
-        "jdkDistro": "amzn" // Amazon Corretto is a safe bet for AWS work
+    },
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "21",
+      "installMaven": "true",
+      "jdkDistro": "amzn"
+    },
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "version": "latest"
     }
   },
-
-
   "customizations": {
     "vscode": {
       "settings": {
@@ -37,16 +38,19 @@
           "JUCE/": true,
           "**/Builds/": true,
           "**/.vs/": true
-        }
+        },
+        "python.defaultInterpreterPath": ".venv/bin/python",
+        "python.terminal.activateEnvInCurrentTerminal": true
       },
       "extensions": [
         "hashicorp.terraform",
         "anton-prazdnichnykh.tflint",
-        "ms-python.python",
         "amazonwebservices.aws-toolkit-vscode",
         "usernamehw.errorlens",
         "github.vscode-github-actions",
-        "vscjava.vscode-java-pack"
+        "vscjava.vscode-java-pack",
+        "ms-python.python",
+        "ms-python.vscode-pylance"
       ]
     }
   },
@@ -54,7 +58,6 @@
     "WAYLAND_DISPLAY": "",
     "DISPLAY": ""
   },
-
   "mounts": [
     {
       "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.aws",
@@ -62,7 +65,6 @@
       "type": "bind"
     }
   ],
-
   "postCreateCommand": "bash .devcontainer/setup.sh",
   "remoteUser": "vscode"
 }

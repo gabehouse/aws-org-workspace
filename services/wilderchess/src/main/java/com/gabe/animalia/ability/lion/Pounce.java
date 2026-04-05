@@ -1,70 +1,53 @@
 package com.gabe.animalia.ability.lion;
+
 import java.io.IOException;
 
+import com.gabe.animalia.enums.ActionEnum;
 import com.gabe.animalia.general.Action;
 import com.gabe.animalia.general.Critter;
 import com.gabe.animalia.general.Player;
 import com.gabe.animalia.general.Square;
 import com.gabe.animalia.general.Targetable;
 
-
 public class Pounce extends Action {
-	private Critter subject;
-	private Square target;
-	private String targetType = "spot";
-	private String name = "Pounce";
-	private String type = "block";
-	private double timeCost = 1;
-	private int energyCost = 20;
-	private int block = 15;
 	private String effectDescription = "defence + 15";
-	private Player player;
-	private Player otherPlayer;
 	private Square initialTempSpot;
 	private String indicatorMessage;
-	private int duration = 1;
-	private String statusType = "block";
-	private boolean performable = true;
+
 	private String direction = "";
-	private Square previousSpot;
-	private String description = name.replace("\n", "") + "\nDefence: " + block + "\nType: " + this.type  +  "\nEnergy: " + energyCost + "\nTime: " + timeCost + "\nDescription: Moves Lion to an \nadjacent spot and raises defence \nby " + block + ".";
-	private String selectDescription = name.replace("\n", "") + "\nDefence: " + block + "\nType: " + this.type  +  "\nEnergy: " + energyCost + "\nTime: " + timeCost + "\nDescription: Moves Lion to an \nadjacent spot and raises defence \nby " + block + ".";
+
 	public Pounce(Critter subject, Targetable target, Player player, Player otherPlayer) {
-		this.subject = subject;
-		this.target = (Square)target;
-		this.player = player;
-		this.otherPlayer = otherPlayer;
-
-
+		super(subject, target, player, otherPlayer, ActionEnum.POUNCE);
 	}
 
 	@Override
 	public void displayOptions() {
 		subject.displayPossibleMoves(player, name);
 
-
 	}
 
 	@Override
 	public void init() {
-		if (subject.getTempSpot().compareSurrounding(target.getName())) {
+		Square t = getTargetAsSquare();
+		if (subject.getTempSpot().compareSurrounding(t.getName())) {
+
 			subject.getMoves().add(this);
 			initialTempSpot = subject.getTempSpot();
 			subject.getIndicatedBlocks().add(subject);
 			subject.getTempSpot().setPlannedMove(false);
 			player.getQueue().add(this);
-			target.setPlannedMove(true);
-			subject.setTempSpot(target);
+			t.setPlannedMove(true);
+			subject.setTempSpot(t);
 			// subject.displayPossibleMoves(player);
-			subject.getIndicatedMoves().add(target);
+			subject.getIndicatedMoves().add(t);
 
 			indicatorMessage = "indicate|block," + subject.getName() + ","
-					+ subject.getSide() + "|move," + target.getName();
+					+ subject.getSide() + "|move," + t.getName();
 
 			if (subject.hasMoved()) {
 
-					player.sendString("indicatespots,no moves");
-					player.sendString("possiblemoves, ");
+				player.sendString("indicatespots,no moves");
+				player.sendString("possiblemoves, ");
 
 			} else {
 				subject.displayPossibleMoves(player, name);
@@ -72,27 +55,9 @@ public class Pounce extends Action {
 		}
 	}
 
-
 	@Override
 	public String getIndicatorMessage() {
 		return indicatorMessage;
-	}
-
-	@Override
-	public void displayAction() {
-
-
-
-
-
-				player.sendString(
-						"move," + getUsingName() + "," + subject.getSide()
-								+ "," + getTargetName() + "," + (timeCost*1000));
-				otherPlayer.sendString(
-						"move," + getUsingName() + "," + subject.getSide()
-								+ "," + getTargetName() + "," + (timeCost*1000));
-
-
 	}
 
 	public void findDirection() {
@@ -118,10 +83,11 @@ public class Pounce extends Action {
 			}
 		}
 	}
+
 	@Override
-	public boolean initable() {
-		if (!target.isPlannedMove() && performable && subject.getEnergy() - energyCost >= 0
-				&& subject.canUseAction() && subject.canMove()) {
+	public boolean customInitable() {
+		if (getTargetAsSquare() != null
+				&& !getTargetAsSquare().isPlannedMove()) {
 
 			return true;
 		}
@@ -130,221 +96,77 @@ public class Pounce extends Action {
 	}
 
 	@Override
-	public boolean performable() {
-		if (!target.isOccupied() && performable && subject.getEnergy() - energyCost >= 0
-				&& subject.canUseAction() && subject.canMove() && subject.getSpot().compareSurrounding(target.getName())) {
-
-			return true;
+	public CastResult customCheck() {
+		Square s = getTargetAsSquare();
+		if (s == null) {
+			return CastResult.TARGET_IS_NULL;
 		}
-		return false;
-
-	}
-
-	public void actionLog() {
-
-
-			player.sendString(
-					"actionlog," + subject.getName() + " pounced " + direction
-							+ ".");
-			otherPlayer.sendString("actionlog," + subject.getName() + " pounced " + direction + ".");
-
+		if (s.isOccupied()) {
+			return CastResult.SPOT_OCCUPIED;
+		}
+		if (!subject.getSpot().compareSurrounding(s.getName())) {
+			return CastResult.INVALID_TARGET_SPOT;
+		}
+		return CastResult.SUCCESS;
 
 	}
 
 	@Override
-	public boolean perform() {
-		if (!target.isOccupied() && subject.getEnergy() - energyCost >= 0
-				&& subject.canUseAction() && performable
-				&& subject.getEnergy() - energyCost >= 0 && subject.canMove()
-				&& subject.getSpot().compareSurrounding(target.getName())) {
-			if (subject.getSpot().compareSurrounding(target.getName())) {
-				findDirection();
-				actionLog();
-				subject.getSpot().setOccupied(false);
-				subject.getSpot().setPlannedMove(false);
-				subject.setSpot(target);
-				target.setCritter(subject);
-				subject.getIndicatedMoves().remove(target);
-				target.setOccupied(true);
-				target.setCritter(subject);
-			}
-			subject.setEnergy(subject.getEnergy() - energyCost);
-			subject.setDefence(subject.getDefence() + block);
-			subject.getEffects().add(this);
-			showEffect();
-			subject.onMove(subject.getOwner(), subject.getOpponent());
-			subject.sendStats(player, otherPlayer);
-			return true;
-		}
-		delete();
-		return false;
+	public String getManifestData(double startTime) {
+		StringBuilder sb = new StringBuilder();
+
+		// Row 1: The Benched Critter
+		sb.append(buildManifestRow(
+				"MOVE", "MOVE", this.getType(), subject,
+				"square", target.getName(), subject.getSide(), subject.getHealth(), subject.getMaxHealth(),
+				startTime, this.logStr, "none", "none"));
+		sb.append("|");
+		sb.append(buildManifestRow(
+				"basic", this.getName(), this.getType(), subject,
+				"critter", subject.getName(), subject.getSide(), subject.getHealth(), subject.getMaxHealth(),
+				startTime, "none", this.getSubject().getFullEffectSnapshot(), "none"));
+
+		return sb.toString();
 	}
 
 	@Override
-	public void overTimeEffect(Critter critter) {
+	public boolean customPerform() {
+		Square t = getTargetAsSquare();
+		subject.onMove(subject.getOwner(), subject.getOpponent());
+		findDirection();
+		subject.getSpot().setPlannedMove(false);
+		subject.getSpot().setCritter(null);
+		subject.setSpot(t);
+		t.setCritter(subject);
+		t.setPlannedMove(true);
+		subject.getIndicatedMoves().remove(t);
+
+		subject.raiseDefence(block);
+		subject.addEffect(this);
+		return true;
+
 	}
 
 	@Override
 	public void endEffect(Critter critter) {
-		subject.setDefence(subject.getDefence() - block);
-
-
-			player.sendString(
-					"effecttt,remove," + subject.getName() + ","
-							+ subject.getSide() + ","
-							+ subject.getEffects().indexOf(this));
-			otherPlayer.sendString(
-					"effecttt,remove," + subject.getName() + ","
-							+ subject.getSide() + ","
-							+ subject.getEffects().indexOf(this));
-
-
-	}
-
-	public void showEffect() {
-
-			player.sendString(
-					"effecttt,create,block.png," + name + "," + subject.getName()
-							+ "," + subject.getSide() + "," + duration + "," + effectDescription
-							+ "," + subject.getEffects().indexOf(this));
-			otherPlayer.sendString(
-					"effecttt,create,block.png," + name + "," + subject.getName()
-					+ "," + subject.getSide() + "," + duration + "," + effectDescription
-					+ "," + subject.getEffects().indexOf(this));
-
-
-	}
-
-	@Override
-	public String getStatusType() {
-		return statusType;
+		subject.lowerDefence(block);
 	}
 
 	@Override
 	public void delete() {
+		Square t = getTargetAsSquare();
 		if (subject.getMoves().size() == 1) {
 			subject.setTempSpot(subject.getSpot());
-			target.setPlannedMove(false);
+			t.setPlannedMove(false);
 			subject.getSpot().setPlannedMove(true);
 		} else if (this.equals(subject.getMoves().get(subject.getMoves().size() - 1))) {
-			subject.setTempSpot((Square)subject.getMoves().get(subject.getMoves().size() - 2).getTarget());
-			target.setPlannedMove(false);
+			subject.setTempSpot((Square) subject.getMoves().get(subject.getMoves().size() - 2).getTarget());
+			t.setPlannedMove(false);
 		}
 		subject.getMoves().remove(this);
 		subject.getIndicatedBlocks().remove(subject);
-		subject.getIndicatedMoves().remove(target);
+		subject.getIndicatedMoves().remove(t);
 
 	}
-	@Override
-	public Player getPlayer() {
-		return player;
-	}
-	@Override
-	public void setPlayer(Player player) {
-		this.player = player;
-	}
-	@Override
-	public Player getOtherPlayer() {
-		return otherPlayer;
-	}
-	@Override
-	public void setOtherPlayer(Player otherPlayer) {
-		this.otherPlayer = otherPlayer;
-	}
-	@Override
-	public Critter getSubject() {
-		return subject;
-	}
-	@Override
-	public void setSubject(Critter subject) {
-		this.subject = subject;
-	}
-	@Override
-	public Targetable getTarget() {
-		return target;
-	}
-	@Override
-	public void setTarget(Targetable target) {
-		this.target = (Square)target;
-	}
-	@Override
-	public String getTargetType() {
-		return targetType;
-	}
 
-	@Override
-	public String getDescription() {
-		return description;
-	}
-	@Override
-	public String getSelectDescription() {
-		return selectDescription;
-	}
-	@Override
-	public String getType() {
-		return type;
-	}
-
-	@Override
-	public int getDuration() {
-		return duration;
-	}
-
-	@Override
-	public void setDuration(int duration) {
-		this.duration = duration;
-	}
-
-	@Override
-	public String getTargetName() {
-		return target.getName();
-	}
-
-	@Override
-	public Action getNew() {
-		return new Pounce(null, null, null, null);
-	}
-
-	@Override
-	public String getUsingName() {
-		return subject.getName();
-	}
-
-	@Override
-	public double getTimeCost() {
-		return timeCost;
-	}
-
-	@Override
-	public int getEnergyCost() {
-		return energyCost;
-	}
-
-	@Override
-	public String getName() {
-		return name;
-	}
-
-	@Override
-	public boolean isPerformable() {
-		return performable;
-	}
-
-	@Override
-	public void setPerformable(boolean performable) {
-		this.performable = performable;
-	}
-	@Override
-	public String getEffects() {
-		return "block.png";
-	}
-	@Override
-	public void setTimeCost(double timeCost) {
-		this.timeCost = timeCost;
-	}
-
-	@Override
-	public void setEnergyCost(int energyCost) {
-		this.energyCost = energyCost;
-	}
 }

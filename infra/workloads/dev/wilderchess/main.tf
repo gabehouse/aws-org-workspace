@@ -14,9 +14,10 @@ data "terraform_remote_state" "network" {
 }
 
 locals {
-  vpc_id        = data.terraform_remote_state.network.outputs.vpc_id
-  public_rt_ids = data.terraform_remote_state.network.outputs.public_route_table_ids
-  subnet_id     = data.terraform_remote_state.network.outputs.public_subnet_ids[0]
+  # Mapped to your specific output names
+  vpc_id = data.terraform_remote_state.network.outputs.vpc_id
+  # We use public_subnets [0] to match your output
+  subnet_id = data.terraform_remote_state.network.outputs.public_subnets[0]
 }
 
 # Look up the S3 IP ranges for your region
@@ -28,8 +29,6 @@ data "aws_prefix_list" "s3" {
 resource "aws_vpc_endpoint" "s3" {
   vpc_id       = local.vpc_id
   service_name = "com.amazonaws.us-east-2.s3"
-  # This attaches the endpoint to your existing route tables
-  route_table_ids = local.public_rt_ids
 }
 
 # -----------------------------------------------------------------------------
@@ -86,10 +85,13 @@ resource "aws_iam_instance_profile" "dev_bot_profile" {
 }
 
 resource "aws_security_group" "dev_bot_sg" {
-  name   = "dev-bot-sg"
-  vpc_id = local.vpc_id
+  name        = "dev-bot-sg"
+  description = "Security group for Wilderchess bot runners"
+  vpc_id      = local.vpc_id
 
-  # ESSENTIAL: Allow SSH traffic
+  # ---------------------------------------------------------------------------
+  # INBOUND: SSH (Consider narrowing cidr_blocks to your IP for 100% cleanliness)
+  # ---------------------------------------------------------------------------
   ingress {
     from_port   = 22
     to_port     = 22
@@ -97,14 +99,42 @@ resource "aws_security_group" "dev_bot_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # ---------------------------------------------------------------------------
+  # OUTBOUND: Everything the Bot needs to function
+  # ---------------------------------------------------------------------------
+
+  # DNS (UDP/TCP 53): Crucial for resolving s3.us-east-2.amazonaws.com
   egress {
-    description = "Allow HTTPS for Yum, Docker, and S3"
+    from_port   = 53
+    to_port     = 53
+    protocol    = "udp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 53
+    to_port     = 53
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # HTTP/HTTPS (80/443): For yum, Docker, ECR, and S3
+  egress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    # trivy:ignore:AVD-AWS-0104
-    # tfsec:ignore:aws-vpc-no-public-egress-sgr
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "dev-bot-sg"
   }
 }
 
@@ -140,42 +170,47 @@ resource "aws_launch_template" "dev_bot_lt" {
               yum update -y
               yum install -y docker cronie
 
-              # Start and enable Docker
+              # Start and enable Docker/Crond
               systemctl start docker
               systemctl enable docker
-
-              # Start and enable Crond
               systemctl start crond
               systemctl enable crond
 
-              # --- DISK SPACE PROTECTION: CAP SYSTEM LOGS ---
-              # This stops the journal from eating the disk when errors occur
+              # --- DISK SPACE PROTECTION ---
               echo "SystemMaxUse=100M" >> /etc/systemd/journald.conf
               echo "RuntimeMaxUse=50M" >> /etc/systemd/journald.conf
               systemctl restart systemd-journald
               journalctl --vacuum-size=100M
 
+              # ECR Login
               REGISTRY_URL=$(echo "${aws_ecr_repository.dev_bot_repo.repository_url}" | cut -d'/' -f1)
               aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin $REGISTRY_URL
 
               docker pull ${aws_ecr_repository.dev_bot_repo.repository_url}:latest
 
-              # Pull and Run the Bot
-              docker pull ${aws_ecr_repository.dev_bot_repo.repository_url}:latest
-
+              # --- NEW: Create ML Data directory ---
               mkdir -p /home/ec2-user/gamelogs
+              mkdir -p /home/ec2-user/ml_data
+              chmod 777 /home/ec2-user/ml_data  # Ensure container can write
 
-              # Run container with log rotation and volume mount
+              # Run container with BOTH volumes mounted
               docker run -d \
                 --name bot-runner \
                 --log-opt max-size=5m \
                 --log-opt max-file=2 \
                 -v /home/ec2-user/gamelogs:/app/gamelogs \
+                -v /home/ec2-user/ml_data:/app/ml_data \
                 ${aws_ecr_repository.dev_bot_repo.repository_url}:latest
 
-              # DRAIN LOGS: Ensure the directory exists, then write the cron job
+              # DRAIN LOGS AND CSVs
               mkdir -p /etc/cron.d
-              echo "* * * * * root /usr/bin/aws s3 mv /home/ec2-user/gamelogs s3://${aws_s3_bucket.dev_simulation_logs.id}/raw/ --recursive" > /etc/cron.d/s3_sync
+              cat <<CRON > /etc/cron.d/s3_sync
+              # Move raw JSON logs
+              * * * * * root /usr/bin/aws s3 mv /home/ec2-user/gamelogs s3://${aws_s3_bucket.dev_simulation_logs.id}/raw/ --recursive
+              # Move the unique CSV files
+              * * * * * root /usr/bin/aws s3 mv /home/ec2-user/ml_data s3://${aws_s3_bucket.dev_simulation_logs.id}/staging/ --recursive
+              CRON
+
               chmod 644 /etc/cron.d/s3_sync
               EOF
   )
@@ -184,7 +219,7 @@ resource "aws_launch_template" "dev_bot_lt" {
 resource "aws_autoscaling_group" "dev_bot_fleet" {
   name                = "dev-bot-asg"
   desired_capacity    = 0
-  max_size            = 10
+  max_size            = 30
   min_size            = 0
   vpc_zone_identifier = [local.subnet_id]
 
@@ -192,13 +227,21 @@ resource "aws_autoscaling_group" "dev_bot_fleet" {
     instances_distribution {
       on_demand_base_capacity                  = 0
       on_demand_percentage_above_base_capacity = 0
-      spot_allocation_strategy                 = "lowest-price"
+
+      # REMOVE spot_instance_pools if it was here
+      spot_allocation_strategy = "capacity-optimized"
     }
+
     launch_template {
       launch_template_specification {
         launch_template_id = aws_launch_template.dev_bot_lt.id
         version            = "$Latest"
       }
+
+      # Highly recommended: Add a few types to give AWS options
+      override { instance_type = "t3.small" }
+      override { instance_type = "t3.medium" }
+      override { instance_type = "t2.small" }
     }
   }
 }

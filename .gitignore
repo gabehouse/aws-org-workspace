@@ -57,3 +57,8 @@ node_modules
 services/wilderchess/gamelogs/
 services/wilderchess/app*.zip
 services/wilderchess/target/
+
+#ml
+.venv/
+__pycache__/
+*.onnxservices/wilderchess/temp_chunks/

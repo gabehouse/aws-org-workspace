@@ -7,7 +7,7 @@ package com.gabe.animalia.ml.game;
 public class GameFinalResult {
 
     private String gameId;
-    private String winningPlayerId;
+    private int winningPlayerId;
     private int totalTurns;
     private String timestamp;
 
@@ -17,7 +17,7 @@ public class GameFinalResult {
 
     public GameFinalResult() {}
 
-    public GameFinalResult(String gameId, String winningPlayerId, int totalTurns, String timestamp) {
+    public GameFinalResult(String gameId, int winningPlayerId, int totalTurns, String timestamp) {
         this.gameId = gameId;
         this.winningPlayerId = winningPlayerId;
         this.totalTurns = totalTurns;
@@ -28,8 +28,8 @@ public class GameFinalResult {
     public String getGameId() { return gameId; }
     public void setGameId(String gameId) { this.gameId = gameId; }
 
-    public String getWinningPlayerId() { return winningPlayerId; }
-    public void setWinningPlayerId(String winningPlayerId) { this.winningPlayerId = winningPlayerId; }
+    public int getWinningPlayerId() { return winningPlayerId; }
+    public void setWinningPlayerId(int winningPlayerId) { this.winningPlayerId = winningPlayerId; }
 
     public int getTotalTurns() { return totalTurns; }
     public void setTotalTurns(int totalTurns) { this.totalTurns = totalTurns; }

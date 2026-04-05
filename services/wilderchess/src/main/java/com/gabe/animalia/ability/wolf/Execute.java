@@ -1,38 +1,18 @@
 package com.gabe.animalia.ability.wolf;
-import java.io.IOException;
 
+import com.gabe.animalia.enums.ActionEnum;
 import com.gabe.animalia.general.Action;
 import com.gabe.animalia.general.Critter;
 import com.gabe.animalia.general.Player;
 import com.gabe.animalia.general.Targetable;
 
-
 public class Execute extends Action {
-	private Critter subject;
-	private Critter target;
-	private String targetType = "critter";
-	private String name = "Execute";
-	private String type = "attack";
-	private double timeCost = 3;
-	private int energyCost = 60;
-	private int damage = 0;
-	private Player player;
-	private Player otherPlayer;
-	private boolean used;
 	private String indicatorMessage;
-	private boolean performable = true;
-
 
 	public Execute(Critter subject, Targetable target, Player player, Player otherPlayer) {
-		this.subject = subject;
-		this.target = (Critter)target;
-		this.player = player;
-		this.otherPlayer = otherPlayer;
-
-
+		super(subject, target, player, otherPlayer, ActionEnum.EXECUTE);
 
 	}
-
 
 	@Override
 	public String getIndicatorMessage() {
@@ -43,10 +23,9 @@ public class Execute extends Action {
 	public void init() {
 		subject.getIndicatedAttacks().add(target);
 		player.getQueue().add(this);
-		indicatorMessage = "indicate|attack," + target.getName() + "," + target.getSide();
+		indicatorMessage = "indicate|support," + target.getName() + "," + target.getSide();
 
-			player.sendString("option,remove," + name);
-
+		player.sendString("option,remove," + name);
 
 	}
 
@@ -65,79 +44,36 @@ public class Execute extends Action {
 		}
 		System.out.println(str);
 
-			player
-					.sendString("option,attack," + name + "," + str);
+		player
+				.sendString("option,support," + name + "," + str);
 
 	}
 
 	@Override
-	public void displayAction() {
+	public CastResult customCheck() {
+		Critter t = getTargetAsCritter();
+		if (t == null)
+			return CastResult.CUSTOM_CHECK_FAILED;
 
-	}
-	@Override
-	public boolean performable() {
-		if (subject.getEnergy() - energyCost >= 0 && performable) {
-			return true;
-		}
-		return false;
-
-	}
-
-	public void actionLog() {
-
-
-			player.sendString("actionlog," + subject.getName() + " used " + name + " on " + target.getName() + ".");
-			otherPlayer.sendString("actionlog," + subject.getName() + " used " + name + " on " + target.getName() + ".");
-
-
-	}
-
-	@Override
-	public boolean perform() {
-		if (subject.getEnergy() - energyCost >= 0 && subject.canUseAction() && performable()) {
-			actionLog();
-			if (target.getSpot().getInfront() != null && !target.getSide().equals(subject.getSide())) {
-				if (target.getSpot().getInfront().isOccupied()) {
-					this.target = target.getSpot().getInfront().getCritter();
-
-				}
+		if (subject.getSpot().getInfront() == null) {
+			if ((double) t.getHealth() / (double) t.getMaxHealth() * 100 < 50) {
+				// subject is in first row and target is below 50 hp
+				return CastResult.SUCCESS;
 			}
 
-			if (subject.getSpot().getInfront() == null) {
-				if ((double)target.getHealth() / (double)target.getMaxHealth() * 100 < 50) {
-					if (target.getDefence() == 0) {
-						target.setHealth(0);
-						target.onHit(subject.getOwner(), subject.getOpponent(), this);
-					} else {
-						target.onBlock(subject.getOwner(),
-								subject.getOpponent());
-						subject.setEnergy(subject.getEnergy() - energyCost);
-					}
-				} else {
-					subject.setEnergy(subject.getEnergy() - energyCost);
-				}
-			} else {
-				subject.setEnergy(subject.getEnergy() - energyCost);
-			}
-
-
-				player.sendString(
-						"energy," + subject.getName() + "," + subject.getSide()
-								+ "," + subject.getEnergy() + "|");
-				player.sendString(
-						"health," + target.getName() + "," + target.getSide()
-								+ "," + target.getHealth() + "|");
-				otherPlayer.sendString(
-						"energy," + subject.getName() + "," + subject.getSide()
-								+ "," + subject.getEnergy() + "|");
-				otherPlayer.sendString(
-						"health," + target.getName() + "," + target.getSide()
-								+ "," + target.getHealth() + "|");
-
-
-			return true;
 		}
-		return false;
+		return CastResult.CUSTOM_CHECK_FAILED;
+	}
+
+	@Override
+	public boolean customPerform() {
+		Critter t = getTargetAsCritter();
+		if (t == null)
+			return false;
+
+		t.setHealth(0);
+
+		return true;
 	}
 
 	@Override
@@ -145,111 +81,5 @@ public class Execute extends Action {
 		subject.getIndicatedAttacks().remove(target);
 
 	}
-	@Override
-	public Player getPlayer() {
-		return player;
-	}
-	@Override
-	public void setPlayer(Player player) {
-		this.player = player;
-	}
-	@Override
-	public Player getOtherPlayer() {
-		return otherPlayer;
-	}
-	@Override
-	public void setOtherPlayer(Player otherPlayer) {
-		this.otherPlayer = otherPlayer;
-	}
-	@Override
-	public Critter getSubject() {
-		return subject;
-	}
-	@Override
-	public void setSubject(Critter subject) {
-		this.subject = subject;
-	}
-	@Override
-	public Critter getTarget() {
-		return target;
-	}
-	@Override
-	public void setTarget(Targetable target) {
-		this.target = (Critter)target;
-	}
-	@Override
-	public String getTargetType() {
-		return targetType;
-	}
-
-	@Override
-	public String getDescription() {
-		return name.replace("\n", "")
-				+ "\nType: "
-				+ this.type
-				+ "\nEnergy: "
-				+ energyCost
-				+ "\nTime: "
-				+ timeCost
-				+ "\nDescription: Kills a selected \nenemy fighter if they are under \n half health and unprotected. \nMust be used from the front \ncolumn. Energy is refunded on \nsuccess.";
-	}
-
-	@Override
-	public String getType() {
-		return type;
-	}
-
-	@Override
-	public String getTargetName() {
-		return target.getName();
-	}
-
-	@Override
-	public Action getNew() {
-		return new Execute(null, null, null, null);
-
-	}
-
-	@Override
-	public String getUsingName() {
-		return subject.getName();
-	}
-
-	@Override
-	public double getTimeCost() {
-		return timeCost;
-	}
-
-	@Override
-	public int getEnergyCost() {
-		return energyCost;
-	}
-
-	@Override
-	public String getName() {
-		return name;
-	}
-
-	@Override
-	public boolean isPerformable() {
-		return performable;
-	}
-
-	@Override
-	public void setPerformable(boolean performable) {
-		this.performable = performable;
-	}
-
-	@Override
-	public void setTimeCost(double timeCost) {
-		this.timeCost = timeCost;
-	}
-
-	@Override
-	public void setEnergyCost(int energyCost) {
-		this.energyCost = energyCost;
-	}
-
-
 
 }
