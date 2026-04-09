@@ -6,10 +6,11 @@ applications:
         preBuild:
           commands:
             - corepack enable
-            # Filter by the exact name from your package.json
             - pnpm install --filter my-app --no-frozen-lockfile
         build:
           commands:
+            # Fixes the Out of Memory error during Vite transformation
+            - export NODE_OPTIONS="--max-old-space-size=6144"
             - pnpm run build
       artifacts:
         baseDirectory: dist
@@ -23,6 +24,5 @@ applications:
         build:
           commands:
             - corepack enable
-            # Concurrency=1 saves RAM during the install
             - pnpm install --filter my-app --no-frozen-lockfile --child-concurrency=1
             - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
