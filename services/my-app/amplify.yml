@@ -6,8 +6,8 @@ applications:
         preBuild:
           commands:
             - corepack enable
-            # Try filtering by the directory name relative to root
-            - pnpm install --filter "./services/my-app" --no-frozen-lockfile
+            # Use the package name instead of the path
+            - pnpm install --filter my-app --no-frozen-lockfile
         build:
           commands:
             - pnpm run build
@@ -20,5 +20,6 @@ applications:
         build:
           commands:
             - corepack enable
-            - pnpm install --filter "./services/my-app" --no-frozen-lockfile
+            # We'll run install in the appRoot specifically to be safe
+            - cd $AWS_ ampx_app_root && pnpm install --no-frozen-lockfile
             - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
