@@ -6,8 +6,8 @@ applications:
         preBuild:
           commands:
             - corepack enable
-            # Only install what my-app needs
-            - pnpm install --filter ./services/my-app... --no-frozen-lockfile
+            # Try filtering by the directory name relative to root
+            - pnpm install --filter "./services/my-app" --no-frozen-lockfile
         build:
           commands:
             - pnpm run build
@@ -15,14 +15,10 @@ applications:
         baseDirectory: dist
         files:
           - '**/*'
-      cache:
-        paths:
-          - node_modules/**/*
     backend:
       phases:
         build:
           commands:
             - corepack enable
-            # Use the same filter here to save RAM
-            - pnpm install --filter ./services/my-app... --no-frozen-lockfile
+            - pnpm install --filter "./services/my-app" --no-frozen-lockfile
             - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
