@@ -6,7 +6,8 @@ applications:
         preBuild:
           commands:
             - corepack enable
-            - pnpm install --no-frozen-lockfile
+            # Only install what my-app needs
+            - pnpm install --filter ./services/my-app... --no-frozen-lockfile
         build:
           commands:
             - pnpm run build
@@ -21,7 +22,7 @@ applications:
       phases:
         build:
           commands:
-            # Ensure dependencies are installed so ampx can be found
             - corepack enable
-            - pnpm install --no-frozen-lockfile
+            # Use the same filter here to save RAM
+            - pnpm install --filter ./services/my-app... --no-frozen-lockfile
             - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
