@@ -1,5 +1,6 @@
 package com.gabe.animalia.critter;
 
+import com.gabe.animalia.enums.FighterType;
 import com.gabe.animalia.general.Action;
 import com.gabe.animalia.general.Critter;
 import com.gabe.animalia.general.Player;
@@ -20,31 +21,11 @@ public class Heron extends Critter {
 
 	public Heron(String name, Square spot, String side, Player owner,
 			Player opponent) {
-		super(name, spot, MAX_HEALTH, MAX_FATIGUE, abilities, side, owner,
+		super(name, FighterType.HERON, spot, MAX_HEALTH, MAX_FATIGUE, abilities, side, owner,
 				opponent, passiveCritterDescription, passiveName,
 				passiveSelectDescription);
 	}
 
-	@Override
-	public void onHit(Player attacking, Player hit, Action action) {
-		super.onHit(attacking, hit, action);
-
-	}
-
-	@Override
-	public void onMove(Player player, Player otherPlayer) {
-
-	}
-
-	@Override
-	public void onBlock(Player blocked, Player blocking) {
-		super.onBlock(blocked, blocking);
-	}
-
-	@Override
-	public void benchedEffect(Player player, Player otherPlayer) {
-
-	}
 	@Override
 	public final boolean isComingSoon() {
 		return comingSoon;

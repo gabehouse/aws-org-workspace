@@ -35,5 +35,10 @@ rm terraform-docs.tar.gz
 # Using 'python3 -m' is the safest way to call pip-installed tools in a script
 python3 -m pre_commit install
 
+# 5. Python AI Dependencies
+echo "🐍 Installing Python AI dependencies..."
+# If you have a requirements.txt, use that. Otherwise, install direct:
+pip install boto3 pandas torch onnxruntime --break-system-packages
+
 # Install dependencies if a package.json is found
 find . -name "package.json" -not -path "**/node_modules/**" -execdir npm install \;

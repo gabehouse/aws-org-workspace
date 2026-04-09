@@ -16,14 +16,6 @@ import javax.mail.internet.MimeMessage;
 
 import org.eclipse.jetty.websocket.api.RemoteEndpoint;
 
-
-
-
-
-
-
-
-
 import com.gabe.animalia.ability.Move;
 import com.gabe.animalia.critter.Bat;
 import com.gabe.animalia.critter.Bull;
@@ -45,13 +37,11 @@ import com.gabe.animalia.items.RatlandJestersHat;
 import com.gabe.animalia.items.ThiefGloves;
 import com.gabe.animalia.items.SmokeBomb;
 
-
 public class State {
 	private static State anInstance = null;
 	int callCount = 0;
 	int turnCount = 0;
 	int totalGameCount = 0;
-	boolean botVsBot = true;
 	int numBotGamesAtOnce = 4;
 	static Critter selectDove = new Dove("Dove", new Square("fake", ""), null, null, null);
 	static Critter selectFox = new Fox("Fox", new Square("fake", ""), null, null, null);
@@ -63,11 +53,11 @@ public class State {
 	static Critter selectBull = new Bull("Bull", new Square("fake", ""), null, null, null);
 	static Critter selectHeron = new Heron("Heron", new Square("fake", ""), null, null, null);
 	static Critter selectHawk = new Hawk("Hawk", new Square("fake", ""), null, null, null);
-	static Critter selectNewt = new Newt ("Newt", new Square("fake", ""), null, null, null);
-	static Critter selectPig = new Pig ("Pig", new Square("fake", ""), null, null, null);
+	static Critter selectNewt = new Newt("Newt", new Square("fake", ""), null, null, null);
+	static Critter selectPig = new Pig("Pig", new Square("fake", ""), null, null, null);
 	static Critter[] selectCritters = { selectDove, selectFox, selectLion,
 			selectDonkey, selectWolf, selectTurtle, selectBat, selectBull,
-			selectHeron, selectHawk, selectNewt, selectPig};
+			selectHeron, selectHawk, selectNewt, selectPig };
 	static Item selectCrimberryPack = new CrimberryPack(null, null);
 	static Item selectWarHorn = new WarHorn(null, null);
 	static Item selectOilBomb = new OilBomb(null, null);
@@ -86,13 +76,9 @@ public class State {
 	private State() {
 
 	}
-	public synchronized void runBotVsBot () {
-
-
-
-	}
 
 	public synchronized void update(RemoteEndpoint endpoint, String message) {
+		System.out.println("~~~~update message:" + message + "~~~~~");
 
 		String tokens[] = message.split(",");
 		if (tokens[0].equals("selectinitrequest")) {
@@ -107,24 +93,23 @@ public class State {
 			try {
 				endpoint.sendString(str);
 			} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		} else if (tokens[0].equals("playbot")) {
 			Game game = new Game(
-				new User(endpoint, totalGameCount*2 + 1),
-				new User(null, -1), gameLogger
-			);
-					try {
-						endpoint.sendString("setid," + (totalGameCount * 2 + 1));
-						endpoint.sendString("startgame");
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					game.init();
-					games.add(game);
-					totalGameCount++;
+					new User(endpoint, totalGameCount * 2 + 1),
+					new User(null, -1), gameLogger);
+			try {
+				endpoint.sendString("setid," + (totalGameCount * 2 + 1));
+				endpoint.sendString("startgame");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			game.init();
+			games.add(game);
+			totalGameCount++;
 
 		} else if (tokens[0].equals("searchqueue")) {
 			if (tokens[1].equals("add")) {
@@ -169,7 +154,7 @@ public class State {
 					}
 				}
 			}
-		}  else if (tokens[0].equals("bugreport")) {
+		} else if (tokens[0].equals("bugreport")) {
 			sendBugReport(tokens[1], tokens[2]);
 		} else {
 
@@ -208,8 +193,7 @@ public class State {
 						}
 					});
 
-
-				try {
+			try {
 				Message msg = new MimeMessage(session);
 
 				msg.setFrom(new InternetAddress(username));
@@ -280,7 +264,9 @@ public class State {
 			} else {
 				str += "|" + c.getName();
 				for (Action a : c.getAbilities()) {
-					str += "," + a.getType() + "," + a.getDescription();
+					String typeString = (a.getType() != null) ? a.getType().name().toLowerCase() : "none";
+
+					str += "," + typeString + "," + a.getInfo();
 				}
 				str += "," + c.getPassiveSelectDescription();
 			}
@@ -288,15 +274,14 @@ public class State {
 		}
 		str += "~";
 		for (Item i : selectItems) {
-			str += i.getName() + "," + i.getDescription() + "|";
+			str += i.getName() + "," + i.getInfo() + "|";
 		}
 		try {
-	//		System.out.println(str);
+			// System.out.println(str);
 			endpoint.sendString("selectinit," + str);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 
 	}
 }

@@ -831,31 +831,38 @@ function App() {
           </h1>
         </div>
 
-        {/* Tennis Coaching Blurb - Updated content and alignment */}
-   <div style={{ marginBottom: '1.5rem', textAlign: 'left', color: '#374151', paddingLeft: '1rem', paddingRight: '1rem' }}> {/* Added horizontal padding to the container */}
-          <p style={{ fontSize: '1rem', lineHeight: '1.5', marginBottom: '1rem' }}> {/* Removed individual horizontal margins */}
-            Hello! My name is Gabriel, and I'm looking to share my love for tennis and provide affordable lessons to people of all ages and skill levels.
-          </p>
-          <p style={{ fontSize: '1rem', lineHeight: '1.5', marginBottom: '1rem' }}> {/* Removed individual horizontal margins */}
-            I have experience coaching private lessons, assistant coaching for a tennis camp, and being a hitting partner for top junior OTA players.
-          </p>
-          <p style={{ fontSize: '1rem', lineHeight: '1.5', marginBottom: '1rem' }}> {/* Removed individual horizontal margins */}
-            The lessons will take place at the public WCI courts. Please note that in using a public court to keep costs low, there's a chance the courts will be occupied. In this case, we'll train just as effectively off-court, working on technique, volleys, and hitting against a wall until a court becomes available.
-          </p>
-          <p style={{ fontSize: '1rem', lineHeight: '1.5', marginBottom: '1rem' }}> {/* Removed individual horizontal margins */}
-            Lessons are <strong><s>$30</s> $20 for a 1-hour session</strong>, with your <strong>first lesson only $10!</strong> You can also come with friends and split the cost. Click on an available space in the calendar to book a lesson, and I'll personally send you an email to confirm. Currently, I'm only accepting <strong>cash and e-transfer payments</strong>.
-          </p>
-          <p style={{ fontSize: '1rem', lineHeight: '1.5' }}> {/* Removed individual horizontal margins */}
-            If you want to cancel a booking, simply click your slot on the calendar. Please try to avoid canceling within 3 hours of the lesson, but if you forget, there are no fees or worries.
-          </p>
-        </div>
+{/* Tennis Coaching Blurb - Refined for Clients & Portfolio Appeal */}
+<div style={{ marginBottom: '1.5rem', textAlign: 'left', color: '#374151', padding: '0 1rem' }}>
+  <p style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.75rem', color: '#111827' }}>
+    Professional Tennis Instruction | Waterloo
+  </p>
 
-        {/* Group Lesson Description - Updated content and alignment */}
-        <div style={{ marginBottom: '1rem', textAlign: 'left', color: '#374151', paddingLeft: '1rem', paddingRight: '1rem' }}> {/* Added horizontal padding to the container */}
-          <p style={{ fontSize: '1rem', lineHeight: '1.5' }}> {/* Removed individual horizontal margins */}
-            Interested in <strong>group sessions</strong>? I'm looking to organize longer group sessions at a private court with a mix of tennis drills and singles/doubles matches. Sign up for the waitlist, and once I have enough interest, I'll email everyone to work something out.
-          </p>
-        </div>
+  <p style={{ fontSize: '1rem', lineHeight: '1.6', marginBottom: '1rem' }}>
+    Hi, I’m Gabriel. I provide technical coaching and high-performance hitting sessions for all skill levels. My background includes private instruction, tennis camp leadership, and serving as a hitting partner for <strong>top junior OTA players</strong>.
+  </p>
+
+  <p style={{ fontSize: '1rem', lineHeight: '1.6', marginBottom: '1rem' }}>
+    <strong>The Training Environment:</strong> To keep elite-level coaching accessible, sessions are held at the WCI public courts. We operate with high adaptability—should courts be at capacity, we pivot to intensive off-court technical modules (biomechanics, volleys, and wall-drills) until space opens, ensuring zero downtime.
+  </p>
+
+  <p style={{ fontSize: '1rem', lineHeight: '1.6', marginBottom: '1rem' }}>
+    <strong>Rates & Booking:</strong> <s>$40</s> <strong>$30 per hour</strong> (Split the cost with friends!).
+    Your <strong>introductory session is just $10</strong>. Select a calendar slot to trigger an automated confirmation and secure your booking.
+  </p>
+
+  <p style={{ fontSize: '0.9rem', color: '#6B7280', fontStyle: 'italic' }}>
+    Flexible cancellation: No fees for late changes, though 3-hour notice is appreciated. Payments accepted via Cash or E-transfer.
+  </p>
+</div>
+
+{/* Group Lesson Description - Waitlist Logic */}
+<div style={{ marginBottom: '1rem', textAlign: 'left', color: '#374151', padding: '0 1rem' }}>
+  <div style={{ backgroundColor: '#F3F4F6', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #3B82F6' }}>
+    <p style={{ fontSize: '1rem', lineHeight: '1.5', margin: 0 }}>
+      <strong>Scalable Group Sessions:</strong> I am currently aggregating interest for structured group clinics at private facilities. These sessions will feature a mix of tactical drills and match-play. <strong>Join the waitlist</strong> to be notified when we reach capacity for a new cohort.
+    </p>
+  </div>
+</div>
 
         {/* Email Contact Line - Added here and aligned left */}
         <div style={{ marginBottom: '1.5rem', textAlign: 'left', color: '#374151', fontSize: '1rem', lineHeight: '1.5', paddingLeft: '1rem', paddingRight: '1rem' }}> {/* Added horizontal padding to the container */}

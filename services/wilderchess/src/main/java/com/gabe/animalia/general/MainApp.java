@@ -26,13 +26,9 @@ import com.gabe.animalia.ml.server.GameLogger;
 // import com.gabe.animalia.ml.HeavyStateTest;
 // import com.gabe.animalia.ml.SequentialLogTest;
 
-
-
 public class MainApp extends AbstractHandler {
     private static final int PAGE_SIZE = 3000;
     private static final String INDEX_HTML = loadIndex();
-
-
 
     private static String loadIndex() {
         try (BufferedReader reader = new BufferedReader(
@@ -73,64 +69,62 @@ public class MainApp extends AbstractHandler {
     }
 
     public static void main(String[] args) throws Exception {
-        boolean botVsBot = false;
+        boolean botVsBot = true;
         int numBotGamesAtOnce = 1;
         int totalGameCount = 0;
         ArrayList<Game> games = new ArrayList<Game>();
         if (botVsBot) {
-		    GameLogger gameLogger = new GameLogger();
+            GameLogger gameLogger = new GameLogger();
             while (totalGameCount < numBotGamesAtOnce) {
-					Game game = new Game(
-						new User(null, -1),
-						new User(null, -1), gameLogger
-				);
-				games.add(game);
-				totalGameCount++;
+                Game game = new Game(
+                        new User(null, -1),
+                        new User(null, -1), gameLogger);
+                games.add(game);
+                totalGameCount++;
             }
         } else {
 
-        Server server = new Server(getPort());
-        ResourceHandler resourceHandler = new ResourceHandler();
-        // resourceHandler.setDirectoriesListed(true);
-        // resourceHandler.setWelcomeFiles(new String[] { "index.html" });
-        resourceHandler.setResourceBase(".");
-     //   HeavyStateTest.runHeavyStateVerification();
+            Server server = new Server(getPort());
+            ResourceHandler resourceHandler = new ResourceHandler();
+            // resourceHandler.setDirectoriesListed(true);
+            // resourceHandler.setWelcomeFiles(new String[] { "index.html" });
+            resourceHandler.setResourceBase(".");
+            // HeavyStateTest.runHeavyStateVerification();
 
+            WebSocketHandler wsHandler = new WebSocketHandler() {
+                @Override
+                public void configure(WebSocketServletFactory factory) {
+                    factory.register(MyWebSocketHandler.class);
+                }
+            };
+            ResourceHandler assetsResourceHandler = new ResourceHandler();
+            assetsResourceHandler.setResourceBase("assets");
+            assetsResourceHandler.setPathInfoOnly(true);
+            assetsResourceHandler.setWelcomeFiles(new String[] {});
+            assetsResourceHandler.setDirectoriesListed(false);
 
-        WebSocketHandler wsHandler = new WebSocketHandler() {
-            @Override
-            public void configure(WebSocketServletFactory factory) {
-                factory.register(MyWebSocketHandler.class);
-            }
-        };
-        ResourceHandler assetsResourceHandler = new ResourceHandler();
-        assetsResourceHandler.setResourceBase("assets");
-        assetsResourceHandler.setPathInfoOnly(true);
-        assetsResourceHandler.setWelcomeFiles(new String[] {});
-        assetsResourceHandler.setDirectoriesListed(false);
+            // Create a context handler for the assets path
+            ContextHandler assetsContextHandler = new ContextHandler("/assets");
+            assetsContextHandler.setHandler(assetsResourceHandler);
 
-        // Create a context handler for the assets path
-        ContextHandler assetsContextHandler = new ContextHandler("/assets");
-        assetsContextHandler.setHandler(assetsResourceHandler);
+            // For serving the main application (including index.html from resources)
+            // Your existing MainApp handler already handles this
 
-        // For serving the main application (including index.html from resources)
-        // Your existing MainApp handler already handles this
+            // Update your handlers list
+            HandlerList handlers = new HandlerList();
+            handlers.setHandlers(new Handler[] {
+                    wsHandler,
+                    assetsContextHandler,
+                    new MainApp() // Your existing handler that serves index.html from resources
+            });
 
-        // Update your handlers list
-        HandlerList handlers = new HandlerList();
-        handlers.setHandlers(new Handler[] {
-                wsHandler,
-                assetsContextHandler,
-                new MainApp() // Your existing handler that serves index.html from resources
-        });
+            server.setHandler(handlers);
 
-        server.setHandler(handlers);
+            // server.setHandler(new WebSocketTest());
 
-        // server.setHandler(new WebSocketTest());
-
-        server.start();
-        server.join();
-    }
+            server.start();
+            server.join();
+        }
 
     }
 }

@@ -7,7 +7,7 @@ public class TypesAndStuff {
 	public String [] poisons = {};
 	public String [] moves = {"move", "Pounce", "Charge"};
 	public String [] stealths = {"Meld"};
-	public String [] channelings = {"Inferno"};
+	public String [] channellings = {"Inferno"};
 	public String [] suppresses = {"Shell Stance", "Bray", "Toss"};
 	public String [] immobilizes = {""};
 	public String [] blocks = {"Shell Stance", "Shield Strike", "Divine Intervention", "Pounce", "Defend", "Stout Shield"};
@@ -96,8 +96,8 @@ public class TypesAndStuff {
 
 	}
 
-	public boolean isChanneling(Action effect) {
-		for (String b : channelings) {
+	public boolean ischannelling(Action effect) {
+		for (String b : channellings) {
 			if (b.equals(effect.getName().replace("\n", ""))) {
 				return true;
 			}

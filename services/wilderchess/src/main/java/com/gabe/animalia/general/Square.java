@@ -3,10 +3,9 @@ package com.gabe.animalia.general;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-
 public class Square extends Targetable {
 	private boolean plannedMove;
-	private boolean occupied;
+
 	private Critter critter;
 	private String name;
 	private Square onLeft;
@@ -16,7 +15,7 @@ public class Square extends Targetable {
 	private String side;
 	private boolean bench = false;
 	private ArrayList<Square> surroundingSquares;
-	private HashMap<String,String> topLeftCoord = new HashMap<String,String>();
+	private HashMap<String, String> topLeftCoord = new HashMap<String, String>();
 
 	public Square(String name, String side) {
 		this.name = name;
@@ -38,9 +37,56 @@ public class Square extends Targetable {
 		if (name.contains("Bench")) {
 			bench = true;
 		}
+
+		// --- ADD THIS TO FIX THE -1000 ---
+		String coord = getTopLeftCoord();
+		if (coord != null) {
+			if (coord.contains("Bench")) {
+				// Assign bench spots a specific range, e.g., 900 for left, 901 for right
+				this.id = side.equals("left") ? 900 : 901;
+			} else {
+				// Convert "12" string to 100 + 12 = 112
+				// This ensures squares have a unique, consistent ID range (100-142)
+				this.id = 100 + Integer.parseInt(coord);
+			}
+		}
 	}
+
 	public String getTopLeftCoord() {
 		return topLeftCoord.get(name);
+	}
+
+	public int getBoardIndex() {
+		// 1. Give the bench a dedicated index (7)
+		if (this.bench)
+			return 7;
+
+		String coord = getTopLeftCoord();
+		if (coord == null)
+			return -1;
+
+		switch (coord) {
+			case "00":
+			case "40":
+				return 0;
+			case "10":
+			case "30":
+				return 1;
+			case "01":
+			case "41":
+				return 2;
+			case "11":
+			case "31":
+				return 3;
+			case "02":
+			case "42":
+				return 4;
+			case "12":
+			case "32":
+				return 5;
+			default:
+				return 6;
+		}
 	}
 
 	@Override
@@ -51,9 +97,11 @@ public class Square extends Targetable {
 	public boolean isBench() {
 		return bench;
 	}
+
 	public Square getOnLeft() {
 		return onLeft;
 	}
+
 	public void setSurrounding(Square infront, Square behind, Square onLeft, Square onRight) {
 		this.infront = infront;
 		this.behind = behind;
@@ -74,6 +122,7 @@ public class Square extends Targetable {
 		}
 
 	}
+
 	public Square getSurroundingSquare(String name) {
 		if (infront != null) {
 			if (name.equals(infront.toString())) {
@@ -98,6 +147,7 @@ public class Square extends Targetable {
 		return null;
 
 	}
+
 	public boolean compareSurrounding(String name) {
 		if (infront != null) {
 			if (name.equals(infront.toString())) {
@@ -121,24 +171,31 @@ public class Square extends Targetable {
 		}
 		return false;
 	}
+
 	public String getSide() {
 		return side;
 	}
+
 	public boolean isPlannedMove() {
 		return plannedMove;
 	}
+
 	public void setPlannedMove(boolean plannedMove) {
 		this.plannedMove = plannedMove;
 	}
+
 	public Square getOnRight() {
 		return onRight;
 	}
+
 	public Square getBehind() {
 		return behind;
 	}
+
 	public Square getInfront() {
 		return infront;
 	}
+
 	public boolean isOccupied() {
 		if (critter != null) {
 			return true;
@@ -146,27 +203,27 @@ public class Square extends Targetable {
 		return false;
 
 	}
-	public void setOccupied(boolean occupied) {
-		// if (occupied == false) {
-		// 	this.setCritter(null);
-		// }
-		// this.occupied = occupied;
-	}
+
 	public String getName() {
 		return name;
 	}
+
 	public void setName(String name) {
 		this.name = name;
 	}
+
 	public Critter getCritter() {
 		return critter;
 	}
+
 	public void setCritter(Critter critter) {
 		this.critter = critter;
 	}
+
 	public ArrayList<Square> getSurroundingSquares() {
 		return surroundingSquares;
 	}
+
 	public String toString() {
 		if (name == null) {
 			return "null";

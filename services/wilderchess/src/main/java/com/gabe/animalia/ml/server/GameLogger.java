@@ -1,47 +1,86 @@
 package com.gabe.animalia.ml.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SequenceWriter;
+
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.gabe.animalia.ml.game.GameFinalResult;
+import com.gabe.animalia.ml.game.GameFeaturizer;
+
 import com.gabe.animalia.ml.game.GameSessionLog;
-import com.gabe.animalia.ml.game.GameTurnRecord;
-import com.gabe.animalia.ml.game.StateSnapshotLogEntry;
+
 import java.io.File;
 import java.io.IOException;
-import java.io.FileOutputStream;
-import java.io.BufferedOutputStream;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.io.PrintWriter;
+
+import java.io.FileWriter;
+
+import java.util.List;
 
 public class GameLogger {
-
-    private final String logDirectory = "gamelogs/";
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    // Define the two distinct base directories
+    private final String jsonBaseDir;
+    private final String csvBaseDir;
+
     public GameLogger() {
-        File dir = new File(logDirectory);
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
-        // Make JSON pretty for easier debugging
+        // 1. Determine JSON path (Default: gamelogs/)
+        String envJsonPath = System.getenv("GAME_LOG_DIR");
+        this.jsonBaseDir = normalizePath(envJsonPath != null ? envJsonPath : "gamelogs/");
+
+        // 2. Determine CSV path (Default: ml_data/)
+        String envCsvPath = System.getenv("ML_DATA_DIR");
+        this.csvBaseDir = normalizePath(envCsvPath != null ? envCsvPath : "ml_data/");
+
+        // Ensure both base directories exist
+        ensureDirectoryExists(jsonBaseDir);
+        ensureDirectoryExists(csvBaseDir);
+
         objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
     }
 
-    /**
-     * Saves the entire game session to a single file.
-     * The file name will be [gameId].json
-     */
-    public void saveGameSession(GameSessionLog session, String filenameIdentifier) {
-        if (session == null || filenameIdentifier == null) return;
+    private String normalizePath(String path) {
+        return path.endsWith("/") ? path : path + "/";
+    }
 
-        // Use the provided identifier for the filename
-        String filename = logDirectory + filenameIdentifier + ".json";
+    private void ensureDirectoryExists(String path) {
+        File dir = new File(path);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+    }
+
+    public void saveGameSession(GameSessionLog session, String statusAndTimestamp) {
+        if (session == null || statusAndTimestamp == null)
+            return;
+
+        // Flat filename: gamelogs/uuid-123_SUCCESS-2026-04-02.json
+        String flatName = session.getGameId() + "_" + statusAndTimestamp + ".json";
+        File file = new File(jsonBaseDir + flatName);
+
         try {
-            objectMapper.writeValue(new File(filename), session);
+            objectMapper.writeValue(file, session);
+            System.out.println("JSON Log Saved: " + file.getName());
         } catch (IOException e) {
-            System.err.println("CRITICAL: Failed to save game session " + filenameIdentifier + ": " + e.getMessage());
+            System.err.println("JSON Save Failed: " + e.getMessage());
+        }
+    }
+
+    public void saveToCsvFile(String gameId, String statusAndTimestamp, List<String> rows) {
+        if (rows.isEmpty() || gameId == null)
+            return;
+
+        // Flat filename: ml_data/uuid-123_SUCCESS-2026-04-02.csv
+        String flatName = gameId + "_" + statusAndTimestamp + ".csv";
+        File file = new File(csvBaseDir + flatName);
+
+        try (PrintWriter out = new PrintWriter(new FileWriter(file, false))) {
+            out.println(new GameFeaturizer().getCsvHeader());
+            for (String row : rows) {
+                out.println(row);
+            }
+            System.out.println("CSV Data Saved: " + file.getName());
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

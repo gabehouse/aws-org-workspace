@@ -1,48 +1,21 @@
 package com.gabe.animalia.general;
 
-public class Item extends Action{
+import com.gabe.animalia.enums.ActionEnum;
 
-	public String getName() {
-		return null;
-	}
-	public void setName(String name) {
+public class Item extends Action {
+	protected int second = -1;
+	protected boolean used = false;
 
+	public Item(Player player, Player otherPlayer, ActionEnum actionData) {
+		super(null, null, player, otherPlayer, actionData);
 	}
-	public String getDescription() {
-		return null;
-	}
-	public void setDescription(String description) {
 
-	}
-	public String getTargetType() {
-		return null;
-	}
-	public void setTargetType(String targetType) {
-
-	}
-	public Targetable getTarget() {
-		return null;
-	}
-	public void setTarget(Targetable target) {
-
-	}
-	public Player getPlayer() {
-		return null;
-	}
-	public void setPlayer(Player player) {
-
-	}
-	public Player getOtherPlayer() {
-		return null;
-	}
-	public void setOtherPlayer(Player otherPlayer) {
-
-	}
 	public boolean isUsed() {
-		return false;
+		return this.used;
 	}
-	public void setUsed(boolean used) {
 
+	public void setUsed(boolean used) {
+		this.used = used;
 	}
 
 	public String getImageName() {
@@ -52,11 +25,11 @@ public class Item extends Action{
 
 	public int getSecond() {
 		// TODO Auto-generated method stub
-		return 0;
+		return this.second;
 	}
 
 	public void setSecond(int second) {
-		// TODO Auto-generated method stub
+		this.second = second;
 
 	}
 
