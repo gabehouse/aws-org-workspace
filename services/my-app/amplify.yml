@@ -6,7 +6,7 @@ applications:
         preBuild:
           commands:
             - corepack enable
-            # Use the package name instead of the path
+            # Filter by the exact name from your package.json
             - pnpm install --filter my-app --no-frozen-lockfile
         build:
           commands:
@@ -15,11 +15,14 @@ applications:
         baseDirectory: dist
         files:
           - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
     backend:
       phases:
         build:
           commands:
             - corepack enable
-            # We'll run install in the appRoot specifically to be safe
-            - cd $AWS_ ampx_app_root && pnpm install --no-frozen-lockfile
+            # Concurrency=1 saves RAM during the install
+            - pnpm install --filter my-app --no-frozen-lockfile --child-concurrency=1
             - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
