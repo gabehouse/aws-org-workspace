@@ -25,4 +25,6 @@ applications:
           commands:
             - corepack enable
             - pnpm install --filter my-app --no-frozen-lockfile --child-concurrency=1
+            # Add this line to give the CDK Synthesis enough RAM to breathe
+            - export NODE_OPTIONS="--max-old-space-size=6144"
             - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
