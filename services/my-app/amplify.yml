@@ -9,22 +9,18 @@ applications:
             - pnpm install --filter my-app --no-frozen-lockfile
         build:
           commands:
-            # Fixes the Out of Memory error during Vite transformation
+            # RESET and set memory for the frontend specifically
             - export NODE_OPTIONS="--max-old-space-size=6144"
             - pnpm run build
       artifacts:
         baseDirectory: dist
         files:
           - '**/*'
-      cache:
-        paths:
-          - node_modules/**/*
     backend:
       phases:
         build:
           commands:
             - corepack enable
             - pnpm install --filter my-app --no-frozen-lockfile --child-concurrency=1
-            # Add this line to give the CDK Synthesis enough RAM to breathe
             - export NODE_OPTIONS="--max-old-space-size=6144"
             - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
