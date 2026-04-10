@@ -58,7 +58,18 @@ services/wilderchess/gamelogs/
 services/wilderchess/app*.zip
 services/wilderchess/target/
 
-#ml
+# ml
 .venv/
+venv/          # <--- ADD THIS (Crucial for your current error)
+**/venv/       # <--- ADD THIS (Safety net for any venv in any subfolder)
 __pycache__/
-*.onnxservices/wilderchess/temp_chunks/
+
+# Separate these lines (they were mushed together)
+*.onnx
+services/wilderchess/temp_chunks/
+
+*.jar
+*.parquet
+
+# Data folders
+services/wilderchess/*_data/
