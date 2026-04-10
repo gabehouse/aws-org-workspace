@@ -16,14 +16,14 @@ export const auth = defineAuth({
       },
 
       callbackUrls: [
-        'http://localhost:5173/',
+        'http://localhost:5174/',
         'https://main.d34rismepnlcfp.amplifyapp.com/',
         'https://prod.d204uk8pvk2nwc.amplifyapp.com/',
         'https://www.grandrivertennis.ca/',
         'https://grandrivertennis.ca/'
       ],
       logoutUrls: [
-        'http://localhost:5173/',
+        'http://localhost:5174/',
         'https://main.d34rismepnlcfp.amplifyapp.com/',
         'https://prod.d204uk8pvk2nwc.amplifyapp.com/',
         'https://www.grandrivertennis.ca/',
