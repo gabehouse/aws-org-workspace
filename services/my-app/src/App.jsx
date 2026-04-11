@@ -313,7 +313,7 @@ const ProjectCard = ({ project }) => {
             style={{
                 marginBottom: '25px',
                 padding: '24px',
-                backgroundColor: '#fff',
+                backgroundColor: '#fcfaf2',
                 borderRadius: '8px',
                 boxShadow: isExpanded ? '0 10px 30px rgba(0,0,0,0.1)' : '0 2px 8px rgba(0,0,0,0.05)',
                 transition: 'all 0.3s ease',
@@ -530,7 +530,7 @@ const Projects = ({ isMobile }) => {
                 {
                     label: "Game Balance Convergence",
                     image: "assets/portfolio_convergence_chart.png",
-                    description: "Empirical validation of agent performance across 6,000+ simulated games. The Heuristic Baseline confirmed a stable 50.3% win-rate, while the Reinforcement Learning agent achieved a statistically significant 54.6% win-rate (95% CI via Wilson Score Interval), proving a tactical advantage over rule-based logic."
+                    description: "Empirical validation of agent performance across 2300 simulated games. The Heuristic Baseline confirmed a stable 49.5% win-rate, while the Reinforcement Learning agent achieved a statistically significant 82.9% win-rate (95% CI via Wilson Score Interval), proving a tactical advantage over rule-based logic."
                 },
                 {
                     label: "Strategy Heatmap",
@@ -662,7 +662,11 @@ const Projects = ({ isMobile }) => {
 
     return (
         <div style={{ padding: '80px 5%', maxWidth: '900px', margin: '0 auto' }}>
-            <h1 style={{ marginBottom: '40px', color: '#333', fontSize: '2.5rem' }}>Technical Projects</h1>
+            <h1 style={{
+                marginBottom: '30px',
+                color: 'inherit', // Uses color from your CSS :root
+                textAlign: isMobile ? 'left' : 'center' // Optional: Centers header on desktop
+            }}>Technical Projects</h1>
             {projects.map((project, index) => (
                 <ProjectCard key={index} project={project} />
             ))}
@@ -730,7 +734,7 @@ const Contact = ({ isMobile }) => {
                 {contacts.map((contact, index) => (
                     <div key={index} style={{
                         padding: '24px',
-                        backgroundColor: 'var(--card-bg, #f8f9fa)', // Dynamic bg
+                        backgroundColor: 'var(--card-bg, #fcfaf2)', // Dynamic bg
                         borderRadius: '8px',
                         border: '1px solid var(--border-color, #e9ecef)',
                         transition: 'transform 0.2s ease-in-out',
