@@ -27,13 +27,20 @@ resource "aws_s3_bucket" "prod_app_bucket" {
 module "wilderchess" {
   source = "../../../modules/wilderchess"
 
+  # --- UPDATE THESE TWO LINES ---
+  # This matches the input in your module/wilderchess/variables.tf
+  app_version = var.app_version
+
+  # Point to the dynamic zip file created by your script
+  source_path = "../../../../services/wilderchess/app-${var.app_version}.zip"
+
+  # Keep these as they are
   app_name            = "Wilderchess"
   env_name            = "Wilderchess"
   solution_stack_name = data.aws_elastic_beanstalk_solution_stack.latest_corretto.name
-  version_label       = "my-app-${var.app_version}"
+  version_label       = "v-${var.app_version}" # Also make the label dynamic
   instance_type       = var.prod_instance_type
   s3_bucket_name      = aws_s3_bucket.prod_app_bucket.id
-  source_path         = "../../../../services/wilderchess/app-${var.app_version}.zip"
 
   vpc_id             = data.terraform_remote_state.network.outputs.vpc_id
   public_subnet_ids  = data.terraform_remote_state.network.outputs.public_subnets

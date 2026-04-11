@@ -4,30 +4,57 @@
 # IAM Roles and Policies
 # -----------------------------------------------------------------------------
 # EC2 Instance Profile and Role
+# EC2 Instance Profile
 resource "aws_iam_instance_profile" "eb_instance_profile" {
   name = "eb-instance-profile"
   role = aws_iam_role.eb_instance_role.name
 }
 
+# EC2 Instance Role (The application's identity)
 resource "aws_iam_role" "eb_instance_role" {
   name = "eb-instance-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+    }]
+  })
+}
+
+# 1. NEW: Inline Policy for Custom Metrics (Required for your logMetric call)
+resource "aws_iam_role_policy" "eb_custom_metrics" {
+  name = "eb-custom-metrics-policy"
+  role = aws_iam_role.eb_instance_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
     Statement = [
       {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ec2.amazonaws.com"
+        Action   = "cloudwatch:PutMetricData"
+        Effect   = "Allow"
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "cloudwatch:namespace" = "Wilderchess"
+          }
         }
       }
     ]
   })
 }
 
+# 2. Standard Elastic Beanstalk Permissions
 resource "aws_iam_role_policy_attachment" "web_tier" {
   role       = aws_iam_role.eb_instance_role.name
   policy_arn = "arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier"
+}
+
+# 3. Required for CloudWatch Logs and Agent
+resource "aws_iam_role_policy_attachment" "cw_agent" {
+  role       = aws_iam_role.eb_instance_role.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
 
 # Elastic Beanstalk Service Role
@@ -59,6 +86,13 @@ resource "aws_iam_role_policy_attachment" "service" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSElasticBeanstalkService"
 }
 
+# Essential for Amazon Linux 2023 engine communication
+resource "aws_iam_role_policy_attachment" "managed_updates" {
+  role       = aws_iam_role.eb_service_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSElasticBeanstalkManagedUpdatesCustomerRolePolicy"
+}
+
+
 
 # -----------------------------------------------------------------------------
 # Elastic Beanstalk Application and Version
@@ -71,19 +105,17 @@ resource "aws_elastic_beanstalk_application" "my_app" {
 # Add a resource to upload the application version to S3
 resource "aws_s3_object" "app_version" {
   bucket = var.s3_bucket_name
-  key    = var.version_label
-  source = var.source_path
+  # Use the dynamic version for the S3 Key
+  key    = "versions/app-${var.app_version}.zip"
+  source = "${path.root}/../../../../services/wilderchess/app-${var.app_version}.zip"
 }
 
-# Register the uploaded S3 object as a new application version
 resource "aws_elastic_beanstalk_application_version" "my_app_version" {
-  name        = var.version_label
+  # This label must be unique for every deployment
+  name        = "release-${var.app_version}"
   application = aws_elastic_beanstalk_application.my_app.name
   bucket      = aws_s3_object.app_version.bucket
   key         = aws_s3_object.app_version.key
-  depends_on = [
-    aws_s3_object.app_version
-  ]
 }
 
 # -----------------------------------------------------------------------------
@@ -109,16 +141,42 @@ resource "aws_security_group" "eb_lb_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
-  # Allow all outbound traffic
+  # Allow outbound DNS resolution
   egress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    description = "Allow outbound HTTPS traffic"
-    # trivy:ignore:AVD-AWS-0104
-    # tfsec:ignore:aws-vpc-no-public-egress-sgr
+    from_port = 53
+    to_port   = 53
+    protocol  = "udp"
+    #trivy:ignore:aws-0104
     cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow DNS resolution"
+  }
+
+  egress {
+    from_port = 53
+    to_port   = 53
+    protocol  = "tcp"
+    #trivy:ignore:aws-0104
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow DNS resolution"
+  }
+
+  # Allow outbound HTTP/HTTPS for updates and CloudWatch/S3 APIs
+  egress {
+    from_port = 80
+    to_port   = 80
+    protocol  = "tcp"
+    #trivy:ignore:aws-0104
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow HTTP for OS updates"
+  }
+
+  egress {
+    from_port = 443
+    to_port   = 443
+    protocol  = "tcp"
+    #trivy:ignore:aws-0104
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow HTTPS for AWS APIs"
   }
 }
 
@@ -138,14 +196,42 @@ resource "aws_security_group" "eb_instance_sg" {
 
 
 
-  # Allow all outbound traffic
+  # Allow outbound DNS resolution
   egress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    description = "Allow outbound HTTPS traffic"
-    # trivy:ignore:AVD-AWS-0104
+    from_port = 53
+    to_port   = 53
+    protocol  = "udp"
+    #trivy:ignore:aws-0104
     cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow DNS resolution"
+  }
+
+  egress {
+    from_port = 53
+    to_port   = 53
+    protocol  = "tcp"
+    #trivy:ignore:aws-0104
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow DNS resolution"
+  }
+
+  # Allow outbound HTTP/HTTPS for updates and CloudWatch/S3 APIs
+  egress {
+    from_port = 80
+    to_port   = 80
+    protocol  = "tcp"
+    #trivy:ignore:aws-0104
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow HTTP for OS updates"
+  }
+
+  egress {
+    from_port = 443
+    to_port   = 443
+    protocol  = "tcp"
+    #trivy:ignore:aws-0104
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow HTTPS for AWS APIs"
   }
 }
 
@@ -166,6 +252,13 @@ resource "aws_elastic_beanstalk_environment" "my_env" {
     aws_iam_instance_profile.eb_instance_profile,
     aws_iam_role.eb_service_role
   ]
+
+  # Add this to your aws_elastic_beanstalk_environment resource
+  setting {
+    namespace = "aws:elbv2:loadbalancer"
+    name      = "IdleTimeout"
+    value     = "3600" # 1 hour
+  }
 
   setting {
     namespace = "aws:ec2:vpc"

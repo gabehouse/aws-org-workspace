@@ -35,6 +35,11 @@ variable "source_path" {
   type        = string
 }
 
+variable "app_version" {
+  type        = string
+  description = "Automatically generated version string from deploy script"
+}
+
 variable "env_vars" {
   description = "A map of environment variables to be set on the instances."
   type        = map(string)
