@@ -14,5 +14,12 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.30.1"
+  "packageManager": "pnpm@10.30.1",
+  "dependencies": {
+    "@aws-cdk/cloud-assembly-api": "^2.2.1",
+    "@aws-cdk/cloud-assembly-schema": "^53.13.0"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.1117.0"
+  }
 }

@@ -29,8 +29,6 @@ Vite: For ultra-fast Hot Module Replacement (HMR).
 
 AWS Amplify SDK: For Cognito Auth and Session management.
 
-Tailwind CSS: (Optional/Suggested) for rapid UI styling.
-
 📂 Project Structure
 .
 ├── config.yaml             # Single source of truth for VST catalog & constants

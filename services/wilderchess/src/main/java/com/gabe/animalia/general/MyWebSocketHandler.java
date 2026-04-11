@@ -56,20 +56,24 @@ public class MyWebSocketHandler {
 
     @OnWebSocketMessage
     public void onMessage(String message) {
-        System.out.println("Message: " + message);
-        String[] tokens = message.split(",");
-        String type = tokens[0];
-        // state is updated with the message
-        if (session != null) {
-            if (session.isOpen()) {
+        // 1. Log immediately to see if we even get inside the method
+        System.out.println("DEBUG: Entering onMessage with: " + message);
+
+        try {
+            String[] tokens = message.split(",");
+            String type = tokens[0];
+
+            // 2. Use the 'session' variable you stored in onConnect
+            if (this.session != null && this.session.isOpen()) {
                 if (type.equals("login")) {
-                    user = tokens[1];
-                    state.update(endpoint, message);
-                } else {
-                    System.out.println("type : " + type);
-                    state.update(endpoint, message);
+                    this.user = tokens[1];
                 }
+                // 3. Your inference logic inside state.update
+                state.update(this.endpoint, message);
             }
+        } catch (Exception e) {
+            System.err.println("CRITICAL ERROR in onMessage: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

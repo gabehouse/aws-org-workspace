@@ -58,11 +58,11 @@ services/wilderchess/gamelogs/
 services/wilderchess/app*.zip
 services/wilderchess/target/
 
-# ml
+# Python Virtual Environments
+venv/
+**/venv/
 .venv/
-venv/          # <--- ADD THIS (Crucial for your current error)
-**/venv/       # <--- ADD THIS (Safety net for any venv in any subfolder)
-__pycache__/
+**/__pycache__/
 
 # Separate these lines (they were mushed together)
 *.onnx
@@ -70,6 +70,10 @@ services/wilderchess/temp_chunks/
 
 *.jar
 *.parquet
+**/target/
 
 # Data folders
 services/wilderchess/*_data/
+
+**/amplify/package-lock.json
+**/amplify/node_modules/

@@ -499,21 +499,21 @@ const Projects = ({ isMobile }) => {
                 {
                     label: "Enterprise-Grade Landing Zone & Identity",
                     image: "assets/diagram-workspace.svg",
-                    description: "A comprehensive multi-account strategy that isolates Management, Dev, and Prod workloads to minimize blast radius. By centralizing IAM Identity Center (SSO) and leveraging OIDC for keyless GitHub Actions deployments, the platform eliminates long-lived credentials while providing a modular 'Service' injection model that ensures environment consistency across all accounts."
+                    description: "A comprehensive multi-account strategy that isolates Management, Dev, and Prod workloads to minimize blast radius. By centralizing IAM Identity Center (SSO) and leveraging OIDC for keyless GitHub Actions deployments, the platform eliminates long-lived credentials while ensuring environment consistency across the organization."
                 }
             ],
             cloudHighlights: [
-                "Architected a **3-Account Strategy** (Management, Dev, Prod) to enforce strict administrative and billing boundaries.",
-                "Engineered a **Custom Devcontainer Environment** that pre-configures AWS CLI, Terraform, and Python, ensuring zero-config onboarding for new developers.",
-                "Automated **Cross-Account Role Assumption** and IAM Identity Center (SSO) configurations to eliminate the use of long-lived root credentials.",
-                "Built a modular **Networking Layer** featuring isolated VPCs, public/private subnets, and Security Group 'blueprints' for consistent connectivity.",
-                "Integrated **GitHub Actions via OIDC** as a platform service, allowing secure, keyless deployments across the entire AWS Organization."
+                "Architected a **3-Account Strategy** (Management, Dev, Prod) using AWS Organizations to enforce strict administrative and billing boundaries.",
+                "Implemented **IAM Identity Center (SSO)** with granular permission sets to eliminate the need for long-lived IAM user credentials and root-level access.",
+                "Engineered a **Modular Networking Layer** featuring isolated VPCs and Security Group 'blueprints' to ensure consistent, secure connectivity across accounts.",
+                "Integrated **GitHub Actions via OIDC** for keyless, short-lived credential exchange, enabling secure CI/CD pipelines across the entire organization.",
+                "Provisioned a **Dockerized Devcontainer** to provide a consistent, pre-configured development environment for local Terraform and AWS CLI operations."
             ]
         },
         {
             title: "Wilderchess: ML-Driven Strategy Engine",
             link: "http://wilderchess.eba-swezjps7.us-east-2.elasticbeanstalk.com/",
-            description: "A real-time multiplayer PvP game powered by a custom-trained **Reinforcement Learning bot** and a high-concurrency Java backend.",
+            description: "A real-time multiplayer PvP game powered by a custom-trained Reinforcement Learning agent and a high-concurrency Java backend.",
             technologies: ["Java 21", "Terraform", "AWS Spot Fleet", "S3", "ECR", "ONNX", "WebSockets"],
             insights: [
                 {
@@ -544,110 +544,118 @@ const Projects = ({ isMobile }) => {
                 }
             ],
             cloudHighlights: [
-                "Architected a **Spot Instance Fleet** via ASG Mixed Instances Policy, orchestrating 30+ nodes to achieve ~80% cost savings for ML data generation.",
-                "Engineered an **Automated Data-Drain Pipeline**: Distributed Docker runners generate game-state CSVs, synced via Cron to S3 for centralized model training.",
-                "Deployed a high-availability **Java Corretto 21** environment on Elastic Beanstalk, utilizing **ALB Sticky Sessions** for persistent WebSocket state.",
-                "Implemented **Infrastructure-as-Code** via modular Terraform, managing multi-account state with S3 backends and granular IAM Security Group rules.",
-                "Integrated **ONNX Runtime** into the Java server for sub-millisecond inference, allowing real-time bot play against live users."
+                "Architected a **Spot Instance Fleet** via ASG Mixed Instances Policy, orchestrating a high-node cluster to achieve ~80% cost reduction for ML data generation.",
+                "Engineered an **Automated Data Pipeline**: Distributed Docker runners generate game-state datasets, synced via Cron to S3 for centralized model training and evaluation.",
+                "Deployed a high-availability **Java Corretto 21** stack on Elastic Beanstalk, utilizing **ALB Sticky Sessions** to maintain persistent WebSocket state for active games.",
+                "Implemented **Infrastructure-as-Code** via modular Terraform, managing environment state with S3 backends and enforcing granular IAM security boundaries.",
+                "Optimized **Real-Time Inference** by integrating the ONNX Runtime directly into the Java server, enabling the RL model to execute moves in under 1ms."
             ]
         },
         {
             title: "House Audio (Full-Stack Engine)",
             link: "https://houseaudio.net",
-            description: "A production-grade storefront and distribution platform for high-performance audio software, featuring automated Stripe fulfillment and secure downloads.",
+            description: "A production-grade storefront and distribution platform for high-performance audio software, featuring automated Stripe fulfillment and secure asset delivery.",
             technologies: ["React", "Terraform", "AWS Lambda", "DynamoDB", "Cognito", "Stripe API", "OIDC"],
-            // ONLY House Audio retains the Featured Product section
             featuredProduct: {
                 title: "Acid Saturator VST",
                 tech: ["C++", "JUCE", "DSP"],
-                description: "Professional-grade audio plugin featuring custom non-linear distortion algorithms, serving as the flagship product for the House Audio platform."
+                description: "Professional-grade audio plugin featuring custom non-linear distortion algorithms, serving as the flagship product for the platform."
             },
             insights: [
                 {
-                    label: "Cloud Architecture Overview",
+                    label: "Serverless Architecture Overview",
                     image: "/assets/diagram-vstshop.svg",
-                    description: "Full-stack serverless architecture featuring OIDC authentication, asynchronous Stripe fulfillment, and secure S3 asset delivery via presigned URLs."
+                    description: "A robust serverless architecture featuring OIDC-based authentication, event-driven Stripe fulfillment via Webhooks, and secure asset distribution."
                 },
                 {
-                    label: "Collision & Momentum Transfer",
+                    label: "Secure Digital Distribution",
                     image: "/assets/acid-saturator-demo.webm",
-                    description: "Visualizing impulse-based collision resolution and energy conservation across multiple high-velocity entities."
+                    description: "End-to-end purchase flow: Stripe events trigger a Lambda-based validation service that generates short-lived S3 Presigned URLs, ensuring content is only accessible to authorized customers."
                 }
-
             ],
             cloudHighlights: [
-                "Architected a **Monorepo workflow** within a **Dockerized Devcontainer**, ensuring 1:1 environment parity for both React and Python Lambda development.",
-                "Orchestrated **User Authentication via Amazon Cognito**, utilizing **Google Social Federation (OIDC)** to provide a frictionless, passwordless login experience while securing downstream API access.",
-                "Engineered a serverless 'Purchase-to-Download' flow: Stripe Webhooks trigger DynamoDB updates, authorizing Lambda-generated S3 Presigned URLs for secure asset delivery.",
-                "Implemented **GitHub Actions with OIDC** for 'Keyless' deployments, automatically pushing React builds to S3/CloudFront and IaC changes to AWS.",
-                "Leveraged a global `config.yaml` to dynamically inject environment variables and Stripe product IDs into the React build at runtime."
+                "Orchestrated **Identity Federation via Amazon Cognito**, utilizing **OIDC (Google Social Login)** to secure downstream API access while providing a passwordless user experience.",
+                "Engineered a serverless **Fulfillment Pipeline**: Stripe Webhooks trigger asynchronous DynamoDB state updates and Lambda-generated **S3 Presigned URLs** for secure, temporary download access.",
+                "Implemented **Infrastructure-as-Code (IaC)** via Terraform to manage a scalable serverless stack, including CloudFront distribution and granular IAM execution roles.",
+                "Integrated **GitHub Actions with OIDC** for 'keyless' CI/CD, automating high-availability deployments for the React frontend and Python-based Lambda microservices.",
+                "Architected a **Containerized Development Environment** using Docker Devcontainers to ensure 1:1 environment parity between local development and AWS Lambda production runtimes."
             ]
         },
         {
             title: "Grand River Tennis Lessons",
-            link: "https://grandrivertennis.ca/",
-            description: "A full-stack scheduling platform built with a serverless architecture to handle high-concurrency booking requests.",
-            technologies: ["React", "Amplify Gen 2", "TypeScript", "Lambda", "DynamoDB", "Cognito"],
-            insights: [{
-                label: "Serverless Event-Driven Booking",
-                image: "/assets/diagram-tennis-booking.svg",
-                description: "Amplify Gen 2 architecture demonstrating the end-to-end booking flow. Features a real-time event pipeline where DynamoDB Streams trigger a dedicated notification Lambda for automated SES alerts, ensuring zero-latency confirmation for students while decoupling backend processes."
-            }],
+            link: "https://master.dkskd07qtjixa.amplifyapp.com/",
+            // Focus on "Event-Driven" and "Secure" in the summary
+            description: "A full-stack booking platform featuring an event-driven serverless backend and secure OIDC-based identity federation.",
+            technologies: ["React", "Amplify Gen 2", "TypeScript", "Lambda", "DynamoDB", "Cognito", "OIDC"],
+            insights: [
+                {
+                    label: "Event-Driven Booking Pipeline",
+                    image: "/assets/diagram-tennis-booking.svg",
+                    description: "Amplify Gen 2 backend where DynamoDB Streams trigger Lambda functions for automated SES alerts. This decouples the booking logic from the notification system, ensuring high availability during peak registration windows."
+                }
+            ],
             cloudHighlights: [
-                "Architected using **Amplify Gen 2**, leveraging TypeScript-based **Infrastructure-from-Code (IfC)** to manage backend resources.",
-                "Automated user lifecycle management and **RBAC (Role-Based Access Control)** using AWS Cognito User Pools and Groups.",
-                "Built a real-time event-driven notification system using **DynamoDB Streams** and AWS Lambda for instant scheduling updates.",
-                "Configured a **GraphQL API (AppSync)** with fine-grained resolver logic for secure, multi-tenant data access."
+                "Architected using **Amplify Gen 2**, utilizing a Git-based **CI/CD Pipeline** that automates full-stack deployments on every branch push.",
+                "Engineered **Social Identity Federation** via AWS Cognito and OIDC, managing secure user sessions without managing sensitive credential data.",
+                "Implemented **Infrastructure-from-Code (IfC)** using TypeScript to define scalable backend resources including AppSync (GraphQL) and DynamoDB.",
+                "Built a real-time notification engine using **DynamoDB Streams**, decoupling high-latency email/SMS tasks from the core booking transaction.",
+                "Configured **RBAC (Role-Based Access Control)** to strictly isolate administrative dashboard access from student booking views."
             ]
         },
         {
-            title: "Cloud-Native Engineering Portfolio", // More professional than "Cloud Portfolio"
-            link: "https://prod.d19uoe1ab629n2.amplifyapp.com/",
+            title: "Cloud-Native Engineering Portfolio",
+            link: "https://master.d1gyqq9jpvj1mt.amplifyapp.com/",
             description: "A self-deploying, high-availability professional platform engineered with serverless primitives and automated certificate lifecycle management.",
-            technologies: ["React", "AWS Amplify", "DynamoDB", "Route 53", "ACM", "GitHub Webhooks"],
+            technologies: ["React", "AWS Amplify", "DynamoDB", "Route 53", "ACM", "GitHub Actions"],
             cloudHighlights: [
-                "Architected a **Self-Healing CI/CD Pipeline** via AWS Amplify, automating the build-test-deploy lifecycle on every GitHub push.",
-                "Implemented **Automated Certificate Provisioning** and renewal using AWS Certificate Manager (ACM), ensuring 100% uptime for SSL/TLS encrypted traffic.",
-                "Configured **Apex Domain Mapping** and global DNS routing via Route 53, optimizing latency through AWS's global edge network.",
-                "Provisioned a **Serverless Analytics Engine** using DynamoDB to track visitor engagement and site performance metrics without managing underlying compute.",
-                "Leveraged **Amplify Environment Branching** to maintain a strict separation between 'Preview' builds and the production environment."
+                "Architected an **Automated CI/CD Pipeline** via AWS Amplify, orchestrating the full build-test-deploy lifecycle triggered by GitHub Webhooks.",
+                "Implemented **Automated Certificate Provisioning** and renewal using AWS Certificate Manager (ACM), ensuring consistent SSL/TLS encryption across all environments.",
+                "Configured **Apex Domain Mapping** and global DNS routing via Route 53, leveraging AWS’s global edge network to minimize request latency.",
+                "Provisioned a **Serverless Analytics Engine** using DynamoDB and Lambda to track visitor engagement metrics with zero-management overhead.",
+                "Leveraged **Amplify Environment Branching** to maintain strict isolation between 'Preview' feature branches and the stable production environment.",
+                "Optimized global content delivery by utilizing **CloudFront's edge locations** (via Amplify) to reduce Time to First Byte (TTFB) for international visitors."
             ]
         },
         {
             title: "Needleman-Wunsch: Algorithmic Lab",
             link: "https://gabehouse.github.io/Needleman-Wunsch-Demo/",
-            description: "An interactive bioinformatics engine for global string alignment, optimized for **$O(n \times m)$ computational complexity**.",
-            technologies: ["React", "JavaScript", "GitHub Actions", "Jest", "GitHub Pages"],
+            description: "An interactive bioinformatics engine for global sequence alignment, optimized for O(n × m) computational complexity.",
+            technologies: ["React", "JavaScript", "Jest", "GitHub Pages"],
             insights: [
                 {
                     label: "Dynamic Recurrence Visualization",
-                    video: "../assets/nw-algo-demo.webm", // Point to the WebM file
-                    description: "High-fidelity visualization of the $O(n \times m)$ matrix filling and optimal path backtracking, rendered without color-banding."
+                    video: "../assets/nw-algo-demo.webm",
+                    description: "High-fidelity visualization of the O(n × m) matrix filling and optimal path backtracking, utilizing optimized DOM rendering to prevent layout thrashing during large-scale calculations."
                 }
             ],
             cloudHighlights: [
-                "Architected an **Automated CI/CD Pipeline** via GitHub Actions to handle build-optimization and zero-downtime deployment to **GitHub Pages**.",
-                "Implemented rigorous **Unit Testing via Jest** for core alignment logic, ensuring 100% accuracy for biological sequence comparisons.",
-                "Optimized frontend rendering performance to handle large-scale matrices without blocking the main UI thread, demonstrating efficient client-side compute."
+                "Implemented rigorous **Unit Testing via Jest** for the core Dynamic Programming recurrence, ensuring 100% accuracy for edge-case biological sequence comparisons.",
+                "Optimized client-side compute to handle large-scale matrices without blocking the **Main UI Thread**, maintaining a fluid 60 FPS experience during heavy algorithmic processing.",
+                "Engineered a **Static Site Delivery** strategy leveraging GitHub's global CDN, providing a zero-cost, high-availability hosting model with minimal latency.",
+                "Optimized the **Frontend Rendering Engine** to manage large grid states efficiently, preventing memory leaks and UI stutter during real-time matrix generation.",
+                "Designed the algorithmic core with **Functional Programming principles**, allowing for isolated testing and modular extension of different scoring matrices (e.g., BLOSUM62).",
+                "Leveraged **GitHub Pages** for production hosting, ensuring a reliable, SSL-encrypted entry point for the professional portfolio."
             ]
         },
         {
             title: "JS Physics Lab: Kinetic Engine",
-            link: "https://gabehouse.github.io/js-physics-demo/", // Update to your GH Pages URL
+            link: "https://gabehouse.github.io/js-physics-demo/",
             description: "A high-performance 2D physics simulation engineered in vanilla JavaScript, featuring real-time collision detection and momentum conservation logic.",
-            technologies: ["JavaScript", "HTML5 Canvas", "GitHub Actions", "CSS3"],
+            technologies: ["JavaScript", "HTML5 Canvas", "CSS3", "GitHub Pages"],
             insights: [
                 {
                     label: "Collision & Momentum Transfer",
                     image: "../assets/ball-physics-demo.webm",
-                    description: "Visualizing impulse-based collision resolution and energy conservation across multiple high-velocity entities."
+                    description: "Visualizing impulse-based collision resolution and energy conservation. The engine utilizes a custom vector math library to calculate reflection vectors and resolve kinetic energy transfer across high-velocity entities."
                 }
             ],
             cloudHighlights: [
-                "Architected an **Automated CI/CD Pipeline** via GitHub Actions to handle production builds and zero-downtime deployment to **GitHub Pages**.",
-                "Optimized the **Animation Render Loop** using `requestAnimationFrame`, ensuring 60 FPS by decoupling physics state updates from browser draw calls.",
-                "Implemented a custom **Vector Mathematics Library** to resolve Euclidean distance and reflection vectors for realistic kinetic interactions.",
-                "Engineered an efficient **Collision Detection Algorithm** designed to minimize $O(n^2)$ computational overhead during high-density simulations."
+                "Engineered a high-performance **2D Rendering Engine** using HTML5 Canvas, decoupling physics state updates from browser draw calls to maintain a smooth user experience.",
+                "Optimized the **Animation Render Loop** using `requestAnimationFrame`, achieving a consistent 60 FPS under varying computational loads.",
+                "Developed a custom **Vector Mathematics Library** from scratch to handle Euclidean distance calculations and reflection vectors for realistic kinetic interactions.",
+                "Implemented an efficient **Collision Detection Algorithm** designed to minimize $O(n^2)$ computational overhead, allowing for high-density particle simulations.",
+                "Leveraged **GitHub Pages** for static site delivery, utilizing a global CDN to ensure high availability and low-latency access for international users.",
+                "Designed the engine with a **Modular Architecture**, enabling the easy addition of physical properties like gravity, friction, and elasticity without refactoring core logic."
             ]
         }
     ];
@@ -691,42 +699,79 @@ const Contact = ({ isMobile }) => {
     ];
 
     return (
-        <div style={{ padding: '60px 5%', width: '100%', maxWidth: '900px', boxSizing: 'border-box' }}>
-            <h1 style={{ marginBottom: '10px', color: '#1a1a1a' }}>Connection Endpoints</h1>
-            <p style={{ color: '#666', marginBottom: '40px', fontSize: '1.1rem' }}>
+        <div style={{
+            padding: '60px 5%',
+            width: '100%',
+            maxWidth: '900px',
+            margin: '0 auto', // CRITICAL: Centers the block in the viewport
+            boxSizing: 'border-box',
+        }}>
+            <h1 style={{
+                marginBottom: '10px',
+                color: 'inherit', // Uses color from your CSS :root
+                textAlign: isMobile ? 'left' : 'center' // Optional: Centers header on desktop
+            }}>
+                Connection Endpoints
+            </h1>
+            <p style={{
+                color: 'var(--text-secondary, #666)',
+                marginBottom: '40px',
+                fontSize: '1.1rem',
+                textAlign: isMobile ? 'left' : 'center'
+            }}>
                 Reach out via the verified service endpoints below.
             </p>
 
             <div style={{
                 display: 'grid',
                 gridTemplateColumns: isMobile ? '100%' : 'repeat(auto-fit, minmax(280px, 1fr))',
-                gap: '20px'
+                gap: '20px',
             }}>
                 {contacts.map((contact, index) => (
                     <div key={index} style={{
                         padding: '24px',
-                        backgroundColor: '#f8f9fa',
+                        backgroundColor: 'var(--card-bg, #f8f9fa)', // Dynamic bg
                         borderRadius: '8px',
-                        border: '1px solid #e9ecef',
-                        transition: 'all 0.2s ease-in-out'
+                        border: '1px solid var(--border-color, #e9ecef)',
+                        transition: 'transform 0.2s ease-in-out',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between'
                     }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#007bff', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                            {contact.service}
-                        </span>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '12px 0 8px 0' }}>
-                            <span style={{ color: '#007bff', display: 'flex' }}>
-                                {contact.icon}
+                        <div>
+                            <span style={{
+                                fontSize: '0.75rem',
+                                fontWeight: '700',
+                                color: '#646cff', // Matches your global link color
+                                textTransform: 'uppercase',
+                                letterSpacing: '1px'
+                            }}>
+                                {contact.service}
                             </span>
-                            <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#1a1a1a' }}>{contact.title}</h2>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '12px 0 8px 0' }}>
+                                <span style={{ color: '#646cff', display: 'flex' }}>
+                                    {contact.icon}
+                                </span>
+                                <h2 style={{ margin: 0, fontSize: '1.5rem', color: 'inherit' }}>
+                                    {contact.title}
+                                </h2>
+                            </div>
+
+                            <p style={{ color: 'inherit', opacity: 0.8, fontSize: '0.9rem', marginBottom: '15px', lineHeight: '1.6' }}>
+                                {contact.description}
+                            </p>
                         </div>
 
-                        <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '15px', lineHeight: '1.6' }}>
-                            {contact.description}
-                        </p>
-
                         <a href={contact.action} target="_blank" rel="noopener noreferrer"
-                            style={{ color: '#007bff', textDecoration: 'none', fontWeight: '600', fontSize: '1rem', wordBreak: 'break-all' }}>
+                            style={{
+                                color: '#646cff',
+                                textDecoration: 'none',
+                                fontWeight: '600',
+                                fontSize: '1rem',
+                                wordBreak: 'break-all',
+                                marginTop: 'auto'
+                            }}>
                             {contact.value} →
                         </a>
                     </div>
