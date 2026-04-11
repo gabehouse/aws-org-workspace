@@ -23,4 +23,4 @@ applications:
             - corepack enable
             - pnpm install --filter my-app --no-frozen-lockfile --child-concurrency=1
             - export NODE_OPTIONS="--max-old-space-size=6144"
-            - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+            - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID --debug

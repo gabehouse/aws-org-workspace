@@ -47,6 +47,7 @@ public class Player {
 	private Critter selectedCritter;
 	private Critter[] critters;
 	private Critter[] totalCritters;
+	private String difficulty;
 
 	private ArrayList<Item> queuedItems = new ArrayList<Item>();
 	private ArrayList<Action> queue = new ArrayList<Action>();
@@ -240,6 +241,7 @@ public class Player {
 			try {
 				return inference.predict(features).winProbability;
 			} catch (Exception e) {
+				System.err.println("[AI-ERROR] Prediction failed! Defaulting to 0.5. Reason: " + e.getMessage());
 				return 0.5f;
 			}
 		} catch (NullPointerException e) {
@@ -250,25 +252,31 @@ public class Player {
 	}
 
 	public void aiFillActionQueue(Player otherPlayer) {
-		System.out.println("AI FILL ACTION QUEUE");
+		System.out.println("AI FILL ACTION QUEUE for Player " + this.id);
 		List<List<Action>> candidateTurns = new ArrayList<>();
 
-		// 1. Generate 20 random "potential" turns
 		for (int i = 0; i < 100; i++) {
 			candidateTurns.add(generatePotentialTurnMedium(otherPlayer));
 		}
 
-		// 2. Evaluate each turn using the passed-in params
 		List<Action> bestTurn = null;
-		float highestWinProb = -1.0f;
+		float bestScore = -1.0f; // This is now a generic "score" rather than raw prob
 
 		for (List<Action> turn : candidateTurns) {
-			float currentProb = evaluateState(otherPlayer, turn, inference, featurizer);
-			if (currentProb > highestWinProb) {
-				highestWinProb = currentProb;
+			float rawProb = evaluateState(otherPlayer, turn, inference, featurizer);
+
+			// --- THE FIX: ADJUST SCORE BASED ON IDENTITY ---
+			// If we are pA (Player 1), we want rawProb to be 0.0.
+			// If we are pB (Player 2), we want rawProb to be 1.0.
+			float situationalScore = (this.id == 0) ? (1.0f - rawProb) : rawProb;
+
+			if (situationalScore > bestScore) {
+				bestScore = situationalScore;
 				bestTurn = turn;
 			}
 		}
+
+		// Commit bestTurn..
 
 		// 3. Commit the winner
 		if (bestTurn != null) {
@@ -389,12 +397,10 @@ public class Player {
 		for (Critter c : critters) {
 			if (c.hasBlock() && !c.isBenched()) {
 				tank = c;
-				System.out.println("Tank found randomfillmedium");
 				break;
 			}
 		}
 		if (tank != null && random.nextInt(2) == 1 && !tank.isBenched()) {
-			System.out.println("attempt to move tank " + tank);
 			// 1/2 chance for tank to move infront of lowest hp fighter
 
 			// get lowest hp critter
@@ -599,13 +605,18 @@ public class Player {
 	}
 
 	public void fillActionQueue(Player otherPlayer) {
-		System.out.println("RANDOMFILLACTIONQUEUE");
-		aiFillActionQueue(otherPlayer);
+		System.out.println("FILLACTIONQUEUE");
+		if (this.difficulty.equals("easy")) {
+			randomFillActionQueueEasy(otherPlayer);
+		} else if (this.difficulty.equals("medium")) {
+			randomFillActionQueueMedium(otherPlayer);
+		} else if (this.difficulty.equals("hard")) {
+			aiFillActionQueue(otherPlayer);
+		}
 	}
 
 	private void randomFillActionQueue(Player otherPlayer) {
-		System.out.println("RANDOMFILLACTIONQUEUE");
-		randomFillActionQueueMedium(otherPlayer);
+
 	}
 
 	public void sendString(String str) {
@@ -1110,6 +1121,14 @@ public class Player {
 
 	public void setBot(boolean isBot) {
 		this.isBot = isBot;
+	}
+
+	public String getDifficulty() {
+		return difficulty;
+	}
+
+	public void setDifficulty(String difficulty) {
+		this.difficulty = difficulty;
 	}
 
 	public Critter findCritterAt(String internalPos) {

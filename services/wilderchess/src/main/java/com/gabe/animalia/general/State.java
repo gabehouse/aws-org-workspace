@@ -93,18 +93,17 @@ public class State {
 			try {
 				endpoint.sendString(str);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		} else if (tokens[0].equals("playbot")) {
-			Game game = new Game(
-					new User(endpoint, totalGameCount * 2 + 1),
-					new User(null, -1), gameLogger);
+			User a = new User(endpoint, totalGameCount * 2 + 1);
+			User b = new User(null, -1);
+			b.setDifficulty(tokens[1]);
+			Game game = new Game(a, b, gameLogger);
 			try {
 				endpoint.sendString("setid," + (totalGameCount * 2 + 1));
 				endpoint.sendString("startgame");
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			game.init();

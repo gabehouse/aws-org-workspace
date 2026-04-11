@@ -62,6 +62,12 @@ public class MainApp extends AbstractHandler {
 
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
             throws IOException, ServletException {
+
+        // ONLY serve index.html if the request is exactly "/" or "/index.html"
+        if (!target.equals("/") && !target.equals("/index.html")) {
+            return; // Let Jetty try other handlers or return a 404
+        }
+
         response.setContentType("text/html;charset=utf-8");
         response.setStatus(HttpServletResponse.SC_OK);
         baseRequest.setHandled(true);
@@ -69,16 +75,21 @@ public class MainApp extends AbstractHandler {
     }
 
     public static void main(String[] args) throws Exception {
-        boolean botVsBot = true;
+
+        boolean botVsBot = false;
         int numBotGamesAtOnce = 1;
         int totalGameCount = 0;
         ArrayList<Game> games = new ArrayList<Game>();
         if (botVsBot) {
             GameLogger gameLogger = new GameLogger();
             while (totalGameCount < numBotGamesAtOnce) {
+                User a = new User(null, -1);
+                User b = new User(null, -1);
+                a.setDifficulty("hard");
+                b.setDifficulty("hard");
                 Game game = new Game(
-                        new User(null, -1),
-                        new User(null, -1), gameLogger);
+                        a,
+                        b, gameLogger);
                 games.add(game);
                 totalGameCount++;
             }
@@ -97,15 +108,21 @@ public class MainApp extends AbstractHandler {
                     factory.register(MyWebSocketHandler.class);
                 }
             };
-            ResourceHandler assetsResourceHandler = new ResourceHandler();
-            assetsResourceHandler.setResourceBase("assets");
-            assetsResourceHandler.setPathInfoOnly(true);
-            assetsResourceHandler.setWelcomeFiles(new String[] {});
-            assetsResourceHandler.setDirectoriesListed(false);
+            // Inside your main method...
 
-            // Create a context handler for the assets path
+            // 1. Create a ResourceHandler that looks INSIDE the JAR (Classpath)
+            ResourceHandler assetsResourceHandler = new ResourceHandler();
+
+            // Use the classloader to find the assets folder inside your JAR
+            assetsResourceHandler.setBaseResource(
+                    org.eclipse.jetty.util.resource.Resource.newClassPathResource("/assets"));
+
+            // 2. Create the Context Handler for /assets
             ContextHandler assetsContextHandler = new ContextHandler("/assets");
             assetsContextHandler.setHandler(assetsResourceHandler);
+
+            // 3. IMPORTANT: Update your MainApp.handle to ONLY serve HTML on the root path
+            // This prevents it from serving HTML when a JS file is missing
 
             // For serving the main application (including index.html from resources)
             // Your existing MainApp handler already handles this

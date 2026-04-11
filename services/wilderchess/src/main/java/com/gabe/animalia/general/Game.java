@@ -145,7 +145,7 @@ public class Game {
 
 	// dont need to change this, change the one in mainapp
 	boolean botVsBot = false;
-	boolean botIsAi = false;
+	boolean botIsAi = true;
 
 	public Game(User user1, User user2, GameLogger gameLogger) {
 		if (user2.getID() == -1)
@@ -251,8 +251,8 @@ public class Game {
 					initialState = turnOrchestrator.captureInitialState(turnNumber, p1, p2);
 
 					calculatingTurn = true;
-					p1.randomFillActionQueueMedium(p2);
-					p2.randomFillActionQueueMedium(p1);
+					p1.fillActionQueue(p2);
+					p2.fillActionQueue(p1);
 
 					calculateTurn(p1, p2, 0);
 				} catch (Exception e) {
@@ -521,11 +521,16 @@ public class Game {
 			// player.sendString(initialManifest);
 			// otherPlayer.sendString(initialManifest);
 
-			if (player.isBot())
-				player.randomFillActionQueueMedium(otherPlayer);
+			if (botVsBot) {
+				p1.fillActionQueue(p2);
+				p2.fillActionQueue(p1);
+			} else {
+				if (player.isBot())
+					player.fillActionQueue(otherPlayer);
 
-			if (otherPlayer.isBot())
-				otherPlayer.randomFillActionQueueMedium(player);
+				if (otherPlayer.isBot())
+					otherPlayer.fillActionQueue(player);
+			}
 
 		}
 	}
@@ -1612,10 +1617,10 @@ public class Game {
 			if (!botVsBot) {
 				System.out.println(" player bot?: " + p1.isBot());
 				if (p1.isBot()) {
-					p1.randomFillActionQueueMedium(p2);
+					p1.fillActionQueue(p2);
 				}
 				if (p2.isBot()) {
-					p2.randomFillActionQueueMedium(p1);
+					p2.fillActionQueue(p1);
 				}
 			}
 

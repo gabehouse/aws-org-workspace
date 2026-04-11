@@ -82,6 +82,7 @@
 /workspaces/aws-org-workspace/services/wilderchess/src/main/java/com/gabe/animalia/critter/Fox.java
 /workspaces/aws-org-workspace/services/wilderchess/src/main/java/com/gabe/animalia/ability/bull/Charge.java
 /workspaces/aws-org-workspace/services/wilderchess/src/main/java/com/gabe/animalia/general/Targetable.java
+/workspaces/aws-org-workspace/services/wilderchess/src/main/java/com/gabe/animalia/ml/server/CloudWatchLogger.java
 /workspaces/aws-org-workspace/services/wilderchess/src/main/java/com/gabe/animalia/ability/dove/Intervention.java
 /workspaces/aws-org-workspace/services/wilderchess/src/main/java/com/gabe/animalia/critter/Pig.java
 /workspaces/aws-org-workspace/services/wilderchess/src/main/java/com/gabe/animalia/critter/Turtle.java
