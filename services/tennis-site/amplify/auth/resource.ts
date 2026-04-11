@@ -19,15 +19,15 @@ export const auth = defineAuth({
         'http://localhost:5174/',
         'https://www.grandrivertennis.ca/',
         'https://grandrivertennis.ca/',
-        'https://feature-as.d26iv2qhuzdd1n.amplifyapp.com/',
-        'https://master.d26iv2qhuzdd1n.amplifyapp.com/'
+        'https://feature-as.dkskd07qtjixa.amplifyapp.com/',
+        'https://master.dkskd07qtjixa.amplifyapp.com/'
       ],
       logoutUrls: [
         'http://localhost:5174/',
         'https://www.grandrivertennis.ca/',
         'https://grandrivertennis.ca/',
-        'https://feature-as.d26iv2qhuzdd1n.amplifyapp.com/',
-        'https://master.d26iv2qhuzdd1n.amplifyapp.com/'
+        'https://feature-as.dkskd07qtjixa.amplifyapp.com/',
+        'https://master.dkskd07qtjixa.amplifyapp.com/'
       ],
     }
   },
