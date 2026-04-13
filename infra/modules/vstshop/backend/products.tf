@@ -5,11 +5,11 @@ locals {
       price     = 1299
       s3_key    = "AcidSaturator.zip"
       imagePath = "product-media/acid-saturator-gui.png"
-      youtubeId = "dQw4w9WgXcQ"
+      # Swapping youtubeId for videoPath
+      videoPath = "product-media/acid-saturator-demo.webm"
     }
   }
 }
-
 resource "stripe_product" "vst" {
   for_each = local.vst_catalog
   name     = each.value.name
@@ -30,7 +30,7 @@ resource "local_file" "product_config" {
       name      = v.name
       price     = format("$%.2f", v.price / 100)
       imagePath = v.imagePath
-      youtubeId = v.youtubeId # Pass this to the JSON
+      videoPath = v.videoPath # Use this in your React <video> tag
     }
   ])
 }
