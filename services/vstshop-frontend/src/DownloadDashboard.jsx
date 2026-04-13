@@ -11,39 +11,39 @@ const ProductCard = ({ product, isOwned, isUserLoggedIn, isProcessing, onBuy, on
   const fullImageUrl = `${cloudfrontBase}/${product.imagePath}`;
 
   // Local changelog data - in a real app, this would come from the JSON/DB
-const changelog = [
-  {
-    version: "v1.1.0",
-    date: "Feb 2026",
-    note: "Major 'Acid' DSP Update: Re-engineered saturation engine with Asymmetric Bias for even-harmonic warmth. Improved Output knob resolution via internal gain-compensation and added 0.93 skew factor for perfect 0dB centering."
-  },
-  {
-    version: "v1.0.5",
-    date: "Feb 2026",
-    note: "Added state persistence support for Ableton Live and other DAW hosts via XML serialization. Improved UI responsiveness with specialized text-to-value formatting for dB and percentage units."
-  },
-  {
-    version: "v1.0.0",
-    date: "Jan 2026",
-    note: "Initial Release: Stereo oversampling saturator with 'Auto-Makeup' logic and 4x aliasing protection."
-  }
-];
+  const changelog = [
+    {
+      version: "v1.1.0",
+      date: "Feb 2026",
+      note: "Major 'Acid' DSP Update: Re-engineered saturation engine with Asymmetric Bias for even-harmonic warmth. Improved Output knob resolution via internal gain-compensation and added 0.93 skew factor for perfect 0dB centering."
+    },
+    {
+      version: "v1.0.5",
+      date: "Feb 2026",
+      note: "Added state persistence support for Ableton Live and other DAW hosts via XML serialization. Improved UI responsiveness with specialized text-to-value formatting for dB and percentage units."
+    },
+    {
+      version: "v1.0.0",
+      date: "Jan 2026",
+      note: "Initial Release: Stereo oversampling saturator with 'Auto-Makeup' logic and 4x aliasing protection."
+    }
+  ];
 
   return (
     <div style={featuredCardStyle}>
       {/* LEFT: GUI IMAGE & SKELETON */}
-<div
-  className="image-section-container"
-  style={imageSectionStyle}
-  onClick={() => onShowVideo(product)}
->
+      <div
+        className="image-section-container"
+        style={imageSectionStyle}
+        onClick={() => onShowVideo(product)}
+      >
         {!imgLoaded && <div style={skeletonStyle} />}
-<img
-    className="vst-gui-image"
-    src={fullImageUrl}
-    style={guiImageStyle} // Remove the inline onMouseEnter/Leave from here
-    onLoad={() => setImgLoaded(true)}
-  />
+        <img
+          className="vst-gui-image"
+          src={fullImageUrl}
+          style={guiImageStyle} // Remove the inline onMouseEnter/Leave from here
+          onLoad={() => setImgLoaded(true)}
+        />
         <button
           style={watchDemoBtnStyle}
           className="watch-demo-btn"
@@ -110,9 +110,9 @@ const changelog = [
           <div style={changelogGridStyle}>
             {changelog.map((item, index) => (
               <div key={index} style={changelogItemStyle}>
-                <strong style={{color: '#0F172A'}}>{item.version}</strong>
-                <span style={{color: '#94A3B8', fontSize: '11px'}}>{item.date}</span>
-                <span style={{color: '#475569'}}>{item.note}</span>
+                <strong style={{ color: '#0F172A' }}>{item.version}</strong>
+                <span style={{ color: '#94A3B8', fontSize: '11px' }}>{item.date}</span>
+                <span style={{ color: '#475569' }}>{item.note}</span>
               </div>
             ))}
           </div>
@@ -130,11 +130,11 @@ function DownloadDashboard({ isUserLoggedIn, onTriggerLogin }) {
   const [downloadingId, setDownloadingId] = useState(null);
   const [activeVideoProduct, setActiveVideoProduct] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
-const [showSandboxBanner, setShowSandboxBanner] = useState(true);
+  const [showSandboxBanner, setShowSandboxBanner] = useState(true);
 
-const handleDismissBanner = () => {
-  setShowSandboxBanner(false);
-};
+  const handleDismissBanner = () => {
+    setShowSandboxBanner(false);
+  };
 
   useEffect(() => {
     if (isUserLoggedIn) {
@@ -188,7 +188,7 @@ const handleDismissBanner = () => {
       });
       const { checkoutUrl } = await response.json();
       window.location.href = checkoutUrl;
-    } catch (err) { setError("Checkout failed."+ err); }
+    } catch (err) { setError("Checkout failed." + err); }
   };
 
   const triggerDownload = async (productId) => {
@@ -209,9 +209,9 @@ const handleDismissBanner = () => {
 
   return (
     <div style={containerStyle}>
-{showSandboxBanner && (
+      {/* {showSandboxBanner && (
   <div style={testModeBannerStyle}>
-    {/* This span takes up all available space, pushing the X to the edge */}
+    {}
     <span style={{ flex: 1, textAlign: 'center', paddingLeft: '26px' }}>
       🛠️ <strong>DEMO MODE:</strong> Use card <code>4242 4242 4242 4242</code> for test purchases.
     </span>
@@ -224,7 +224,7 @@ const handleDismissBanner = () => {
       ✕
     </button>
   </div>
-)}
+)} */}
       {productConfig.map((product) => (
         <ProductCard
           key={product.id}
@@ -242,12 +242,26 @@ const handleDismissBanner = () => {
       {activeVideoProduct && (
         <div style={modalOverlayStyle} onClick={() => setActiveVideoProduct(null)}>
           <div style={modalContentStyle} onClick={e => e.stopPropagation()}>
-            <button style={closeModalStyle} className="close-modal-btn" onClick={() => setActiveVideoProduct(null)}>X</button>
-            <iframe
-              width="100%" height="100%"
-              src={`https://www.youtube.com/embed/${activeVideoProduct.youtubeId}?autoplay=1`}
-              title="YouTube video player" frameBorder="0" allowFullScreen
-            ></iframe>
+            <button
+              style={closeModalStyle}
+              className="close-modal-btn"
+              onClick={() => setActiveVideoProduct(null)}
+            >
+              X
+            </button>
+
+            {/* Replaced iframe with video tag */}
+            <video
+              width="100%"
+              height="100%"
+              controls
+              autoPlay
+              muted={false}
+              style={{ borderRadius: '8px', backgroundColor: '#000' }}
+            >
+              <source src={`/product-media/${activeVideoProduct.id}-demo.webm`} type="video/webm" />
+              Your browser does not support the video tag.
+            </video>
           </div>
         </div>
       )}
@@ -452,7 +466,7 @@ const successIconStyle = { width: '60px', height: '60px', backgroundColor: '#DCF
 const containerStyle = { width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '30px', padding: '20px', boxSizing: 'border-box' };
 const loaderStyle = { textAlign: 'center', padding: '100px', color: '#64748B', fontWeight: '500' };
 const featuredCardStyle = { display: 'flex', flexDirection: 'row', backgroundColor: '#fff', width: '100%', maxWidth: '1100px', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.1)', border: '1px solid #E2E8F0', flexWrap: 'wrap' };
-const imageSectionStyle = {  flex: '1.4', position: 'relative', backgroundColor: '#0F172A', backgroundImage: 'radial-gradient(circle at center, #1E293B 0%, #0F172A 100%)', minHeight: '450px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px', boxSizing: 'border-box', overflow: 'hidden' };
+const imageSectionStyle = { flex: '1.4', position: 'relative', backgroundColor: '#0F172A', backgroundImage: 'radial-gradient(circle at center, #1E293B 0%, #0F172A 100%)', minHeight: '450px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px', boxSizing: 'border-box', overflow: 'hidden' };
 const guiImageStyle = {
   maxWidth: '90%',
   maxHeight: '90%',
@@ -462,7 +476,7 @@ const guiImageStyle = {
   boxShadow: '0 50px 100px -20px rgba(0,0,0,0.7)',
   cursor: 'pointer', // Change from 'crosshair' to 'pointer'
   transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)' // ADD THIS LINE
-};const watchDemoBtnStyle = { transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',  position: 'absolute', bottom: '25px', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: '30px', cursor: 'pointer', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' };
+}; const watchDemoBtnStyle = { transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', position: 'absolute', bottom: '25px', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: '30px', cursor: 'pointer', fontWeight: '600', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' };
 const detailsSectionStyle = { flex: '1', padding: '30px', display: 'flex', flexDirection: 'column', width: '100%', flexBasis: '350px', boxSizing: 'border-box' };
 const topMetaRowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', width: '100%' };
 const productNameStyle = { fontSize: '32px', fontWeight: '800', margin: '0 0 15px 0', color: '#0F172A', letterSpacing: '-0.5px' };

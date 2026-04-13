@@ -55,10 +55,12 @@ def handler(event, context):
 
         logger.info(f"Creating session for {user_id} product {requested_id}")
 
+# Create the session
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{'price': price_id, 'quantity': 1}],
             mode='payment',
+            allow_promotion_codes=True,
             metadata={'productId': requested_id},
             client_reference_id=user_id,
             success_url=f"{frontend_url}/success?session_id={{CHECKOUT_SESSION_ID}}",
