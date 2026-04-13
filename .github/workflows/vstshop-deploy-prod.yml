@@ -180,14 +180,12 @@ jobs:
 
       - name: Sync Product Media to S3
         run: |
-          - name: Sync Product Media to S3
-            run: |
-              if [ -d "${{ env.SITE_DIR }}/src/images/products" ]; then
-                echo "Syncing VST media (Images & Video)..."
-                aws s3 sync "${{ env.SITE_DIR }}/src/images/products" \
-                  s3://${{ steps.infra.outputs.BUCKET_NAME }}/product-media \
-                  --delete
-              fi
+          if [ -d "${{ env.SITE_DIR }}/src/images/products" ]; then
+            echo "Syncing VST media (Images & Video)..."
+            aws s3 sync "${{ env.SITE_DIR }}/src/images/products" \
+              s3://${{ steps.infra.outputs.BUCKET_NAME }}/product-media \
+              --delete
+          fi
 
       - name: Invalidate CloudFront Cache
         run: |
