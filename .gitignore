@@ -77,3 +77,7 @@ services/wilderchess/*_data/
 
 **/amplify/package-lock.json
 **/amplify/node_modules/
+
+.amplify/
+cdk.out/
+amplify_outputs.json
