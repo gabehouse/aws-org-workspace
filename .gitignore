@@ -77,3 +77,24 @@ services/wilderchess/*_data/
 
 **/amplify/package-lock.json
 **/amplify/node_modules/
+# JUCE / C++ Build Artifacts
+**/JuceLibraryCode/
+**/Builds/
+**/*.jucer.user
+**/*.vst3
+**/*.app
+**/*.component
+**/*.lib
+**/*.exe
+**/*.pdb
+
+# Audio Specific
+**/*.wav
+**/*.mp3
+**/*.aif
+**/*.zip
+
+services/AcidSaturator/NewProject/JuceLibraryCode/
+infra/workloads/dev/vstshop/disk_test.zip
+
+JUCE

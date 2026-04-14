@@ -19,13 +19,13 @@ importers:
         specifier: ^2.1117.0
         version: 2.1117.0
 
-  services/my-app:
+  services/cloud-portfolio:
     dependencies:
       '@phosphor-icons/react':
         specifier: ^2.1.10
         version: 2.1.10(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@tailwindcss/vite':
-        specifier: ^4.0.14
+        specifier: ^4.0.14 
         version: 4.2.2(vite@6.4.2(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(tsx@4.21.0))
       aws-amplify:
         specifier: ^6.13.5
@@ -95,7 +95,7 @@ importers:
         specifier: ^6.2.0
         version: 6.4.2(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(tsx@4.21.0)
 
-  services/my-app/amplify: {}
+  services/cloud-portfolio/amplify: {}
 
   services/tennis-site:
     dependencies:
