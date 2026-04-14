@@ -53,7 +53,6 @@ node_modules
 **/Builds/
 **/Binaries/
 
-<<<<<<< HEAD
 #wilderchess
 services/wilderchess/gamelogs/
 services/wilderchess/app*.zip
@@ -78,7 +77,6 @@ services/wilderchess/*_data/
 
 **/amplify/package-lock.json
 **/amplify/node_modules/
-=======
 # JUCE / C++ Build Artifacts
 **/JuceLibraryCode/
 **/Builds/
@@ -96,6 +94,7 @@ services/wilderchess/*_data/
 **/*.aif
 **/*.zip
 
->>>>>>> c9a38cb (chore: rename my-app to cloud_portfolio and prep for rebase)
 services/AcidSaturator/NewProject/JuceLibraryCode/
 infra/workloads/dev/vstshop/disk_test.zip
+
+JUCE
