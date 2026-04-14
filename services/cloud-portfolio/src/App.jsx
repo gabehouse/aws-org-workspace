@@ -462,24 +462,49 @@ const ProjectCard = ({ project }) => {
                         </div>
                     )}
 
-                    <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
-                        {/* Only show Live Site if a non-GitHub link exists */}
+                    {/* LINKS SECTION */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', marginTop: '10px' }}>
+
+                        {/* 1. Live Site (Standard) */}
                         {project.link && !project.link.includes('github.com') && (
-                            <a href={project.link} target="_blank" rel="noreferrer" style={{ color: '#007bff', textDecoration: 'none', fontWeight: '600' }}>
+                            <a href={project.link} target="_blank" rel="noreferrer"
+                                style={{ color: '#007bff', textDecoration: 'none', fontWeight: '600' }}>
                                 Live Site ↗
                             </a>
                         )}
 
-                        {/* Always show GitHub if repo exists, OR if link is actually a repo */}
-                        {(project.repo || (project.link && project.link.includes('github.com'))) && (
-                            <a
-                                href={project.repo || project.link}
-                                target="_blank"
-                                rel="noreferrer"
-                                style={{ color: '#333', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}
-                            >
-                                View Source ↗
-                            </a>
+                        {/* 2. Split Source (Monorepo Logic) */}
+                        {project.infraRepo ? (
+                            <>
+                                <a
+                                    href={project.infraRepo}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{ color: '#8b5e3c', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                >
+                                    <span style={{ fontSize: '1rem' }}>☁️</span> Infra Source ↗
+                                </a>
+                                <a
+                                    href={project.repo || project.serviceRepo}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{ color: '#333', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                >
+                                    <span style={{ fontSize: '1rem' }}>📦</span> Service Source ↗
+                                </a>
+                            </>
+                        ) : (
+                            /* 3. Single Source (Standalone Repo Logic) */
+                            (project.repo || (project.link && project.link.includes('github.com'))) && (
+                                <a
+                                    href={project.repo || project.link}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{ color: '#333', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                >
+                                    View Source ↗
+                                </a>
+                            )
                         )}
                     </div>
                 </div>
@@ -492,7 +517,7 @@ const Projects = ({ isMobile }) => {
     const projects = [
         {
             title: "AWS Multi-Account Platform Template",
-            link: "https://github.com/gabehouse/aws-org-template",
+            repo: "https://github.com/gabehouse/aws-org-template",
             description: "A production-grade 'Infrastructure-as-Platform' template for bootstrapping a secure, multi-account AWS Organization with automated identity management.",
             technologies: ["Terraform", "AWS Organizations", "IAM Identity Center", "Docker", "VPC", "OIDC"],
             insights: [
@@ -512,6 +537,8 @@ const Projects = ({ isMobile }) => {
         },
         {
             title: "Wilderchess: ML-Driven Strategy Engine",
+            infraRepo: "https://github.com/gabehouse/aws-org-workspace/tree/master/infra/workloads/dev/wilderchess",
+            serviceRepo: "https://github.com/gabehouse/aws-org-workspace/tree/master/services/wilderchess",
             link: "http://wilderchess.eba-swezjps7.us-east-2.elasticbeanstalk.com/",
             description: "A real-time multiplayer PvP game powered by a custom-trained Reinforcement Learning agent and a high-concurrency Java backend.",
             technologies: ["Java 21", "Terraform", "AWS Spot Fleet", "S3", "ECR", "ONNX", "WebSockets"],
@@ -524,13 +551,13 @@ const Projects = ({ isMobile }) => {
                 {
                     label: "Dynamic Recurrence Visualization",
                     video: "assets/wilderchess-demo.webm", // Point to the WebM file
-                    description: "High-fidelity visualization of the $O(n \times m)$ matrix filling and optimal path backtracking, rendered without color-banding."
+                    description: "Live gameplay showcasing the Reinforcement Learning agent’s preference for positional control and piece activity. Unlike heuristic-based bots, the model identifies non-obvious tactical sacrifices to maximize board influence."
                 },
 
                 {
                     label: "Game Balance Convergence",
                     image: "assets/portfolio_convergence_chart.png",
-                    description: "Empirical validation of agent performance across 2300 simulated games. The Heuristic Baseline confirmed a stable 49.5% win-rate, while the Reinforcement Learning agent achieved a statistically significant 82.9% win-rate (95% CI via Wilson Score Interval), proving a tactical advantage over rule-based logic."
+                    description: "Empirical validation of agent performance across 2,300 simulated games. The Heuristic Baseline confirmed a stable 49.5% win-rate, while the Reinforcement Learning agent achieved a statistically significant 82.9% win-rate (95% CI via Wilson Score Interval), proving a tactical advantage over rule-based logic."
                 },
                 {
                     label: "Strategy Heatmap",
@@ -554,6 +581,8 @@ const Projects = ({ isMobile }) => {
         {
             title: "House Audio (Full-Stack Engine)",
             link: "https://houseaudio.net",
+            infraRepo: "https://github.com/gabehouse/aws-org-workspace/tree/master/infra/workloads/prod/vstshop",
+            serviceRepo: "https://github.com/gabehouse/aws-org-workspace/tree/master/services/vstshop-frontend",
             description: "A production-grade storefront and distribution platform for high-performance audio software, featuring automated Stripe fulfillment and secure asset delivery.",
             technologies: ["React", "Terraform", "AWS Lambda", "DynamoDB", "Cognito", "Stripe API", "OIDC"],
             featuredProduct: {
@@ -584,6 +613,7 @@ const Projects = ({ isMobile }) => {
         {
             title: "Grand River Tennis Lessons",
             link: "https://master.dkskd07qtjixa.amplifyapp.com/",
+            repo: "https://github.com/gabehouse/aws-org-workspace/tree/master/services/tennis-site",
             // Focus on "Event-Driven" and "Secure" in the summary
             description: "A full-stack booking platform featuring an event-driven serverless backend and secure OIDC-based identity federation.",
             technologies: ["React", "Amplify Gen 2", "TypeScript", "Lambda", "DynamoDB", "Cognito", "OIDC"],
@@ -605,6 +635,7 @@ const Projects = ({ isMobile }) => {
         {
             title: "Cloud-Native Engineering Portfolio",
             link: "https://master.d1gyqq9jpvj1mt.amplifyapp.com/",
+            repo: "https://github.com/gabehouse/aws-org-workspace/tree/master/services/cloud-portfolio",
             description: "A self-deploying, high-availability professional platform engineered with serverless primitives and automated certificate lifecycle management.",
             technologies: ["React", "AWS Amplify", "DynamoDB", "Route 53", "ACM", "GitHub Actions"],
             cloudHighlights: [
@@ -618,6 +649,8 @@ const Projects = ({ isMobile }) => {
         },
         {
             title: "Needleman-Wunsch: Algorithmic Lab",
+            repo: "https://github.com/gabehouse/Needleman-Wunsch-Demo",
+
             link: "https://gabehouse.github.io/Needleman-Wunsch-Demo/",
             description: "An interactive bioinformatics engine for global sequence alignment, optimized for O(n × m) computational complexity.",
             technologies: ["React", "JavaScript", "Jest", "GitHub Pages"],
@@ -640,6 +673,7 @@ const Projects = ({ isMobile }) => {
         {
             title: "JS Physics Lab: Kinetic Engine",
             link: "https://gabehouse.github.io/js-physics-demo/",
+            repo: "https://github.com/gabehouse/js-physics-demo",
             description: "A high-performance 2D physics simulation engineered in vanilla JavaScript, featuring real-time collision detection and momentum conservation logic.",
             technologies: ["JavaScript", "HTML5 Canvas", "CSS3", "GitHub Pages"],
             insights: [
@@ -653,7 +687,7 @@ const Projects = ({ isMobile }) => {
                 "Engineered a high-performance **2D Rendering Engine** using HTML5 Canvas, decoupling physics state updates from browser draw calls to maintain a smooth user experience.",
                 "Optimized the **Animation Render Loop** using `requestAnimationFrame`, achieving a consistent 60 FPS under varying computational loads.",
                 "Developed a custom **Vector Mathematics Library** from scratch to handle Euclidean distance calculations and reflection vectors for realistic kinetic interactions.",
-                "Implemented an efficient **Collision Detection Algorithm** designed to minimize $O(n^2)$ computational overhead, allowing for high-density particle simulations.",
+                "Implemented an efficient **Collision Detection Algorithm** designed to minimize O(n²) computational overhead, allowing for high-density particle simulations.",
                 "Leveraged **GitHub Pages** for static site delivery, utilizing a global CDN to ensure high availability and low-latency access for international users.",
                 "Designed the engine with a **Modular Architecture**, enabling the easy addition of physical properties like gravity, friction, and elasticity without refactoring core logic."
             ]
@@ -662,11 +696,7 @@ const Projects = ({ isMobile }) => {
 
     return (
         <div style={{ padding: '80px 5%', maxWidth: '900px', margin: '0 auto' }}>
-            <h1 style={{
-                marginBottom: '30px',
-                color: 'inherit', // Uses color from your CSS :root
-                textAlign: isMobile ? 'left' : 'center' // Optional: Centers header on desktop
-            }}>Technical Projects</h1>
+            <h1 style={{ marginBottom: '40px', color: '#333', fontSize: '2.5rem' }}>Technical Projects</h1>
             {projects.map((project, index) => (
                 <ProjectCard key={index} project={project} />
             ))}
@@ -736,7 +766,7 @@ const Contact = ({ isMobile }) => {
                         padding: '24px',
                         backgroundColor: 'var(--card-bg, #fcfaf2)', // Dynamic bg
                         borderRadius: '8px',
-                        border: '1px solid var(--border-color, #e9ecef)',
+                        border: '1px solid var(--border-color, #fcfaf2)',
                         transition: 'transform 0.2s ease-in-out',
                         display: 'flex',
                         flexDirection: 'column',
