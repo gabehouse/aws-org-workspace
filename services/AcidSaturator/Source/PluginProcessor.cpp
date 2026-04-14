@@ -17,13 +17,38 @@ juce::AudioProcessorValueTreeState::ParameterLayout NewProjectAudioProcessor::cr
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
-    // Core Parameters
-    layout.add(std::make_unique<juce::AudioParameterFloat>("DRIVE", "Drive", 1.0f, 20.0f, 1.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("MIX", "Mix", 0.0f, 1.0f, 1.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>("OUT", "Output", 0.1f, 2.0f, 1.0f));
+    // 1. DRIVE (Added a Skew of 0.5 so 1.0 to 5.0 takes up half the knob)
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID("DRIVE", 1),
+        "Drive",
+        juce::NormalisableRange<float>(1.0f, 20.0f, 0.1f, 0.5f),
+        1.0f));
 
-    // Auto-Makeup Toggle (The "Ableton" Style feature)
-    layout.add(std::make_unique<juce::AudioParameterBool>("MAKEUP", "Auto-Makeup", true));
+    // 2. MIX
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID("MIX", 1),
+        "Mix",
+        0.0f, 1.0f, 1.0f));
+
+    // 3. OUTPUT (The "Pro" Version with dB display)
+// Change the Output parameter range to include a skew factor
+    layout.add(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID("OUT", 1),
+        "Output",
+        // Min: 0.1, Max: 2.0, Step: 0.01, Skew: 0.85f (Adjusts 1.0 to center)
+        juce::NormalisableRange<float>(0.1f, 2.0f, 0.01f, 0.85f),
+        1.0f,
+        juce::AudioParameterDefaultsAttributes().withStringFromValueFunction(
+            [](float value, int) {
+                return juce::String(juce::Decibels::gainToDecibels(value), 1) + " dB";
+            })
+    ));
+
+    // 4. MAKEUP
+    layout.add(std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID("MAKEUP", 1),
+        "Auto-Makeup",
+        true));
 
     return layout;
 }
