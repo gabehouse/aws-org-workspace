@@ -551,7 +551,7 @@ const Projects = ({ isMobile }) => {
                 {
                     label: "Dynamic Recurrence Visualization",
                     video: "assets/wilderchess-demo.webm", // Point to the WebM file
-                    description: "High-fidelity visualization of the O(n x m) matrix filling and optimal path backtracking, rendered without color-banding."
+                    description: "Live gameplay showcasing the Reinforcement Learning agent’s preference for positional control and piece activity. Unlike heuristic-based bots, the model identifies non-obvious tactical sacrifices to maximize board influence."
                 },
 
                 {
