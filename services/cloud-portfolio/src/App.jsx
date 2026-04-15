@@ -696,7 +696,11 @@ const Projects = ({ isMobile }) => {
 
     return (
         <div style={{ padding: '80px 5%', maxWidth: '900px', margin: '0 auto' }}>
-            <h1 style={{ marginBottom: '40px', color: '#333', fontSize: '2.5rem' }}>Technical Projects</h1>
+            <h1 style={{
+                marginBottom: '30px',
+                color: 'inherit', // Uses color from your CSS :root
+                textAlign: isMobile ? 'left' : 'center' // Optional: Centers header on desktop
+            }}>Technical Projects</h1>
             {projects.map((project, index) => (
                 <ProjectCard key={index} project={project} />
             ))}
