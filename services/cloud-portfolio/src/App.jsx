@@ -697,7 +697,7 @@ const Projects = ({ isMobile }) => {
     return (
         <div style={{ padding: '80px 5%', maxWidth: '900px', margin: '0 auto' }}>
             <h1 style={{
-                marginBottom: '30px',
+                marginBottom: '60px',
                 color: 'inherit', // Uses color from your CSS :root
                 textAlign: isMobile ? 'left' : 'center' // Optional: Centers header on desktop
             }}>Technical Projects</h1>
