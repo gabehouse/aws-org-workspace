@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import ColorGrid from './ColorGrid';
 import Markdown from 'react-markdown';
-import { GithubLogo, LinkedinLogo, Envelope } from "@phosphor-icons/react";
+import { GithubLogo, LinkedinLogo, Envelope, Cloud, CaretDown, CaretUp, Browser, Gear, Books } from "@phosphor-icons/react";
 
 const App = () => {
     const homeRef = useRef(null);
@@ -357,11 +357,36 @@ const ProjectCard = ({ project }) => {
             )}
 
             {/* HEADER */}
-            <div onClick={() => setIsExpanded(!isExpanded)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }}>
+            <div
+                onClick={() => setIsExpanded(!isExpanded)}
+                style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    padding: '4px 0'
+                }}
+            >
                 <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#333' }}>{project.title}</h2>
-                <span style={{ fontSize: '1rem', color: '#007bff', fontWeight: 'bold' }}>
-                    {isExpanded ? 'VIEW LESS −' : 'VIEW CLOUD INFRA +'}
-                </span>
+
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 16px',
+                    backgroundColor: isExpanded ? '#e0d0b0' : 'transparent',
+                    border: '1.5px solid #007bff',
+                    borderRadius: '6px',
+                    color: isExpanded ? '#333' : '#007bff',
+                    transition: 'all 0.2s ease',
+                }}>
+                    <Cloud size={20} weight={isExpanded ? "fill" : "light"} />
+                    <span style={{ fontSize: '0.9rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {isExpanded ? 'Hide Architecture' : 'View Cloud Infra'}
+                    </span>
+                    {isExpanded ? <CaretUp size={16} /> : <CaretDown size={16} />}
+                </div>
             </div>
 
             <div style={{ color: '#555', margin: '15px 0', lineHeight: '1.5' }}>
@@ -463,45 +488,44 @@ const ProjectCard = ({ project }) => {
                     )}
 
                     {/* LINKS SECTION */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', marginTop: '10px' }}>
+                    <div style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '24px',
+                        marginTop: '20px',
+                        paddingTop: '15px',
+                        borderTop: '1px dashed #e0d0b0'
+                    }}>
 
-                        {/* 1. Live Site (Standard) */}
+                        {/* 1. Live Endpoint (Production URL) */}
                         {project.link && !project.link.includes('github.com') && (
                             <a href={project.link} target="_blank" rel="noreferrer"
-                                style={{ color: '#007bff', textDecoration: 'none', fontWeight: '600' }}>
-                                Live Site ↗
+                                style={{ ...linkStyle, color: '#007bff' }}>
+                                <Browser size={18} weight="bold" />
+                                Live Endpoint ↗
                             </a>
                         )}
 
-                        {/* 2. Split Source (Monorepo Logic) */}
+                        {/* 2. Split Source (Monorepo / IaC Logic) */}
                         {project.infraRepo ? (
                             <>
-                                <a
-                                    href={project.infraRepo}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    style={{ color: '#8b5e3c', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                >
-                                    <span style={{ fontSize: '1rem' }}>☁️</span> Infra Source ↗
+                                <a href={project.infraRepo} target="_blank" rel="noreferrer"
+                                    style={{ ...linkStyle, color: '#8b5e3c' }}>
+                                    <Gear size={18} weight="bold" />
+                                    Infra Source (Terraform) ↗
                                 </a>
-                                <a
-                                    href={project.repo || project.serviceRepo}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    style={{ color: '#333', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                >
-                                    <span style={{ fontSize: '1rem' }}>📦</span> Service Source ↗
+                                <a href={project.repo || project.serviceRepo} target="_blank" rel="noreferrer"
+                                    style={{ ...linkStyle, color: '#333' }}>
+                                    <GithubLogo size={18} weight="bold" />
+                                    Service Source ↗
                                 </a>
                             </>
                         ) : (
                             /* 3. Single Source (Standalone Repo Logic) */
                             (project.repo || (project.link && project.link.includes('github.com'))) && (
-                                <a
-                                    href={project.repo || project.link}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    style={{ color: '#333', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                >
+                                <a href={project.repo || project.link} target="_blank" rel="noreferrer"
+                                    style={{ ...linkStyle, color: '#333' }}>
+                                    <GithubLogo size={18} weight="bold" />
                                     View Source ↗
                                 </a>
                             )
@@ -511,6 +535,16 @@ const ProjectCard = ({ project }) => {
             )}
         </div>
     );
+};
+const linkStyle = {
+    textDecoration: 'none',
+    fontWeight: '700',
+    fontSize: '0.85rem',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    letterSpacing: '0.3px',
+    textTransform: 'uppercase'
 };
 // 2. The updated Projects component
 const Projects = ({ isMobile }) => {
@@ -702,7 +736,11 @@ const Projects = ({ isMobile }) => {
                 textAlign: isMobile ? 'left' : 'center' // Optional: Centers header on desktop
             }}>Technical Projects</h1>
             {projects.map((project, index) => (
-                <ProjectCard key={index} project={project} />
+                <ProjectCard
+                    key={index}
+                    project={project}
+                    isMobile={isMobile} // <--- Pass it here
+                />
             ))}
         </div>
     );
