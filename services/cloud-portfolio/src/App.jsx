@@ -736,7 +736,11 @@ const Projects = ({ isMobile }) => {
                 textAlign: isMobile ? 'left' : 'center' // Optional: Centers header on desktop
             }}>Technical Projects</h1>
             {projects.map((project, index) => (
-                <ProjectCard key={index} project={project} />
+                <ProjectCard
+                    key={index}
+                    project={project}
+                    isMobile={isMobile} // <--- Pass it here
+                />
             ))}
         </div>
     );
