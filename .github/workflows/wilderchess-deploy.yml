@@ -72,5 +72,8 @@ jobs:
       - name: Terraform Init & Apply
         working-directory: ${{ env.TF_DIR }}
         run: |
-          terraform init
+      - name: Terraform Init & Apply
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          terraform init -backend-config=../../../backend.ci.hcl
           terraform apply -var "app_version=${{ steps.package.outputs.VERSION }}" -auto-approve
