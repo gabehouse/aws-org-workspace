@@ -4,16 +4,20 @@ on:
   pull_request:
     branches: [ "master" ]
     paths:
-      - 'infra/workloads/prod/**'
+      - 'infra/workloads/prod/vstshop/**'
       - 'services/vstshop-frontend/**'
+      - '!services/vstshop-frontend/*.md'  # <--- Ignore any Markdown in this folder
+      - '!services/vstshop-frontend/public/assets/**' # <--- Ignore the diagram/assets
       - 'infra/modules/**'
       - '.github/workflows/vstshop-deploy-prod.yml'
 
   push:
     branches: [ "master" ]
     paths:
-      - 'infra/workloads/prod/**'
+      - 'infra/workloads/prod/vstshop/**'
       - 'services/vstshop-frontend/**'
+      - '!services/vstshop-frontend/*.md'  # <--- Ignore any Markdown in this folder
+      - '!services/vstshop-frontend/public/assets/**' # <--- Ignore the diagram/assets
       - 'infra/modules/**'
       - '.github/workflows/vstshop-deploy-prod.yml'
   workflow_dispatch:

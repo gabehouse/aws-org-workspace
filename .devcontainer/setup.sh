@@ -105,6 +105,7 @@ alias cdm="cd /workspaces/aws-org-workspace/infra/modules"
 alias cda="cd /workspaces/aws-org-workspace/services/AcidSaturator"
 alias cdp="cd /workspaces/aws-org-workspace/services/cloud-portfolio"
 alias cdw="cd /workspaces/aws-org-workspace/services/wilderchess"
+alias cdv="cd /workspaces/aws-org-workspace/services/vstshop-frontend"
 
 # Movement Shortcuts
 alias ..="cd .."
@@ -118,5 +119,7 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" --no-use
 EOF
 fi
+
+sudo mkdir -p /home/vscode/.cache/pnpm && sudo chown -R vscode:vscode /home/vscode/.cache
 
 echo "✅ Provisioning complete!"
