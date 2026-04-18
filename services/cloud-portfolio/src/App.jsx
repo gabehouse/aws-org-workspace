@@ -575,7 +575,7 @@ const Projects = ({ isMobile }) => {
             serviceRepo: "https://github.com/gabehouse/aws-org-workspace/tree/master/services/wilderchess",
             link: "http://wilderchess.eba-swezjps7.us-east-2.elasticbeanstalk.com/",
             description: "A real-time multiplayer PvP game powered by a custom-trained Reinforcement Learning agent and a high-concurrency Java backend.",
-            technologies: ["Java 21", "Terraform", "AWS Spot Fleet", "S3", "ECR", "ONNX", "WebSockets"],
+            technologies: ["Java 21", "Terraform", "AWS Spot Fleet", "S3", "ECR", "ONNX", "WebSockets", "OIDC"],
             insights: [
                 {
                     label: "Hybrid ML & Infrastructure Lifecycle",
@@ -609,7 +609,8 @@ const Projects = ({ isMobile }) => {
                 "Engineered an **Automated Data Pipeline**: Distributed Docker runners generate game-state datasets, synced via Cron to S3 for centralized model training and evaluation.",
                 "Deployed a high-availability **Java Corretto 21** stack on Elastic Beanstalk, utilizing **ALB Sticky Sessions** to maintain persistent WebSocket state for active games.",
                 "Implemented **Infrastructure-as-Code** via modular Terraform, managing environment state with S3 backends and enforcing granular IAM security boundaries.",
-                "Optimized **Real-Time Inference** by integrating the ONNX Runtime directly into the Java server, enabling the RL model to execute moves in under 1ms."
+                "Optimized **Real-Time Inference** by integrating the ONNX Runtime directly into the Java server, enabling the RL model to execute moves in under 1ms.",
+                "Developed a **secure CI/CD Pipeline** using **GitHub Actions** and **OpenID Connect (OIDC)**, automating **Maven builds** and **Terraform deployments** to AWS without persistent credentials, ensuring **100% reproducible environments**."
             ]
         },
         {
