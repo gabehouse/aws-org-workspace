@@ -43,16 +43,20 @@ jobs:
         id: package
         run: |
           VERSION=$(date +%Y%m%d%H%M%S)
-          # Create the zip at the ROOT of the repo for easy access
           cd ${{ env.APP_DIR }}
-          mkdir -p deploy_dist
-          cp target/wilderchess-app.jar deploy_dist/application.jar
-          cp Procfile deploy_dist/
           
-          cd deploy_dist
-          # We name it 'app-$VERSION.zip' to match your TF source
-          zip -r ../../../app-$VERSION.zip . 
+          # Create clean deployment dir
+          mkdir -p deploy
+          cp target/wilderchess-app.jar deploy/application.jar
+          cp Procfile deploy/
+          # Copy assets if needed (matches your script)
+          [ -d "assets" ] && cp -r assets deploy/ 
+
+          # Zip the contents from INSIDE the deploy folder
+          cd deploy
+          zip -r ../app-$VERSION.zip .
           
+          # Pass the VERSION to the next step
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       # 3. Infrastructure Auth (OIDC)

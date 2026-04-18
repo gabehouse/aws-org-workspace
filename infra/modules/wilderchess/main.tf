@@ -107,6 +107,7 @@ resource "aws_s3_object" "app_version" {
   # Use the dynamic version for the S3 Key
   key    = "versions/app-${var.app_version}.zip"
   source = "${path.root}/../../../../services/wilderchess/app-${var.app_version}.zip"
+  etag   = filemd5("${path.root}/../../../../services/wilderchess/app-${var.app_version}.zip")
 }
 
 resource "aws_elastic_beanstalk_application_version" "my_app_version" {
