@@ -12,9 +12,9 @@ A high-concurrency game engine and infrastructure platform designed for real-tim
 
 ## 📊 Performance & Insights
 
-|               Inference Latency               |               Strategy Heatmap               |
-| :-------------------------------------------: | :------------------------------------------: |
-| ![Latency](docs/images/inference_latency.png) | ![Heatmap](docs/images/strategy_heatmap.png) |
+|               Inference Latency                |               Strategy Heatmap               |
+| :--------------------------------------------: | :------------------------------------------: |
+| ![Latency](docs/images/portfolio_aws_dark.png) | ![Heatmap](docs/images/strategy_heatmap.png) |
 
 ---
 
