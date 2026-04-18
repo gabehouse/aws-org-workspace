@@ -43,6 +43,12 @@ This project utilizes a high-performance **VS Code Dev Container** environment.
 2. **Package Management:** Run `uv sync` to initialize the Python/ML environment via hard-links (optimized for speed and disk space).
 3. **Execution:** Use the operations script to launch the local engine:
 
+Bash
+
+```bash
+./ops/run.sh
+```
+
 🚀 Deployment & Orchestration
 Wilderchess utilizes a hybrid deployment model: Automated CI/CD for the web application and Manual Orchestration for large-scale ML data generation.
 
@@ -58,7 +64,7 @@ Bash
 ```bash
 # Manual override (requires prod profile)
 export AWS_PROFILE=prod
-./ops/deploy.sh {version_tag}
+./ops/deploy_eb.sh
 ```
 
 🧪 Simulation & ML Environment (Spot Fleets)
@@ -70,9 +76,10 @@ Bash
 
 ```bash
 aws sso login --profile dev
-2. Update Simulation Artifacts:
-Push the latest Python bot logic or container image to Amazon ECR:
 ```
+
+2. Update Simulation Artifacts:
+   Push the latest Python bot logic or container image to Amazon ECR:
 
 Bash
 
@@ -104,7 +111,3 @@ Cost Optimization: Leveraged AWS Spot Instances via ASG Mixed Instance Policies,
 Zero-Trust Identity: Utilizes GitHub Actions via OIDC for secure, keyless cloud deployments, eliminating the need for long-lived IAM secrets.
 
 Continuous Infrastructure: 100% of the cloud stack is managed via Terraform, with the production lifecycle fully integrated into GitHub for repeatable, hands-off deployments.
-
-```
-
-```
