@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "wilderchess"
+version = "0.1.0"
+description = "ML-driven strategy engine"
+requires-python = ">=3.12"
+dependencies = [
+    "torch",
+    "pandas",
+    "scikit-learn",
+    "joblib",
+    "seaborn",
+    "matplotlib",
+    "onnxruntime"   # For the model execution we discussed earlier
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/wilderchess"]
