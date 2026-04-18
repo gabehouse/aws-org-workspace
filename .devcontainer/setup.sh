@@ -15,6 +15,14 @@ if [[ $(git config --global --get-all safe.directory) != *"/workspaces/aws-org-w
     git config --global --add safe.directory /workspaces/aws-org-workspace
 fi
 
+# --- Git Identity Setup ---
+# This ensures you never see the "Author identity unknown" error again.
+if [[ -z "$(git config --global user.email)" ]]; then
+    echo "👤 Configuring Git Identity..."
+    git config --global user.name "Gabe House"
+    git config --global user.email "gabriel.jsh@gmail.com"
+fi
+
 # 2. Install uv (The 'pnpm' of Python)
 if ! command -v uv &> /dev/null; then
     echo "⚡ Preparing home directories..."

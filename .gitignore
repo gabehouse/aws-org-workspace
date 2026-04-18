@@ -71,7 +71,6 @@ services/wilderchess/temp_chunks/
 *.jar
 *.parquet
 **/target/
-**/target/**
 
 # Data folders
 services/wilderchess/*_data/
