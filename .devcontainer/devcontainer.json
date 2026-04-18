@@ -39,10 +39,17 @@
           "**/Builds/": true,
           "**/.vs/": true
         },
-        "python.defaultInterpreterPath": ".venv/bin/python",
-        "python.terminal.activateEnvInCurrentTerminal": true
+	      "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+	      "python.terminal.activateEnvInCurrentTerminal": true,
+        "python.analysis.importFormat": "relative",
+        "python.analysis.extraPaths": [
+          "${workspaceFolder}/services/wilderchess/src"
+        ],
+    // Tells VS Code to look for the venv uv creates
+        "python.venvPath": "${workspaceFolder}/.venv"
       },
       "extensions": [
+        "tamasfe.even-better-toml",
         "hashicorp.terraform",
         "anton-prazdnichnykh.tflint",
         "amazonwebservices.aws-toolkit-vscode",
@@ -58,11 +65,22 @@
     "WAYLAND_DISPLAY": "",
     "DISPLAY": ""
   },
-  "mounts": [
+"mounts": [
     {
       "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.aws",
       "target": "/home/vscode/.aws",
       "type": "bind"
+    },
+    // PERSISTENT VOLUMES: This prevents re-downloading Python and Node packages
+    {
+      "source": "uv-cache",
+      "target": "/home/vscode/.cache/uv",
+      "type": "volume"
+    },
+    {
+      "source": "pnpm-store",
+      "target": "/home/vscode/.local/share/pnpm",
+      "type": "volume"
     }
   ],
   "postCreateCommand": "bash .devcontainer/setup.sh",

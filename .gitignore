@@ -98,3 +98,8 @@ services/AcidSaturator/NewProject/JuceLibraryCode/
 infra/workloads/dev/vstshop/disk_test.zip
 
 JUCE
+
+dependency-reduced-pom.xml
+target/
+.venv/
+*.log
