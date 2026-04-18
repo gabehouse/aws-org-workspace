@@ -1,0 +1,76 @@
+name: "Wilderchess Deploy"
+
+on:
+  push:
+    branches: [ "master" ]
+    paths:
+      - 'services/wilderchess/**'
+      - 'infra/workloads/prod/wilderchess/**'
+  workflow_dispatch: # Allows manual trigger
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: "us-east-2" # Adjust to your region
+  TF_DIR: "infra/workloads/prod/wilderchess"
+  APP_DIR: "services/wilderchess"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 1. Setup Java & Build JAR
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'corretto'
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: |
+          cd ${{ env.APP_DIR }}
+          mvn clean package -DskipTests
+
+      # 2. Package for Elastic Beanstalk (Your Script Logic)
+      - name: Package Artifact
+        id: package
+        run: |
+          VERSION=$(date +%Y%m%d%H%M%S)
+          cd ${{ env.APP_DIR }}
+          mkdir -p deploy_dist
+          cp target/wilderchess-app.jar deploy_dist/application.jar
+          cp Procfile deploy_dist/
+          # Zip the contents
+          cd deploy_dist
+          zip -r ../../../wilderchess-$VERSION.zip .
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      # 3. Infrastructure Auth (OIDC)
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.MGMT_ACCOUNT_ID }}:role/github-actions-oidc-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Role chaining if your EB is in the Prod account
+      - name: Role Chain to Prod
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-chaining: true
+          role-to-assume: arn:aws:iam::${{ secrets.PROD_ACCOUNT_ID }}:role/terraform-execution-role-prod
+
+      # 4. Terraform Apply
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init & Apply
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          terraform init
+          terraform apply -var "app_version=${{ steps.package.outputs.VERSION }}" -auto-approve

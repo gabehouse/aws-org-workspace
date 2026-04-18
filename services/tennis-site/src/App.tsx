@@ -113,21 +113,21 @@ const formatDisplayName = (
 // Type guard function to filter out null/undefined Todo items and check for required properties
 function isValidTodo(item: unknown): item is Schema["Todo"]["type"] {
   return item !== null && item !== undefined &&
-         typeof item === 'object' &&
-         'id' in item && typeof (item as Schema["Todo"]["type"]).id === 'string' &&
-         'dateSlot' in item && typeof (item as Schema["Todo"]["type"]).dateSlot === 'string' &&
-         'timeSlot' in item && typeof (item as Schema["Todo"]["type"]).timeSlot === 'string';
+    typeof item === 'object' &&
+    'id' in item && typeof (item as Schema["Todo"]["type"]).id === 'string' &&
+    'dateSlot' in item && typeof (item as Schema["Todo"]["type"]).dateSlot === 'string' &&
+    'timeSlot' in item && typeof (item as Schema["Todo"]["type"]).timeSlot === 'string';
 }
 
 // Type guard function to filter out null/undefined WaitlistEntry items and check for required properties
 function isValidWaitlistEntry(item: unknown): item is Schema["WaitlistEntry"]["type"] {
   return item !== null && item !== undefined &&
-         typeof item === 'object' &&
-         'id' in item && typeof (item as Schema["WaitlistEntry"]["type"]).id === 'string' &&
-         'email' in item && typeof (item as Schema["WaitlistEntry"]["type"]).email === 'string' &&
-         ('firstName' in item ? (typeof (item as Schema["WaitlistEntry"]["type"]).firstName === 'string' || (item as Schema["WaitlistEntry"]["type"]).firstName === null) : true) &&
-         ('lastName' in item ? (typeof (item as Schema["WaitlistEntry"]["type"]).lastName === 'string' || (item as Schema["WaitlistEntry"]["type"]).lastName === null) : true) &&
-         ('createdAt' in item ? (typeof (item as Schema["WaitlistEntry"]["type"]).createdAt === 'string' || (item as Schema["WaitlistEntry"]["type"]).createdAt === null) : true);
+    typeof item === 'object' &&
+    'id' in item && typeof (item as Schema["WaitlistEntry"]["type"]).id === 'string' &&
+    'email' in item && typeof (item as Schema["WaitlistEntry"]["type"]).email === 'string' &&
+    ('firstName' in item ? (typeof (item as Schema["WaitlistEntry"]["type"]).firstName === 'string' || (item as Schema["WaitlistEntry"]["type"]).firstName === null) : true) &&
+    ('lastName' in item ? (typeof (item as Schema["WaitlistEntry"]["type"]).lastName === 'string' || (item as Schema["WaitlistEntry"]["type"]).lastName === null) : true) &&
+    ('createdAt' in item ? (typeof (item as Schema["WaitlistEntry"]["type"]).createdAt === 'string' || (item as Schema["WaitlistEntry"]["type"]).createdAt === null) : true);
 }
 
 // Interface for booker details, including the Todo item's ID for removal
@@ -213,7 +213,7 @@ function App() {
     if (Object.keys(Amplify.getConfig()).length > 0) {
       setIsAmplifyConfigured(true);
     }
-   // console.log('Amplify Configuration in Production:', Amplify.getConfig());
+    // console.log('Amplify Configuration in Production:', Amplify.getConfig());
     return () => removeListener();
   }, []);
 
@@ -459,7 +459,7 @@ function App() {
 
       console.log("Result of admin remove booking update:", updatedTodoResult); // Log the full result
       if (updatedTodoResult.errors && updatedTodoResult.errors.length > 0) {
-          console.error("Errors from admin remove booking update:", updatedTodoResult.errors);
+        console.error("Errors from admin remove booking update:", updatedTodoResult.errors);
       }
 
       if (updatedTodoResult.data) {
@@ -544,7 +544,7 @@ function App() {
           }, { authMode: 'userPool' });
           console.log("Unbook result:", unbookResult); // Log the unbook result
           if (unbookResult.errors && unbookResult.errors.length > 0) {
-              console.error("Errors from unbook update:", unbookResult.errors);
+            console.error("Errors from unbook update:", unbookResult.errors);
           }
           setModalContent(`Slot ${getFormattedDate(new Date(dateSlot), 'display')} ${timeSlot} unbooked.`);
           hideModal();
@@ -573,27 +573,27 @@ function App() {
           }
         }
         else {
-            // Slot is unbooked, user is booking it
-            console.log("Attempting to book unbooked slot (update existing):", targetTodo.id);
-            const bookResult = await client.models.Todo.update({
-              id: targetTodo.id,
-              bookedByUsername: currentUserLoginId,
-              bookedByFirstName: currentUserFirstName,
-              bookedByLastName: currentUserLastName,
-              bookedByEmail: currentUserEmail,
-            }, { authMode: 'userPool' });
-            console.log("Book result (update):", bookResult); // Log the book result
-            if (bookResult.errors && bookResult.errors.length > 0) {
-                console.error("Errors from book update:", bookResult.errors);
-            }
-            setModalContent(`Slot ${getFormattedDate(new Date(dateSlot), 'display')} ${timeSlot} booked.`);
-            hideModal();
+          // Slot is unbooked, user is booking it
+          console.log("Attempting to book unbooked slot (update existing):", targetTodo.id);
+          const bookResult = await client.models.Todo.update({
+            id: targetTodo.id,
+            bookedByUsername: currentUserLoginId,
+            bookedByFirstName: currentUserFirstName,
+            bookedByLastName: currentUserLastName,
+            bookedByEmail: currentUserEmail,
+          }, { authMode: 'userPool' });
+          console.log("Book result (update):", bookResult); // Log the book result
+          if (bookResult.errors && bookResult.errors.length > 0) {
+            console.error("Errors from book update:", bookResult.errors);
+          }
+          setModalContent(`Slot ${getFormattedDate(new Date(dateSlot), 'display')} ${timeSlot} booked.`);
+          hideModal();
 
-            // Send booking email
-            await sendEmail(
-                `GRT BOOKING ${currentEnvironment}`,
-                `BOOKING ${targetTodo.timeSlot}, ${targetTodo.dateSlot}, ${currentUserEmail}, ${currentUserFirstName}, ${currentUserLastName}`
-            );
+          // Send booking email
+          await sendEmail(
+            `GRT BOOKING ${currentEnvironment}`,
+            `BOOKING ${targetTodo.timeSlot}, ${targetTodo.dateSlot}, ${currentUserEmail}, ${currentUserFirstName}, ${currentUserLastName}`
+          );
         }
       } else {
         // This 'else' block handles the case where targetTodo is NOT found, meaning it's a new slot to be created.
@@ -609,7 +609,7 @@ function App() {
         }, { authMode: 'userPool' });
         console.log("New slot creation result:", newSlotResult);
         if (newSlotResult.errors && newSlotResult.errors.length > 0) {
-            console.error("Errors from new slot creation:", newSlotResult.errors);
+          console.error("Errors from new slot creation:", newSlotResult.errors);
         }
         setModalContent(`New slot ${getFormattedDate(new Date(dateSlot), 'display')} ${timeSlot} created and booked!`);
         hideModal();
@@ -617,7 +617,7 @@ function App() {
         // Corrected email subject and body for new slot creation
         await sendEmail(
           `GRT BOOKING ${currentEnvironment}`,
-            `BOOKING ${timeSlot}, ${dateSlot}, ${currentUserEmail}, ${currentUserFirstName}, ${currentUserLastName}`
+          `BOOKING ${timeSlot}, ${dateSlot}, ${currentUserEmail}, ${currentUserFirstName}, ${currentUserLastName}`
         );
       }
     } catch (error: unknown) {
@@ -827,46 +827,46 @@ function App() {
             margin: '0', // Remove default margins
             marginTop: '-1rem', // Adjust as needed to reduce gap with button
           }}>
-            Grand River Tennis Lessons
+            Grand River Tennis
           </h1>
         </div>
 
-{/* Tennis Coaching Blurb - Refined for Clients & Portfolio Appeal */}
-<div style={{ marginBottom: '1.5rem', textAlign: 'left', color: '#374151', padding: '0 1rem' }}>
-  <p style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.75rem', color: '#111827' }}>
-    Professional Tennis Instruction | Waterloo
-  </p>
+        {/* Tennis Coaching Blurb - Refined for Clients & Portfolio Appeal */}
+        <div style={{ marginBottom: '1.5rem', textAlign: 'left', color: '#374151', padding: '0 1rem' }}>
+          <p style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.75rem', color: '#111827' }}>
+            Professional Tennis Instruction | Waterloo
+          </p>
 
-  <p style={{ fontSize: '1rem', lineHeight: '1.6', marginBottom: '1rem' }}>
-    Hi, I’m Gabriel. I provide technical coaching and high-performance hitting sessions for all skill levels. My background includes private instruction, tennis camp leadership, and serving as a hitting partner for <strong>top junior OTA players</strong>.
-  </p>
+          <p style={{ fontSize: '1rem', lineHeight: '1.6', marginBottom: '1rem' }}>
+            Hi, I’m Gabriel. I provide technical coaching and high-performance hitting sessions for all skill levels. My background includes private instruction, tennis camp leadership, and serving as a hitting partner for <strong>top junior OTA players</strong>.
+          </p>
 
-  <p style={{ fontSize: '1rem', lineHeight: '1.6', marginBottom: '1rem' }}>
-    <strong>The Training Environment:</strong> To keep elite-level coaching accessible, sessions are held at the WCI public courts. We operate with high adaptability—should courts be at capacity, we pivot to intensive off-court technical modules (biomechanics, volleys, and wall-drills) until space opens, ensuring zero downtime.
-  </p>
+          <p style={{ fontSize: '1rem', lineHeight: '1.6', marginBottom: '1rem' }}>
+            <strong>The Training Environment:</strong> To keep elite-level coaching accessible, sessions are held at the WCI public courts. We operate with high adaptability—should courts be at capacity, we pivot to intensive off-court technical modules (biomechanics, volleys, and wall-drills) until space opens, ensuring zero downtime.
+          </p>
 
-  <p style={{ fontSize: '1rem', lineHeight: '1.6', marginBottom: '1rem' }}>
-    <strong>Rates & Booking:</strong> <s>$40</s> <strong>$30 per hour</strong> (Split the cost with friends!).
-    Your <strong>introductory session is just $10</strong>. Select a calendar slot to trigger an automated confirmation and secure your booking.
-  </p>
+          <p style={{ fontSize: '1rem', lineHeight: '1.6', marginBottom: '1rem' }}>
+            <strong>Rates & Booking:</strong> <s>$40</s> <strong>$30 per hour</strong> (Split the cost with friends!).
+            Your <strong>introductory session is just $10</strong>. Select a calendar slot to trigger an automated confirmation and secure your booking.
+          </p>
 
-  <p style={{ fontSize: '0.9rem', color: '#6B7280', fontStyle: 'italic' }}>
-    Flexible cancellation: No fees for late changes, though 3-hour notice is appreciated. Payments accepted via Cash or E-transfer.
-  </p>
-</div>
+          <p style={{ fontSize: '0.9rem', color: '#6B7280', fontStyle: 'italic' }}>
+            Flexible cancellation: No fees for late changes, though 3-hour notice is appreciated. Payments accepted via Cash or E-transfer.
+          </p>
+        </div>
 
-{/* Group Lesson Description - Waitlist Logic */}
-<div style={{ marginBottom: '1rem', textAlign: 'left', color: '#374151', padding: '0 1rem' }}>
-  <div style={{ backgroundColor: '#F3F4F6', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #3B82F6' }}>
-    <p style={{ fontSize: '1rem', lineHeight: '1.5', margin: 0 }}>
-      <strong>Scalable Group Sessions:</strong> I am currently aggregating interest for structured group clinics at private facilities. These sessions will feature a mix of tactical drills and match-play. <strong>Join the waitlist</strong> to be notified when we reach capacity for a new cohort.
-    </p>
-  </div>
-</div>
+        {/* Group Lesson Description - Waitlist Logic */}
+        <div style={{ marginBottom: '1rem', textAlign: 'left', color: '#374151', padding: '0 1rem' }}>
+          <div style={{ backgroundColor: '#F3F4F6', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #3B82F6' }}>
+            <p style={{ fontSize: '1rem', lineHeight: '1.5', margin: 0 }}>
+              <strong>Scalable Group Sessions:</strong> I am currently aggregating interest for structured group clinics at private facilities. These sessions will feature a mix of tactical drills and match-play. <strong>Join the waitlist</strong> to be notified when we reach capacity for a new cohort.
+            </p>
+          </div>
+        </div>
 
         {/* Email Contact Line - Added here and aligned left */}
         <div style={{ marginBottom: '1.5rem', textAlign: 'left', color: '#374151', fontSize: '1rem', lineHeight: '1.5', paddingLeft: '1rem', paddingRight: '1rem' }}> {/* Added horizontal padding to the container */}
-            <p>Feel free to email <a href="mailto:gabriel.jsh@gmail.com" style={{ color: '#2563eb', textDecoration: 'underline' }}>gabriel.jsh@gmail.com</a> if you have any questions!</p>
+          <p>Feel free to email <a href="mailto:gabriel.jsh@gmail.com" style={{ color: '#2563eb', textDecoration: 'underline' }}>gabriel.jsh@gmail.com</a> if you have any questions!</p>
         </div>
 
         <div style={{ textAlign: 'center', marginBottom: '2rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
@@ -960,16 +960,16 @@ function App() {
                     slotTextColor = '#166534';
                   } else if (isBooked) {
                     if (isAdmin) {
-                        slotBackgroundColor = '#f5f5dc';
-                        slotBorderColor = '#d4c0a1';
-                        slotTextColor = '#5c4033';
-                        slotCursor = 'pointer';
+                      slotBackgroundColor = '#f5f5dc';
+                      slotBorderColor = '#d4c0a1';
+                      slotTextColor = '#5c4033';
+                      slotCursor = 'pointer';
                     } else {
-                        slotBackgroundColor = '#e0e0e0';
-                        slotBorderColor = '#c0c0c0';
-                        slotTextColor = '#606060';
-                        slotCursor = 'default';
-                        slotClickHandler = undefined;
+                      slotBackgroundColor = '#e0e0e0';
+                      slotBorderColor = '#c0c0c0';
+                      slotTextColor = '#606060';
+                      slotCursor = 'default';
+                      slotClickHandler = undefined;
                     }
                   } else {
                     slotBackgroundColor = '#dbeafe';
@@ -1107,7 +1107,7 @@ function App() {
               <ul style={{ listStyleType: 'none', padding: 0, margin: 0 }}>
                 {waitlistEntries.sort((a, b) => new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime()).map((entry) => (
                   <li key={entry.id} style={{ padding: '0.5rem 0', borderBottom: '1px solid #eee' }}>
-                    <strong>Name:</strong> {entry.firstName === null ? 'null' : entry.firstName || 'N/A'} {entry.lastName === null ? 'null' : entry.lastName || 'N/A'} <br/>
+                    <strong>Name:</strong> {entry.firstName === null ? 'null' : entry.firstName || 'N/A'} {entry.lastName === null ? 'null' : entry.lastName || 'N/A'} <br />
                     <strong>Email:</strong> {entry.email} (Signed up: {new Date(entry.createdAt!).toLocaleString()})
                   </li>
                 ))}
