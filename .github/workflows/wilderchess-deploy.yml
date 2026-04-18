@@ -6,6 +6,7 @@ on:
     paths:
       - 'services/wilderchess/**'
       - 'infra/workloads/prod/wilderchess/**'
+      - '.github/workflows/wilderchess-deploy.yml'
   workflow_dispatch: # Allows manual trigger
 
 permissions:
@@ -36,18 +37,22 @@ jobs:
           cd ${{ env.APP_DIR }}
           mvn clean package -DskipTests
 
-      # 2. Package for Elastic Beanstalk (Your Script Logic)
+
+# 2. Package for Elastic Beanstalk
       - name: Package Artifact
         id: package
         run: |
           VERSION=$(date +%Y%m%d%H%M%S)
+          # Create the zip at the ROOT of the repo for easy access
           cd ${{ env.APP_DIR }}
           mkdir -p deploy_dist
           cp target/wilderchess-app.jar deploy_dist/application.jar
           cp Procfile deploy_dist/
-          # Zip the contents
+          
           cd deploy_dist
-          zip -r ../../../wilderchess-$VERSION.zip .
+          # We name it 'app-$VERSION.zip' to match your TF source
+          zip -r ../../../app-$VERSION.zip . 
+          
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       # 3. Infrastructure Auth (OIDC)
@@ -69,9 +74,6 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform Init & Apply
-        working-directory: ${{ env.TF_DIR }}
-        run: |
       - name: Terraform Init & Apply
         working-directory: ${{ env.TF_DIR }}
         run: |

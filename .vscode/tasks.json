@@ -4,11 +4,16 @@
     {
       "label": "Initialize Workspace Terminals",
       "dependsOn": [
-        "Term: Root", "Term: Infra",
-        "Term: Dev Workload", "Term: Prod Workload",
-        "Term: Service A", "Term: Service B"
+        "Term: Root",
+        "Term: Infra",
+        "Term: Dev Workload",
+        "Term: Prod Workload",
+        "Term: Service A",
+        "Term: Service B"
       ],
-      "runOptions": { "runOn": "folderOpen" },
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
       "problemMatcher": []
     },
     /* --- GROUP 1: CODE & INFRA --- */
@@ -16,55 +21,111 @@
       "label": "Term: Root",
       "type": "shell",
       "isBackground": true,
-      "problemMatcher": [],
-      "command": "zsh",
-      "presentation": { "group": "grp-1", "panel": "new", "focus": true }
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "command": "exec zsh",
+      "presentation": {
+        "group": "grp-1",
+        "panel": "new",
+        "focus": true,
+        "close": false,
+        "reveal": "always"
+      }
     },
     {
       "label": "Term: Infra",
       "type": "shell",
-            "isBackground": true,
-      "problemMatcher": [],
-      "command": "cd infra/modules && zsh",
-      "presentation": { "group": "grp-1", "panel": "new" }
+      "isBackground": true,
+      "options": {
+        "cwd": "${workspaceFolder}/infra/modules"
+      },
+      "command": "exec zsh",
+      "presentation": {
+        "group": "grp-1",
+        "panel": "new",
+        "focus": false,
+        "close": false,
+        "reveal": "always"
+      }
     },
     /* --- GROUP 2: WORKLOADS (SSO) --- */
     {
       "label": "Term: Dev Workload",
       "type": "shell",
       "isBackground": true,
-      "problemMatcher": [],
-      "command": "cd infra/workloads/dev && aws sso login --profile dev && zsh",
-      "options": { "env": { "AWS_PROFILE": "dev" } },
-      "presentation": { "group": "grp-2", "panel": "new" }
+      "options": {
+        "cwd": "${workspaceFolder}/infra/workloads/dev",
+        "env": {
+          "AWS_PROFILE": "dev"
+        }
+      },
+      "command": "exec zsh",
+      "presentation": {
+        "group": "grp-2",
+        "panel": "new",
+        "focus": false,
+        "close": false,
+        "reveal": "always"
+      }
     },
     {
       "label": "Term: Prod Workload",
       "type": "shell",
-            "isBackground": true,
-      "problemMatcher": [],
-      "command": "cd infra/workloads/prod && aws sso login --profile prod && zsh",
-      "options": { "env": { "AWS_PROFILE": "prod" } },
-      "presentation": { "group": "grp-2", "panel": "new" }
+      "isBackground": true,
+      "options": {
+        "cwd": "${workspaceFolder}/infra/workloads/prod",
+        "env": {
+          "AWS_PROFILE": "prod"
+        }
+      },
+      "command": "exec zsh",
+      "presentation": {
+        "group": "grp-2",
+        "panel": "new",
+        "focus": false,
+        "close": false,
+        "reveal": "always"
+      }
     },
     /* --- GROUP 3: SERVICES (SSO DEV) --- */
     {
       "label": "Term: Service A",
       "type": "shell",
-            "isBackground": true,
-      "problemMatcher": [],
-      "command": "cd services && aws sso login --profile dev && zsh",
-      "options": { "env": { "AWS_PROFILE": "dev" } },
-      "presentation": { "group": "grp-3", "panel": "new" }
+      "isBackground": true,
+      "options": {
+        "cwd": "${workspaceFolder}/services",
+        "env": {
+          "AWS_PROFILE": "dev"
+        }
+      },
+      "command": "exec zsh",
+      "presentation": {
+        "group": "grp-3",
+        "panel": "new",
+        "focus": false,
+        "close": false,
+        "reveal": "always"
+      }
     },
     {
       "label": "Term: Service B",
       "type": "shell",
-            "isBackground": true,
-      "problemMatcher": [],
-      "command": "cd services && aws sso login --profile dev && zsh",
-      "options": { "env": { "AWS_PROFILE": "dev" } },
-      "presentation": { "group": "grp-3", "panel": "new" }
+      "isBackground": true,
+      "options": {
+        "cwd": "${workspaceFolder}/services",
+        "env": {
+          "AWS_PROFILE": "dev"
+        }
+      },
+      "command": "exec zsh",
+      "presentation": {
+        "group": "grp-3",
+        "panel": "new",
+        "focus": false,
+        "close": false,
+        "reveal": "always"
+      }
     }
   ]
 }

@@ -16,7 +16,8 @@
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/node:1": {
       "version": "lts",
-      "pnpmVersion": "latest"
+      "pnpmVersion": "latest",
+      "nvmInstallPath": "/home/vscode/.nvm"
     },
     "ghcr.io/devcontainers/features/java:1": {
       "version": "21",
@@ -32,21 +33,61 @@
       "settings": {
         "terraform.languageServer.enable": true,
         "terraform.validation.enableLocalCodeCheck": true,
-        "editor.formatOnSave": true,
         "editor.defaultFormatter": "hashicorp.terraform",
         "files.exclude": {
           "JUCE/": true,
           "**/Builds/": true,
           "**/.vs/": true
         },
-	      "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
-	      "python.terminal.activateEnvInCurrentTerminal": true,
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+        "python.terminal.activateEnvInCurrentTerminal": true,
         "python.analysis.importFormat": "relative",
         "python.analysis.extraPaths": [
           "${workspaceFolder}/services/wilderchess/src"
         ],
-    // Tells VS Code to look for the venv uv creates
-        "python.venvPath": "${workspaceFolder}/.venv"
+        // Tells VS Code to look for the venv uv creates
+        "python.venvPath": "${workspaceFolder}/.venv",
+        "editor.formatOnSave": true,
+        "editor.bracketPairColorization.enabled": true,
+        "editor.guides.bracketPairs": "active",
+        // --- Language Specific Formatters ---
+        "[terraform]": {
+          "editor.defaultFormatter": "hashicorp.terraform"
+        },
+        "[terraform-vars]": {
+          "editor.defaultFormatter": "hashicorp.terraform"
+        },
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter",
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+          }
+        },
+        "[java]": {
+          "editor.defaultFormatter": "redhat.java"
+        },
+        "[json]": {
+          "editor.defaultFormatter": "vscode.json-language-features"
+        },
+        "[jsonc]": {
+          "editor.defaultFormatter": "vscode.json-language-features"
+        },
+        "[yaml]": {
+          "editor.defaultFormatter": "redhat.vscode-yaml"
+        },
+        "[shellscript]": {
+          "editor.defaultFormatter": "foxundermoon.shell-format"
+        },
+        "[toml]": {
+          "editor.defaultFormatter": "tamasfe.even-better-toml"
+        },
+        "[dockerfile]": {
+          "editor.defaultFormatter": "ms-azuretools.vscode-docker"
+        },
+        "[markdown]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        }
       },
       "extensions": [
         "tamasfe.even-better-toml",
@@ -57,7 +98,12 @@
         "github.vscode-github-actions",
         "vscjava.vscode-java-pack",
         "ms-python.python",
-        "ms-python.vscode-pylance"
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter", // Added for Python Ctrl+S
+        "esbenp.prettier-vscode", // Added for JSON/YAML/MD
+        "foxundermoon.shell-format", // Added for .sh
+        "ms-azuretools.vscode-docker", // Added for Docker
+        "redhat.vscode-yaml" // Added for better YAML validation
       ]
     }
   },
@@ -65,7 +111,7 @@
     "WAYLAND_DISPLAY": "",
     "DISPLAY": ""
   },
-"mounts": [
+  "mounts": [
     {
       "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.aws",
       "target": "/home/vscode/.aws",

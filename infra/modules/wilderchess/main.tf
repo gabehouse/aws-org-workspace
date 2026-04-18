@@ -4,7 +4,6 @@
 # IAM Roles and Policies
 # -----------------------------------------------------------------------------
 # EC2 Instance Profile and Role
-# EC2 Instance Profile
 resource "aws_iam_instance_profile" "eb_instance_profile" {
   name = "eb-instance-profile"
   role = aws_iam_role.eb_instance_role.name

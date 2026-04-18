@@ -25,6 +25,7 @@ echo "Navigating to terraform directory..."
 cd ../../infra/workloads/prod/wilderchess
 
 # Now Terraform will find your .tf files
+terraform init -backend-config=../../../backend.ci.hcl
 terraform apply -var "app_version=$VERSION" -auto-approve
 
 # Return to where you started
