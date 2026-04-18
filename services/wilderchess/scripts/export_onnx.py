@@ -1,6 +1,6 @@
 import torch
 import torch.onnx
-from model import AnimaliaNet
+from services.wilderchess.scripts.model import AnimaliaNet
 
 
 def export():

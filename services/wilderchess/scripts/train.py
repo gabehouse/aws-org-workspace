@@ -6,7 +6,7 @@ import numpy as np
 import os
 import joblib
 import fastparquet
-from model import AnimaliaNet
+from services.wilderchess.scripts.model import AnimaliaNet
 
 
 def get_java_aligned_features():
