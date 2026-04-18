@@ -22,7 +22,7 @@ WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
 # Create the internal workspace for logs
-RUN mkdir -p /app/gamelogs
+    RUN mkdir -p /app/gamelogs
 
 # Set the environment variable used by your GameLogger
 ENV GAME_LOG_DIR=/app/gamelogs

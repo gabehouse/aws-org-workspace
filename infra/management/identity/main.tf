@@ -46,15 +46,11 @@ resource "aws_ssoadmin_permission_set_inline_policy" "safety_rail" {
     Version = "2012-10-17"
     Statement = [
       {
-        # DENY deletion of the State Bucket
-        # This protects you from yourself!
-        Sid    = "ProtectState"
-        Effect = "Deny"
-        Action = ["s3:DeleteBucket", "s3:DeleteObject*"]
-        Resource = [
-          "arn:aws:s3:::gabriel-tf-state-2026",
-          "arn:aws:s3:::gabriel-tf-state-2026/*"
-        ]
+        # Protect the bucket, but allow object management (locks)
+        Sid      = "ProtectState"
+        Effect   = "Deny"
+        Action   = ["s3:DeleteBucket"]
+        Resource = ["arn:aws:s3:::gabriel-tf-state-2026"]
       }
     ]
   })
