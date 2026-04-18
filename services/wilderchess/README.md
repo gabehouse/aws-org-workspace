@@ -5,20 +5,24 @@
 A high-concurrency game engine and infrastructure platform designed for real-time PvP and large-scale Reinforcement Learning data generation.
 
 ## 🏗 System Architecture
-* **Backend:** Java 21 (Amazon Corretto) with high-availability WebSockets.
-* **Infrastructure:** Modular Terraform managing AWS Elastic Beanstalk, ECR, and Spot Instance Fleets.
-* **Inference:** Integrated ONNX Runtime for sub-1ms model execution.
+
+- **Backend:** Java 21 (Amazon Corretto) with high-availability WebSockets.
+- **Infrastructure:** Modular Terraform managing AWS Elastic Beanstalk, ECR, and Spot Instance Fleets.
+- **Inference:** Integrated ONNX Runtime for sub-1ms model execution.
 
 ## 📊 Performance & Insights
-| Inference Latency | Strategy Heatmap |
-| :---: | :---: |
+
+|               Inference Latency               |               Strategy Heatmap               |
+| :-------------------------------------------: | :------------------------------------------: |
 | ![Latency](docs/images/inference_latency.png) | ![Heatmap](docs/images/strategy_heatmap.png) |
 
 ---
 
 ## 📂 Project Structure
-```text
+
+````text
 wilderchess/
+├── .github/workflows/   # CI/CD Pipeline (GitHub Actions)
 ├── src/wilderchess/     # Core Library (Python)
 ├── src/main/java/       # Game Engine (Java)
 ├── ops/                 # Shell Deployment & CI/CD Scripts
@@ -31,69 +35,58 @@ wilderchess/
 ---
 
 ## 💻 Local Development (DX)
-This project utilizes a high-performance **VS Code Dev Container** environment. 
+This project utilizes a high-performance **VS Code Dev Container** environment.
 
 1. **Environment:** Open the project in VS Code and select "Reopen in Container".
 2. **Package Management:** Run `uv sync` to initialize the Python/ML environment via hard-links (optimized for speed and disk space).
 3. **Execution:** Use the operations script to launch the local engine:
 
 ```bash
-./ops/run.sh
 
-🚀 AWS Cloud Deployment
-The production environment is hosted on AWS Elastic Beanstalk with automated deployment scripts.
+🚀 Deployment & Orchestration
+Wilderchess utilizes a hybrid deployment model: Automated CI/CD for the web application and Manual Orchestration for large-scale ML data generation.
 
-### 🔐 Authentication & Environment
-This project uses separate AWS accounts for Simulation (Dev) and Production (EB).
+🤖 Production Environment (Elastic Beanstalk)
+The primary game engine is deployed via a "Push-to-Deploy" model.
 
-**1. Authenticate via AWS SSO:**
-```bash
-aws sso login --profile dev
-aws sso login --profile prod
+Primary Workflow: Merging or pushing to the master branch triggers the GitHub Actions pipeline. This builds the Java artifact, packages it for Elastic Beanstalk, and executes terraform apply using OIDC for secure, keyless authentication.
 
-2. Target the Simulation Environment (Bot Generation):
+Manual Fallback: For emergency deployments or specific version rollbacks, use the provided utility script:
 
 Bash
-export AWS_PROFILE=dev
-./ops/push_bot.sh
-3. Target the Production Environment (Elastic Beanstalk):
-
-Bash
+# Manual override (requires prod profile)
 export AWS_PROFILE=prod
-./ops/deploy.sh
-
-Configuration: Update the application environment variables or endpoint configuration to point to the production Elastic Beanstalk URL.
-
-Execution: Deploy a specific version to the environment:
-
-Bash
 ./ops/deploy.sh {version_tag}
-🤖 Bot Orchestration & ML Training
-This platform utilizes AWS Spot Fleets to generate large-scale game-state datasets for machine learning training.
+🧪 Simulation & ML Environment (Spot Fleets)
+Data generation for Reinforcement Learning is managed manually to provide granular control over cost and scale.
 
-1. Update Simulation Artifacts
-Push the latest bot logic/image to Amazon ECR:
+1. Authenticate via AWS SSO:
 
 Bash
-./ops/push_bot
-2. Infrastructure Scaling
-Modify main.tf to configure the simulation parameters:
+aws sso login --profile dev
+2. Update Simulation Artifacts:
+Push the latest Python bot logic or container image to Amazon ECR:
 
-Scale Capacity: Adjust desired_bots (e.g., 1 for testing, 10+ for data generation).
+Bash
+./ops/push_bot.sh
+3. Infrastructure Scaling:
+Modify main.tf to configure simulation parameters before provisioning:
 
-Logic Switches:
+Scale Capacity: Adjust desired_bots (e.g., 1 for testing, 100+ for high-volume data).
 
-Set runbotvsbot to true to initiate autonomous simulations.
+Logic Switches: * Set run_bot_vs_bot to true for autonomous simulations.
 
-Set botIsAi to false for rule-based heuristic generation, or true for Reinforcement Learning training.
+Set bot_is_ai to false for rule-based heuristics or true for RL training.
 
-3. Provision Infrastructure
+4. Provision Infrastructure:
+
 Bash
 terraform plan
 terraform apply
 🛠 Project Highlights
-Cost Optimization: Leveraged AWS Spot Instances via Auto Scaling Group (ASG) Mixed Instance Policies, reducing data generation costs by ~80%.
+Cost Optimization: Leveraged AWS Spot Instances via ASG Mixed Instance Policies, reducing data generation costs by ~80%.
 
-Zero-Trust Identity: Utilizes GitHub Actions via OIDC for secure, keyless cloud deployments.
+Zero-Trust Identity: Utilizes GitHub Actions via OIDC for secure, keyless cloud deployments, eliminating the need for long-lived IAM secrets.
 
-Infrastructure-as-Code: 100% of the cloud stack is defined and managed via Terraform for repeatable deployments.
+Continuous Infrastructure: 100% of the cloud stack is managed via Terraform, with the production lifecycle fully integrated into GitHub for repeatable, hands-off deployments.
+````
