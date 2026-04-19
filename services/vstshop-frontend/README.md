@@ -24,8 +24,8 @@ A modern, high-performance template for selling digital assets (VSTs, samples, o
 - **Containerized Parity:** Leveraged **Docker Devcontainers** to maintain 1:1 environment parity between local development and the AWS Lambda production runtime.
 
 <p align="center">
-  <a href="../cloud-portfolio/public/assets/diagram-vstshop.svg" target="_blank">
-    <img src="../cloud-portfolio/public/assets/diagram-vstshop.svg" width="800" alt="VST Shop Architecture - Click to Expand">
+  <a href="../cloud-portfolio/public/assets/diagram-vstshop-architecture.svg" target="_blank">
+    <img src="../cloud-portfolio/public/assets/diagram-vstshop-architecture.svg" width="800" alt="VST Shop Architecture - Click to Expand">
   </a>
   <br>
   <em>(Click diagram to view full resolution)</em>

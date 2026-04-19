@@ -9,8 +9,8 @@ A high-concurrency game engine and infrastructure platform designed for real-tim
 ## 🏗 System Architecture
 
 <p align="center">
-  <a href="../cloud-portfolio/public/assets/diagram-wilderchess.svg" target="_blank">
-    <img src="../cloud-portfolio/public/assets/diagram-wilderchess.svg" width="850" alt="Wilderchess Architecture - Click to Zoom">
+  <a href="../cloud-portfolio/public/assets/diagram-wilderchess-architecture.svg" target="_blank">
+    <img src="../cloud-portfolio/public/assets/diagram-wilderchess-architecture.svg" width="850" alt="Wilderchess Architecture - Click to Zoom">
   </a>
   <br>
   <em>(Click to view high-resolution system architecture)</em>

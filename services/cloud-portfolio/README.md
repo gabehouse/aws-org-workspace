@@ -26,8 +26,8 @@ A self-deploying, high-availability professional platform engineered with server
 - **Environment Parity:** Maintained 1:1 parity between feature previews and production, ensuring consistent configuration of IAM policies and backend resources across the organization workspace.
 
 <p align="center">
-  <a href="../cloud-portfolio/public/assets/diagram-cloud-portfolio.svg" target="_blank">
-    <img src="../cloud-portfolio/public/assets/diagram-cloud-portfolio.svg" width="800" alt="VST Shop Architecture - Click to Expand">
+  <a href="../cloud-portfolio/public/assets/diagram-cloud-portfolio-architecture.svg" target="_blank">
+    <img src="../cloud-portfolio/public/assets/diagram-cloud-portfolio-architecture.svg" width="800" alt="VST Shop Architecture - Click to Expand">
   </a>
   <br>
   <em>(Click diagram to view full resolution)</em>

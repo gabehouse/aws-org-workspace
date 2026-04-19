@@ -557,7 +557,7 @@ const Projects = ({ isMobile }) => {
             insights: [
                 {
                     label: "Enterprise-Grade Landing Zone & Identity",
-                    image: "assets/diagram-workspace.svg",
+                    image: "assets/diagram-workspace-architecture.svg",
                     description: "A comprehensive multi-account strategy that isolates Management, Dev, and Prod workloads to minimize blast radius. By centralizing IAM Identity Center (SSO) and leveraging OIDC for keyless GitHub Actions deployments, the platform eliminates long-lived credentials while ensuring environment consistency across the organization."
                 }
             ],
@@ -579,7 +579,7 @@ const Projects = ({ isMobile }) => {
             insights: [
                 {
                     label: "Hybrid ML & Infrastructure Lifecycle",
-                    image: "/assets/diagram-wilderchess.svg",
+                    image: "/assets/diagram-wilderchess-architecture.svg",
                     description: "A dual-tier architecture utilizing a cost-optimized EC2 Spot Fleet for high-volume data generation and an Elastic Beanstalk production environment. The workflow features a 'Hybrid' training loop: syncing raw data from S3 to a local GPU workstation for training, and deploying optimized ONNX artifacts back to the cloud for real-time inference."
                 },
                 {
@@ -628,7 +628,7 @@ const Projects = ({ isMobile }) => {
             insights: [
                 {
                     label: "Serverless Architecture Overview",
-                    image: "/assets/diagram-vstshop.svg",
+                    image: "/assets/diagram-vstshop-architecture.svg",
                     description: "A robust serverless architecture featuring OIDC-based authentication, event-driven Stripe fulfillment via Webhooks, and secure asset distribution."
                 },
                 {
@@ -655,7 +655,7 @@ const Projects = ({ isMobile }) => {
             insights: [
                 {
                     label: "Event-Driven Booking Pipeline",
-                    image: "/assets/diagram-tennis-booking.svg",
+                    image: "/assets/diagram-tennis-booking-architecture.svg",
                     description: "Amplify Gen 2 backend where DynamoDB Streams trigger Lambda functions for automated SES alerts. This decouples the booking logic from the notification system, ensuring high availability during peak registration windows."
                 }
             ],
@@ -673,6 +673,13 @@ const Projects = ({ isMobile }) => {
             repo: "https://github.com/gabehouse/aws-org-workspace/tree/master/services/cloud-portfolio",
             description: "A self-deploying, high-availability professional platform engineered with serverless primitives and automated certificate lifecycle management.",
             technologies: ["React", "AWS Amplify", "DynamoDB", "ACM", "GitHub Actions", "Cloudflare"],
+            insights: [
+                {
+                    label: "Cloud-Native Architecture & Deployment Pipeline",
+                    image: "/assets/diagram-cloud-portfolio-architecture.svg",
+                    description: "A comprehensive visualization of the hybrid-cloud lifecycle. The architecture showcases the integration between Cloudflare’s global DNS and AWS’s serverless edge, utilizing Amplify Gen 2 for Infrastructure-from-Code (IfC). The diagram illustrates the automated CI/CD loop—where GitHub webhooks trigger isolated environment branching—and the serverless analytics flow from Lambda to DynamoDB."
+                }
+            ],
             cloudHighlights: [
                 "Architected an **Automated CI/CD Pipeline** via AWS Amplify, orchestrating a full build-test-deploy lifecycle with isolated environment branching for feature previews.",
                 "Provisioned a **Serverless Analytics Engine** using **DynamoDB** and **Lambda**, leveraging **Infrastructure-from-Code (IfC)** to define type-safe data schemas and background compute.",

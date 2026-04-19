@@ -11,8 +11,8 @@ A production-grade booking platform designed for high-availability tennis instru
 ## 🏗 System Architecture
 
 <p align="center">
-  <a href="../cloud-portfolio/public/assets/diagram-tennis-booking.svg" target="_blank">
-    <img src="../cloud-portfolio/public/assets/diagram-tennis-booking.svg" width="850" alt="Tennis Booking Architecture - Click to Zoom">
+  <a href="../cloud-portfolio/public/assets/diagram-tennis-booking-architecture.svg" target="_blank">
+    <img src="../cloud-portfolio/public/assets/diagram-tennis-booking-architecture.svg" width="850" alt="Tennis Booking Architecture - Click to Zoom">
   </a>
   <br>
   <em>(Click to view high-resolution event-driven pipeline)</em>
