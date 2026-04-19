@@ -619,7 +619,7 @@ const Projects = ({ isMobile }) => {
             infraRepo: "https://github.com/gabehouse/aws-org-workspace/tree/master/infra/workloads/prod/vstshop",
             serviceRepo: "https://github.com/gabehouse/aws-org-workspace/tree/master/services/vstshop-frontend",
             description: "A production-grade storefront and distribution platform for high-performance audio software, featuring automated Stripe fulfillment and secure asset delivery.",
-            technologies: ["React", "Terraform", "AWS Lambda", "DynamoDB", "Cognito", "Stripe API", "OIDC"],
+            technologies: ["React", "Terraform", "AWS Lambda", "DynamoDB", "Cognito", "Stripe API", "OIDC", "Route 53"],
             featuredProduct: {
                 title: "Acid Saturator VST",
                 tech: ["C++", "JUCE", "DSP"],
@@ -638,10 +638,10 @@ const Projects = ({ isMobile }) => {
                 }
             ],
             cloudHighlights: [
-                "Orchestrated **Identity Federation via Amazon Cognito**, utilizing **OIDC (Google Social Login)** to secure downstream API access while providing a passwordless user experience.",
-                "Engineered a serverless **Fulfillment Pipeline**: Stripe Webhooks trigger asynchronous DynamoDB state updates and Lambda-generated **S3 Presigned URLs** for secure, temporary download access.",
-                "Implemented **Infrastructure-as-Code (IaC)** via Terraform to manage a scalable serverless stack, including CloudFront distribution and granular IAM execution roles.",
-                "Integrated **GitHub Actions with OIDC** for 'keyless' CI/CD, automating high-availability deployments for the React frontend and Python-based Lambda microservices.",
+                "Engineered an **Event-Driven Fulfillment Pipeline**: Stripe Webhooks trigger asynchronous DynamoDB state updates and Lambda-generated **S3 Presigned URLs** for secure digital asset delivery.",
+                "Implemented **Infrastructure-as-Code (IaC)** via Terraform to orchestrate a modular serverless stack, including CloudFront distributions and automated **ACM Certificate validation via Route 53**.",
+                "Orchestrated **Identity Federation via Amazon Cognito**, utilizing **OIDC (Google Social Login)** to secure downstream API access while eliminating the need for managed credential storage.",
+                "Integrated **GitHub Actions with OIDC** for 'keyless' CI/CD, automating high-availability deployments for React and Python-based microservices without persistent IAM secrets.",
                 "Architected a **Containerized Development Environment** using Docker Devcontainers to ensure 1:1 environment parity between local development and AWS Lambda production runtimes."
             ]
         },
@@ -672,14 +672,13 @@ const Projects = ({ isMobile }) => {
             link: "https://master.d1gyqq9jpvj1mt.amplifyapp.com/",
             repo: "https://github.com/gabehouse/aws-org-workspace/tree/master/services/cloud-portfolio",
             description: "A self-deploying, high-availability professional platform engineered with serverless primitives and automated certificate lifecycle management.",
-            technologies: ["React", "AWS Amplify", "DynamoDB", "Route 53", "ACM", "GitHub Actions"],
+            technologies: ["React", "AWS Amplify", "DynamoDB", "ACM", "GitHub Actions", "Cloudflare"],
             cloudHighlights: [
-                "Architected an **Automated CI/CD Pipeline** via AWS Amplify, orchestrating the full build-test-deploy lifecycle triggered by GitHub Webhooks.",
-                "Implemented **Automated Certificate Provisioning** and renewal using AWS Certificate Manager (ACM), ensuring consistent SSL/TLS encryption across all environments.",
-                "Configured **Apex Domain Mapping** and global DNS routing via Route 53, leveraging AWS’s global edge network to minimize request latency.",
-                "Provisioned a **Serverless Analytics Engine** using DynamoDB and Lambda to track visitor engagement metrics with zero-management overhead.",
-                "Leveraged **Amplify Environment Branching** to maintain strict isolation between 'Preview' feature branches and the stable production environment.",
-                "Optimized global content delivery by utilizing **CloudFront's edge locations** (via Amplify) to reduce Time to First Byte (TTFB) for international visitors."
+                "Architected an **Automated CI/CD Pipeline** via AWS Amplify, orchestrating a full build-test-deploy lifecycle with isolated environment branching for feature previews.",
+                "Provisioned a **Serverless Analytics Engine** using **DynamoDB** and **Lambda**, leveraging **Infrastructure-from-Code (IfC)** to define type-safe data schemas and background compute.",
+                "Engineered a **Hybrid-Cloud Networking Strategy** using **Cloudflare** and **CloudFront**, optimizing global edge caching and SSL/TLS termination to minimize Time to First Byte (TTFB).",
+                "Implemented **Scalable Asset Management** via **Amazon S3**, utilizing automated lifecycle policies and cloud-native distribution for high-performance frontend delivery.",
+                "Leveraged **Amplify Gen 2** for seamless **Environment Parity**, ensuring consistent configuration of backend cloud resources between development and production branches."
             ]
         },
         {

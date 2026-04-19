@@ -1,19 +1,27 @@
-# 🎹 VST Shop Engine (Full-Stack)
+# 🎹 House Audio (Full-Stack Engine)
 
 ![React](https://img.shields.io/badge/React-20232A?logo=react&style=flat-square) ![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&style=flat-square&logoColor=white) ![AWS](https://img.shields.io/badge/AWS-Serverless-232F3E?logo=amazon-aws&style=flat-square) ![Terraform](https://img.shields.io/badge/Terraform-1.x-623CE4?logo=terraform&style=flat-square) ![Stripe](https://img.shields.io/badge/Stripe-v3-635BFF?logo=stripe&style=flat-square)
 
 A modern, high-performance template for selling digital assets (VSTs, samples, or software). Powered by a **React + Vite** frontend and a **fully serverless AWS architecture** managed through an enterprise-grade Multi-Account Terraform structure.
 
-## 🚀 Architecture Overview
+[Live Demo](https://houseaudio.net/)
 
-This project leverages **Infrastructure as Code (IaC)** to enforce a **Zero-Trust** environment across isolated AWS accounts.
+## 🏗️ System Architecture
 
-- **Frontend:** React (Vite) distributed via **AWS CloudFront** and **S3** for global low-latency delivery.
-- **API Strategy:** Regional **API Gateway** with **Cognito User Pool** authorization for secure endpoint access.
-- **Compute:** **Python 3.12 Lambdas** architected as independent microservices.
-- **Database:** **DynamoDB** providing atomic purchase tracking and user entitlement mapping.
-- **Fulfillment:** **Stripe API** integration with automated webhook verification and product/price synchronization.
-- **Secure Storage:** Private S3 buckets utilizing **Lambda-generated Presigned URLs** to prevent direct asset exposure.
+- **Fulfillment Engine:** Event-driven pipeline utilizing **Stripe Webhooks**, **DynamoDB**, and **AWS Lambda** for real-time order processing.
+- **Identity & Security:** **Cognito-backed OIDC** federation providing secure, token-based access to digital assets.
+- **Infrastructure-as-Code:** 100% managed via **Terraform** to ensure modular, repeatable, and version-controlled cloud provisioning.
+
+---
+
+## 🛠️ Cloud Highlights
+
+- **Automated Fulfillment Pipeline:** Engineered a serverless "Purchase-to-Download" workflow where Stripe events trigger Lambda-validated **S3 Presigned URLs**, ensuring secure and temporary asset delivery to customers.
+- **Identity Federation:** Orchestrated **Amazon Cognito** with **OIDC (Google Social Login)** to secure downstream API access, implementing a modern passwordless authentication flow.
+- **Keyless CI/CD:** Integrated **GitHub Actions via OIDC** for credential-less deployments to AWS, adhering to **Zero-Trust** security principles by eliminating long-lived IAM secrets.
+- **IaC Automation:** Developed modular **Terraform** templates to manage the full serverless stack, including automated **ACM certificate validation** and CloudFront distribution logic.
+- **Global Traffic Routing:** Architected the domain infrastructure using **Amazon Route 53**, leveraging high-availability DNS routing to provide low-latency entry points for the global distribution network.
+- **Containerized Parity:** Leveraged **Docker Devcontainers** to maintain 1:1 environment parity between local development and the AWS Lambda production runtime.
 
 <p align="center">
   <a href="../cloud-portfolio/public/assets/diagram-vstshop.svg" target="_blank">

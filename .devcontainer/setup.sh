@@ -106,6 +106,7 @@ alias cda="cd /workspaces/aws-org-workspace/services/AcidSaturator"
 alias cdp="cd /workspaces/aws-org-workspace/services/cloud-portfolio"
 alias cdw="cd /workspaces/aws-org-workspace/services/wilderchess"
 alias cdv="cd /workspaces/aws-org-workspace/services/vstshop-frontend"
+alias cdt="cd /workspaces/aws-org-workspace/services/tennis-site"
 
 # Movement Shortcuts
 alias ..="cd .."
