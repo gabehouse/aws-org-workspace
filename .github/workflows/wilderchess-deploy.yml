@@ -5,6 +5,7 @@ on:
     branches: [ "master" ]
     paths:
       - 'services/wilderchess/**'
+      - '!services/wilderchess/*.md'
       - 'infra/workloads/prod/wilderchess/**'
       - '.github/workflows/wilderchess-deploy.yml'
   workflow_dispatch: # Allows manual trigger
