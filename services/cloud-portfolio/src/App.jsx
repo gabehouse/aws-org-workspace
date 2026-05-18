@@ -124,7 +124,7 @@ const App = () => {
     );
 };
 
-function Popup({ height }) {
+function Popup() {
     const [showPopup, setShowPopup] = useState(true);
 
     const closePopup = () => {
@@ -186,7 +186,7 @@ function Popup({ height }) {
     );
 }
 
-const NavigationMenu = ({ currentPage, scrollToHome, scrollToProjects, scrollToContact, isMobile }) => {
+const NavigationMenu = ({ currentPage, scrollToHome, scrollToProjects, scrollToContact }) => {
     const getButtonStyle = (page) => ({
         border: 'none',
         background: 'none',
