@@ -28,7 +28,7 @@ if ! command -v uv &> /dev/null; then
     echo "⚡ Preparing home directories..."
     sudo mkdir -p /home/vscode/.local/bin
     sudo chown -R vscode:vscode /home/vscode/.local
-    
+
     echo "⚡ Installing uv..."
     curl -LsSf https://astral.sh/uv/install.sh | INSTALLER_NO_MODIFY_PATH=1 sh
     export PATH="/home/vscode/.local/bin:$PATH"
@@ -49,7 +49,23 @@ else
     echo "📦 No pyproject.toml, creating standalone venv..."
     $UV_BIN venv
     $UV_BIN pip install boto3 pandas torch onnxruntime pre-commit
-fi # <--- YOU WERE MISSING THIS
+fi
+
+# 3.5 PNPM Isolated Container Alignment
+# This ensures pnpm links files strictly inside the container's isolated storage volume
+echo "📦 Aligning pnpm storage configuration..."
+sudo mkdir -p /home/vscode/.local/share/pnpm
+sudo chown -R vscode:vscode /home/vscode/.local/share/pnpm
+
+# Force pnpm to look inward, cutting off any links to the Windows/WSL host machine
+pnpm config set store-dir /home/vscode/.local/share/pnpm/store
+
+if [ -f "package.json" ]; then
+    echo "⚛️ Syncing Node Workspace via pnpm..."
+    # Nuke broken host-side links if they exist
+    rm -rf node_modules **/node_modules
+    pnpm install
+fi
 
 # 4. Terraform-docs (Only download if missing)
 if ! command -v terraform-docs &> /dev/null; then
@@ -119,6 +135,14 @@ alias ....="cd ../../.."
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" --no-use
 EOF
+fi
+
+# Install Cloudflare Tunnel (cloudflared)
+if ! command -v cloudflared &> /dev/null; then
+    echo "☁️ Installing Cloudflare Tunnel..."
+    curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+    sudo dpkg -i cloudflared.deb
+    rm cloudflared.deb
 fi
 
 sudo mkdir -p /home/vscode/.cache/pnpm && sudo chown -R vscode:vscode /home/vscode/.cache

@@ -2,5 +2,18 @@
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "vscode.typescript-language-features",
   "java.configuration.updateBuildConfiguration": "automatic",
+  "search.useIgnoreFiles": true,
+"files.watcherExclude": {
+          "**/.pnpm-store/**": true,
+          "**/node_modules/**": true,
+          "**/target/**": true,
+          "**/*.d.ts": true
+        },
+  "search.exclude": {
+    "**/.pnpm-store": true,
+    "**/node_modules": true,
+    "**/pnpm-lock.yaml": true,
+    "**/target": true
+  }
 
 }

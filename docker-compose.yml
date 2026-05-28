@@ -1,0 +1,30 @@
+services:
+  jenkins:
+    image: jenkins/jenkins:lts-jdk21
+    container_name: jenkins-ci
+    user: root
+    privileged: true
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - wilderchess-net
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: always
+    environment:
+      - TUNNEL_TOKEN=${CF_TUNNEL_TOKEN}
+    command: tunnel run
+    networks:           # <--- ADD THIS BLOCK
+      - wilderchess-net  # <--- AND THIS LINE
+
+networks:
+  wilderchess-net:
+    driver: bridge
+
+volumes:
+  jenkins_home:

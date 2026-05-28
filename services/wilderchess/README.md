@@ -63,7 +63,17 @@ Bash
 
 ## 🚀 Deployment & Orchestration
 
-Wilderchess utilizes a hybrid deployment model: **Automated CI/CD** for the web application and **Manual Orchestration** for large-scale ML data generation.
+Wilderchess utilizes a hybrid orchestration model to balance rapid local iteration with stable cloud production.
+
+**Automated Local CI/CD (Dev Branch)**
+
+To accelerate the feedback loop, I implemented a Hybrid-Edge CI/CD pipeline for the dev branch:
+
+- Secure Ingress: Utilizes a Cloudflare Zero Trust Tunnel to safely expose a local Jenkins instance to GitHub Webhooks without opening public firewall ports.
+
+- Infrastructure: Jenkins is containerized and orchestrated via Docker, sharing a bridge network with a cloudflared sidecar for internal service discovery.
+
+- DooD (Docker-out-of-Docker): The Jenkins agent mounts the host's /var/run/docker.sock, allowing it to hoist sibling containers for isolated testing and artifact building.
 
 ## 🤖 Production Environment (Elastic Beanstalk)
 

@@ -1,7 +1,15 @@
 import React, { useRef, useState, useEffect } from 'react';
 import ColorGrid from './ColorGrid';
 import Markdown from 'react-markdown';
-import { GithubLogo, LinkedinLogo, Envelope, Cloud, CaretDown, CaretUp, Browser, Gear, Books } from "@phosphor-icons/react";
+import { GithubLogo } from "@phosphor-icons/react/dist/icons/GithubLogo";
+import { LinkedinLogo } from "@phosphor-icons/react/dist/icons/LinkedinLogo";
+import { Envelope } from "@phosphor-icons/react/dist/icons/Envelope";
+import { Cloud } from "@phosphor-icons/react/dist/icons/Cloud";
+import { CaretDown } from "@phosphor-icons/react/dist/icons/CaretDown";
+import { CaretUp } from "@phosphor-icons/react/dist/icons/CaretUp";
+import { Browser } from "@phosphor-icons/react/dist/icons/Browser";
+import { Gear } from "@phosphor-icons/react/dist/icons/Gear";
+import { Books } from "@phosphor-icons/react/dist/icons/Books"
 
 const App = () => {
     const homeRef = useRef(null);
