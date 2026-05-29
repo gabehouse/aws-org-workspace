@@ -4,19 +4,19 @@ pipeline {
         stage('Build & Deploy') {
             steps {
                 script {
-                    // 1. Build the JAR inside a Maven container
-                    docker.image('maven:3.8.5-openjdk-8').inside('-v /root/.m2:/root/.m2') {
-                        dir('services/wilderchess') {
-                            sh 'mvn clean package -DskipTests'
-                        }
-                    }
-
-                    // 2. Wrap the JAR into a Docker Image (This is the "Update")
                     dir('services/wilderchess') {
+                        // Run Maven via a one-off docker run command instead of the 'inside' DSL
+                        sh '''
+                            docker run --rm \
+                            -v /root/.m2:/root/.m2 \
+                            -v $(pwd):/app \
+                            -w /app \
+                            maven:3.8.5-openjdk-8 mvn clean package -DskipTests
+                        '''
+
+                        // Now proceed with building the deployment image
                         sh 'docker stop wilderchess-app || true'
                         sh 'docker rm wilderchess-app || true'
-
-                        // We create a tiny Dockerfile to "Bake" the JAR into the image
                         sh '''
                             echo "FROM openjdk:8-jre-slim
                             COPY target/wilderchess-app.jar app.jar
