@@ -27,15 +27,15 @@ pipeline {
                         sh 'docker rm wilderchess-app || true'
 
                         sh """
-                            ls -lh target/  # This debug line will prove the JAR exists to Jenkins
-
+                            # 1. Generate the Dockerfile directly in the WSL path so the Daemon sees it
                             echo "FROM eclipse-temurin:17-jre-alpine
                             COPY target/wilderchess-app.jar app.jar
-                            ENTRYPOINT [\\"java\\", \\"-Dport=8080\\", \\"-jar\\", \\"app.jar\\"]" > Dockerfile.deploy
+                            ENTRYPOINT [\\"java\\", \\"-Dport=8080\\", \\"-jar\\", \\"app.jar\\"]" > ${WSL_PATH}/Dockerfile.deploy
 
-                            # We use '.' to specify that THIS directory is the context
-                            docker build -t wilderchess-img -f Dockerfile.deploy .
+                            # 2. Tell Docker to build using the WSL_PATH as the context
+                            docker build -t wilderchess-img -f ${WSL_PATH}/Dockerfile.deploy ${WSL_PATH}
 
+                            # 3. Run the new container
                             docker run -d --name wilderchess-app -p 8086:8080 wilderchess-img
                         """
                     }
