@@ -4,15 +4,15 @@ pipeline {
     stages {
         stage('Build & Deploy Java App') {
             // Only runs if files inside wilderchess-app/ changed
-            when {
-                allOf {
-                    // 1. Ensure we are only on the dev branch
-                    branch 'dev'
+            // when {
+            //     allOf {
+            //         // 1. Ensure we are only on the dev branch
+            //         branch 'dev'
 
-                    // 2. Filter by directory
-                    changeset "services/wilderchess/**"
-                }
-            }
+            //         // 2. Filter by directory
+            //         changeset "services/wilderchess/**"
+            //     }
+            // }
             steps {
                 dir('services/wilderchess') {
                     sh 'mvn clean package'
