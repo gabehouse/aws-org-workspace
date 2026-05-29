@@ -20,14 +20,14 @@ pipeline {
                             -v /root/.m2:/root/.m2 \
                             -v ${WSL_PATH}:/app \
                             -w /app \
-                            maven:3.8.5-openjdk-8 mvn clean package -DskipTests
+                            maven:3.9.6-eclipse-temurin-17 mvn clean package -DskipTests
                         """
 
                         sh 'docker stop wilderchess-app || true'
                         sh 'docker rm wilderchess-app || true'
 
                         sh """
-                            echo "FROM openjdk:8-jre-slim
+                            echo "FROM eclipse-temurin:17-jre-alpine
                             COPY target/wilderchess-app.jar app.jar
                             ENTRYPOINT [\\"java\\", \\"-Dport=8080\\", \\"-jar\\", \\"app.jar\\"]" > Dockerfile.deploy
 
