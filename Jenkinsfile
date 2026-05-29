@@ -1,11 +1,18 @@
 pipeline {
     agent any
+
+    // This makes 'docker' available to all stages
+    environment {
+        DOCKER_HOME = tool 'docker-latest'
+        PATH = "${env.DOCKER_HOME}/bin:${env.PATH}"
+    }
+
     stages {
         stage('Build & Deploy') {
             steps {
                 script {
                     dir('services/wilderchess') {
-                        // Run Maven via a one-off docker run command instead of the 'inside' DSL
+                        // This will now work because 'docker' is in the PATH
                         sh '''
                             docker run --rm \
                             -v /root/.m2:/root/.m2 \
@@ -14,9 +21,9 @@ pipeline {
                             maven:3.8.5-openjdk-8 mvn clean package -DskipTests
                         '''
 
-                        // Now proceed with building the deployment image
                         sh 'docker stop wilderchess-app || true'
                         sh 'docker rm wilderchess-app || true'
+
                         sh '''
                             echo "FROM openjdk:8-jre-slim
                             COPY target/wilderchess-app.jar app.jar
