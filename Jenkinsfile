@@ -1,10 +1,10 @@
 pipeline {
     agent any
 
-    // This makes 'docker' available to all stages
     environment {
+        // Option A in the UI makes this the folder containing the 'docker' binary
         DOCKER_HOME = tool 'docker-latest'
-        PATH = "${env.DOCKER_HOME}/bin:${env.PATH}"
+        PATH = "${env.DOCKER_HOME}:${env.PATH}"
     }
 
     stages {
@@ -12,9 +12,8 @@ pipeline {
             steps {
                 script {
                     dir('services/wilderchess') {
-                        // This will now work because 'docker' is in the PATH
                         sh '''
-                            sh 'ls -R ${DOCKER_HOME}'
+                            ls -R ${DOCKER_HOME}
                             docker run --rm \
                             -v /root/.m2:/root/.m2 \
                             -v $(pwd):/app \
