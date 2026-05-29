@@ -11,11 +11,10 @@ pipeline {
         stage('Build & Deploy') {
             steps {
                 script {
-                    // 1. Define the WSL path only for the Docker command to use
                     def WSL_PATH = "/home/g/workspace/aws-org-workspace/services/wilderchess"
 
                     dir('services/wilderchess') {
-                        // Build the JAR (This works because we map WSL_PATH to /app)
+                        // Step 1: Maven Build (Outputs to WSL Host)
                         sh """
                             docker run --rm \
                             -v /root/.m2:/root/.m2 \
@@ -24,23 +23,28 @@ pipeline {
                             maven:3.9.6-eclipse-temurin-17 mvn clean package -DskipTests
                         """
 
-                        // Cleanup
-                        sh 'docker stop wilderchess-app || true'
-                        sh 'docker rm wilderchess-app || true'
+                        // Step 2: "The Rescue"
+                        // This container maps BOTH the WSL path and the Jenkins path
+                        // to move the JAR into Jenkins' view.
+                        sh """
+                            docker run --rm \
+                            -v ${WSL_PATH}/target:/source \
+                            -v \$(pwd)/target:/dest \
+                            alpine cp /source/wilderchess-app.jar /dest/wilderchess-app.jar
+                        """
 
-                        // 2. Write the Dockerfile to the CURRENT directory (Jenkins Workspace)
-                        // Jenkins CAN see this path!
+                        // Step 3: Cleanup and Standard Build
+                        sh 'docker stop wilderchess-app || true && docker rm wilderchess-app || true'
+
                         sh '''
                             echo "FROM eclipse-temurin:17-jre-alpine
                             COPY target/wilderchess-app.jar app.jar
                             ENTRYPOINT [\\"java\\", \\"-Dport=8080\\", \\"-jar\\", \\"app.jar\\"]" > Dockerfile.deploy
+
+                            # Now we don't need WSL_PATH here! Jenkins sees the 'target' folder locally now.
+                            docker build -t wilderchess-img -f Dockerfile.deploy .
+                            docker run -d --name wilderchess-app -p 8086:8080 wilderchess-img
                         '''
-
-                        // 3. The "Magic Trick": Use -f to point to the local Dockerfile,
-                        // but use WSL_PATH as the build context for the JAR.
-                        sh "docker build -t wilderchess-img -f Dockerfile.deploy ${WSL_PATH}"
-
-                        sh "docker run -d --name wilderchess-app -p 8086:8080 wilderchess-img"
                     }
                 }
             }
