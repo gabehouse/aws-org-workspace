@@ -43,7 +43,6 @@ pipeline {
                         sh "docker run -d --name wilderchess-app -p 8086:8080 wilderchess-img"
                     }
                 }
-                }
             }
         }
     }
