@@ -15,7 +15,9 @@ pipeline {
                         sh 'docker stop wilderchess-app || true'
                         sh 'docker rm wilderchess-app || true'
 
-                        // Build a temporary image so we don't rely on host paths
+                        // 1. Create a tiny Dockerfile dynamically
+                        // 2. Build the image (this puts the JAR inside the image)
+                        // 3. Run it without needing a volume mount
                         sh '''
                             echo "FROM openjdk:17-jdk-slim
                             COPY target/wilderchess-app.jar app.jar
