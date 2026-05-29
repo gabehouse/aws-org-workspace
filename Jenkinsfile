@@ -10,23 +10,23 @@ pipeline {
             }
             steps {
                 script {
-                    // STAGE 1: Build the JAR using a Maven container
-                    docker.image('maven:3.9.6-eclipse-temurin-21').inside('-v /root/.m2:/root/.m2') {
+                    docker.image('maven:3.8.5-openjdk-8').inside('-v /root/.m2:/root/.m2') {
                         dir('services/wilderchess') {
+                            // Build the Uber-JAR specifically
                             sh 'mvn clean package -DskipTests'
                         }
                     }
 
-                    // STAGE 2: Deploy the JAR as a sibling container
                     dir('services/wilderchess') {
                         sh 'docker stop wilderchess-app || true'
                         sh 'docker rm wilderchess-app || true'
 
-                        // We use a relative path for the JAR since we are on the same host socket
+                        // Build the deployment image using the JAR we just made
                         sh '''
-                            echo "FROM openjdk:17-jdk-slim
+                            echo "FROM openjdk:8-jre-slim
                             COPY target/wilderchess-app.jar app.jar
-                            ENTRYPOINT [\\"java\\", \\"-jar\\", \\"app.jar\\"]" > Dockerfile.deploy
+                            EXPOSE 8080
+                            ENTRYPOINT [\\"java\\", \\"-Dport=8080\\", \\"-jar\\", \\"app.jar\\"]" > Dockerfile.deploy
 
                             docker build -t wilderchess-img -f Dockerfile.deploy .
                             docker run -d --name wilderchess-app -p 8081:8080 wilderchess-img
