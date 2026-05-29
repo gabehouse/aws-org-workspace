@@ -11,27 +11,18 @@ pipeline {
             }
             steps {
                 script {
-                    // Moving the docker logic inside 'script' fixes the 'Expected a symbol' error
-                    docker.image('maven:3.9.6-eclipse-temurin-21').inside('-v /root/.m2:/root/.m2') {
-                        dir('services/wilderchess') {
-                            sh 'mvn clean package'
-                        }
-                    }
-
                     dir('services/wilderchess') {
-                        // Cleanup and launch sibling container
                         sh 'docker stop wilderchess-app || true'
                         sh 'docker rm wilderchess-app || true'
 
-                        // Note: Using the internal Jenkins workspace path for the mount
+                        // Build a temporary image so we don't rely on host paths
                         sh '''
-                            docker run -d \
-                            --name wilderchess-app \
-                            -p 8081:8080 \
-                            -v ${WORKSPACE}:/app \
-                            --restart unless-stopped \
-                            openjdk:17-jdk-slim \
-                            java -Dport=8080 -jar /app/services/wilderchess/target/wilderchess-app.jar
+                            echo "FROM openjdk:17-jdk-slim
+                            COPY target/wilderchess-app.jar app.jar
+                            ENTRYPOINT [\\"java\\", \\"-Dport=8080\\", \\"-jar\\", \\"app.jar\\"]" > Dockerfile.deploy
+
+                            docker build -t wilderchess-img -f Dockerfile.deploy .
+                            docker run -d --name wilderchess-app -p 8081:8080 wilderchess-img
                         '''
                     }
                 }
