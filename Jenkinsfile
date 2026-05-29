@@ -11,27 +11,29 @@ pipeline {
         stage('Build & Deploy') {
             steps {
                 script {
+                    // This is the absolute path inside your Ubuntu WSL instance
+                    def WSL_PATH = "/home/g/workspace/aws-org-workspace/services/wilderchess"
+
                     dir('services/wilderchess') {
-                        sh '''
-                            ls -R ${DOCKER_HOME}
+                        sh """
                             docker run --rm \
                             -v /root/.m2:/root/.m2 \
-                            -v $(pwd):/app \
+                            -v ${WSL_PATH}:/app \
                             -w /app \
                             maven:3.8.5-openjdk-8 mvn clean package -DskipTests
-                        '''
+                        """
 
                         sh 'docker stop wilderchess-app || true'
                         sh 'docker rm wilderchess-app || true'
 
-                        sh '''
+                        sh """
                             echo "FROM openjdk:8-jre-slim
                             COPY target/wilderchess-app.jar app.jar
                             ENTRYPOINT [\\"java\\", \\"-Dport=8080\\", \\"-jar\\", \\"app.jar\\"]" > Dockerfile.deploy
 
                             docker build -t wilderchess-img -f Dockerfile.deploy .
                             docker run -d --name wilderchess-app -p 8086:8080 wilderchess-img
-                        '''
+                        """
                     }
                 }
             }
