@@ -14,6 +14,7 @@ pipeline {
                     dir('services/wilderchess') {
                         // This will now work because 'docker' is in the PATH
                         sh '''
+                            sh 'ls -R ${DOCKER_HOME}'
                             docker run --rm \
                             -v /root/.m2:/root/.m2 \
                             -v $(pwd):/app \
