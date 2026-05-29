@@ -65,7 +65,7 @@ Bash
 
 Wilderchess utilizes a hybrid orchestration model to balance rapid local iteration with stable cloud production.
 
-\*_Automated Local CI/CD (Dev Branch)_
+**Automated Local CI/CD (Dev Branch)**
 
 To accelerate the feedback loop, I implemented a Hybrid-Edge CI/CD pipeline for the dev branch:
 
