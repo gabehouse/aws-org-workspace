@@ -618,7 +618,8 @@ const Projects = ({ isMobile }) => {
                 "Deployed a high-availability **Java Corretto 21** stack on Elastic Beanstalk, utilizing **ALB Sticky Sessions** to maintain persistent WebSocket state for active games.",
                 "Implemented **Infrastructure-as-Code** via modular Terraform, managing environment state with S3 backends and enforcing granular IAM security boundaries.",
                 "Optimized **Real-Time Inference** by integrating the ONNX Runtime directly into the Java server, enabling the RL model to execute moves in under 1ms.",
-                "Developed a **secure CI/CD Pipeline** using **GitHub Actions** and **OpenID Connect (OIDC)**, automating **Maven builds** and **Terraform deployments** to AWS without persistent credentials, ensuring **100% reproducible environments**."
+                "Developed a **secure CI/CD Pipeline** using **GitHub Actions** and **OpenID Connect (OIDC)**, automating **Maven builds** and **Terraform deployments** to AWS without persistent credentials, ensuring **100% reproducible environments**.",
+                "Architected a local **Jenkins CI pipeline using Docker-out-of-Docker (DooD)**, automating containerized builds on every `dev` branch push to ensure local environment health before cloud staging."
             ]
         },
         {
