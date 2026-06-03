@@ -2,7 +2,7 @@
 
 ![React](https://img.shields.io/badge/React-20232A?logo=react&style=flat-square) ![AWS Amplify](https://img.shields.io/badge/AWS_Amplify_Gen_2-FF9900?logo=aws-amplify&style=flat-square) ![DynamoDB](https://img.shields.io/badge/DynamoDB-4053D6?logo=amazondynamodb&style=flat-square) ![Route 53](https://img.shields.io/badge/Route_53-232F3E?logo=amazon-aws&style=flat-square)
 
-A self-deploying, high-availability professional platform engineered with serverless primitives. This site serves as a live demonstration of **Amplify Gen 2** capabilities, automated infrastructure management, and global content delivery.
+A self-deploying, high-availability professional platform engineered with serverless primitives. This site serves as a live demonstration of **Amplify Gen 2\*** capabilities, automated infrastructure management, and global content delivery.
 
 [View Live Portfolio](https://gabehouse.dev/)
 
