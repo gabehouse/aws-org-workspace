@@ -22,5 +22,11 @@
   "devDependencies": {
     "aws-cdk": "^2.1117.0",
     "esbuild": "^0.28.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "@parcel/watcher"
+    ]
   }
 }
