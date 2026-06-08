@@ -1,7 +1,9 @@
 package com.gabe.animalia.general;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Array;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Properties;
@@ -31,7 +33,9 @@ import com.gabe.animalia.critter.Turtle;
 import com.gabe.animalia.critter.Wolf;
 import com.gabe.animalia.items.CrimberryPack;
 import com.gabe.animalia.items.WarHorn;
+import com.gabe.animalia.ml.game.GameFeaturizer;
 import com.gabe.animalia.ml.server.GameLogger;
+import com.gabe.animalia.ml.server.Inference;
 import com.gabe.animalia.items.OilBomb;
 import com.gabe.animalia.items.RatlandJestersHat;
 import com.gabe.animalia.items.ThiefGloves;

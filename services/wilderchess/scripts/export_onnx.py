@@ -1,10 +1,10 @@
 import torch
 import torch.onnx
-from services.wilderchess.scripts.model import AnimaliaNet
+from scripts.model import AnimaliaNet
 
 
 def export():
-    weights_path = "best_wilderchess_model.pth"
+    weights_path = "models/best_wilderchess_model.pth"
     state_dict = torch.load(weights_path)
 
     input_dim = state_dict['fc1.weight'].shape[1]

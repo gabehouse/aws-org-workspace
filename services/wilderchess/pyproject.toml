@@ -13,8 +13,10 @@ dependencies = [
     "scikit-learn",
     "joblib",
     "seaborn",
-    "matplotlib",
-    "onnxruntime"   # For the model execution we discussed earlier
+    "matplotlib",   # For the model execution we discussed earlier
+    "onnxruntime",
+    "onnx>=1.21.0",
+    "onnxscript>=0.7.0",
 ]
 
 [tool.hatch.build.targets.wheel]

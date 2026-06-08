@@ -79,6 +79,7 @@ public class MainApp extends AbstractHandler {
         boolean botVsBot = false;
         int numBotGamesAtOnce = 1;
         int totalGameCount = 0;
+        Game.loadAiModelOnStartup();
         ArrayList<Game> games = new ArrayList<Game>();
         if (botVsBot) {
             GameLogger gameLogger = new GameLogger();

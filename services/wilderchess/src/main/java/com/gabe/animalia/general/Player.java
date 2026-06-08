@@ -420,7 +420,6 @@ public class Player {
 			// if theres an empty spot infront of the lowest hp critter, move c to that spot
 			if (leastHPCritter != null && leastHPCritter.getInfront() == null
 					&& leastHPCritter.getTempSpot().getInfront() != null) {
-				System.out.println("movetank2");
 				Square spotToMove = leastHPCritter.getTempSpot().getInfront();
 				totalTime += tank.move(spotToMove, 0);
 

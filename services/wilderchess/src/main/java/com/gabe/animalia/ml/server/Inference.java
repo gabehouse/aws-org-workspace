@@ -8,6 +8,8 @@ import software.amazon.awssdk.services.cloudwatch.model.Dimension;
 import software.amazon.awssdk.services.cloudwatch.model.MetricDatum;
 import software.amazon.awssdk.services.cloudwatch.model.PutMetricDataRequest;
 import software.amazon.awssdk.services.cloudwatch.model.StandardUnit;
+import ai.onnxruntime.OrtSession;
+import ai.onnxruntime.TensorInfo;
 
 public class Inference {
     private final OrtEnvironment env;
@@ -216,6 +218,28 @@ public class Inference {
             this.p1HpDelta = deltas[0];
             this.p2HpDelta = deltas[1];
         }
+    }
+
+    public int getInputSize() {
+        try {
+            // Grabs the metadata for the very first input layer of the model
+            NodeInfo inputMeta = session.getInputInfo().values().iterator().next();
+            if (inputMeta.getInfo() instanceof TensorInfo) {
+                TensorInfo tensorInfo = (TensorInfo) inputMeta.getInfo();
+                long[] shape = tensorInfo.getShape();
+
+                // For a flat 1D feature vector, the last dimension is your size
+                // e.g., if shape is [-1, 342], shape[1] is 342
+                long size = shape[shape.length - 1];
+
+                // If the dimension is dynamic (-1), fall back to a safe default or look at your
+                // featurizer
+                return size > 0 ? (int) size : 342;
+            }
+        } catch (Exception e) {
+            System.err.println("Could not parse ONNX input metadata, using fallback.");
+        }
+        return 342; // Safe fallback number
     }
 
 }
