@@ -7,7 +7,7 @@ import {
   fetchProfileByUserId,
   playerDisplayName,
   isValidChallengeStartTime,
-  localDayInputBounds,
+  localChallengeInputMin,
   localInputValue,
   withdrawGauntlet,
   DEFAULT_FORMAT,
@@ -81,7 +81,7 @@ export function CourtPanel({
   // Which gauntlet has its challenge form open, plus that form's fields
   const [challengingId, setChallengingId] = useState<string | null>(null)
   const [proposedStart, setProposedStart] = useState(() => localInputValue(0))
-  const dayBounds = localDayInputBounds()
+  const inputMin = localChallengeInputMin()
   const [message, setMessage] = useState('')
 
   const isWaitingOnTheirReply = (gauntletId: string) =>
@@ -191,7 +191,7 @@ export function CourtPanel({
     if (!requireAuth()) return
     const start = new Date(proposedStart)
     if (!isValidChallengeStartTime(start.toISOString())) {
-      setFormError('Pick a time today (play-now times are OK)')
+      setFormError('Pick a time from now on (play-now is OK)')
       return
     }
     setSubmitting(true)
@@ -349,8 +349,7 @@ export function CourtPanel({
                     <input
                       type="datetime-local"
                       value={proposedStart}
-                      min={dayBounds.min}
-                      max={dayBounds.max}
+                      min={inputMin}
                       onChange={(e) => setProposedStart(e.target.value)}
                       required
                     />
