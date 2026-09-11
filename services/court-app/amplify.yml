@@ -1,0 +1,23 @@
+version: 1
+applications:
+  - appRoot: services/court-app
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - corepack enable
+            - pnpm install --filter court-app --no-frozen-lockfile
+        build:
+          commands:
+            - pnpm run build
+      artifacts:
+        baseDirectory: dist
+        files:
+          - "**/*"
+    backend:
+      phases:
+        build:
+          commands:
+            - corepack enable
+            - pnpm install --filter court-app --no-frozen-lockfile --child-concurrency=1
+            - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID

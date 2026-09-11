@@ -20,6 +20,13 @@
     "@aws-cdk/cloud-assembly-schema": "^53.13.0"
   },
   "devDependencies": {
-    "aws-cdk": "^2.1117.0"
+    "aws-cdk": "^2.1117.0",
+    "esbuild": "^0.28.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "@parcel/watcher"
+    ]
   }
 }

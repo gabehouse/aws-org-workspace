@@ -4,7 +4,7 @@ import { useAuthenticator, Authenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 import { generateClient } from "aws-amplify/data";
 import { Amplify } from 'aws-amplify';
-import { Hub } from '@aws-amplify/core';
+import { Hub } from "aws-amplify/utils";
 import { Subscription } from 'rxjs';
 import { AuthUser, fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import { sendEmail } from './utils/emailService'; // Assuming this path is correct

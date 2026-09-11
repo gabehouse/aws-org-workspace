@@ -6,21 +6,22 @@ applications:
         preBuild:
           commands:
             - corepack enable
-            - pnpm install --filter cloud-portfolio --no-frozen-lockfile
+            # Install monorepo scope using the root context
+            - pnpm install --filter cloud-portfolio... --no-frozen-lockfile
         build:
           commands:
-            # RESET and set memory for the frontend specifically
+            # Set the memory allocation buffer
             - export NODE_OPTIONS="--max-old-space-size=6144"
+
+            # 1. First, synthesize and deploy the backend resources
+            - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID --debug
+
+            # 2. Now run the application build using the newly minted backend configs
             - pnpm run build
       artifacts:
         baseDirectory: dist
         files:
-          - '**/*'
-    backend:
-      phases:
-        build:
-          commands:
-            - corepack enable
-            - pnpm install --filter cloud-portfolio --no-frozen-lockfile --child-concurrency=1
-            - export NODE_OPTIONS="--max-old-space-size=6144"
-            - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID --debug
+          - "**/*"
+      cache:
+        paths:
+          - node_modules/**/*

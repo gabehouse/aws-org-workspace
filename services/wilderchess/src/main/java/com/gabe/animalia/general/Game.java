@@ -76,14 +76,12 @@ public class Game {
 	private int winnerId = -2;
 	StringBuilder manifest;
 
-	// ai
-	private static Inference aiBrain;
-	private static GameFeaturizer featurizer;
-
 	boolean calculatingTurn = false;
 	private boolean initialPhase = true;
 	private boolean firstInitialPhase = true;
 	private boolean vsBot = false;
+	private static final java.util.concurrent.ExecutorService aiWorkerPool = java.util.concurrent.Executors
+			.newFixedThreadPool(2);
 	private TypesAndStuff tAS = new TypesAndStuff();
 	Square leftBottomFront = new Square("leftBottomFront", "left");
 	Square leftBottomBack = new Square("leftBottomBack", "left");
@@ -145,9 +143,14 @@ public class Game {
 
 	// dont need to change this, change the one in mainapp
 	boolean botVsBot = false;
-	boolean botIsAi = true;
+
+	public static Inference aiBrain = null; // Replace 'Object' with your actual 'Inference' type
+	public static GameFeaturizer featurizer = null;
+	public static boolean botIsAi = true;
+	private boolean aiThinking = false;
 
 	public Game(User user1, User user2, GameLogger gameLogger) {
+		// 1. Core data initialization runs instantly on the main thread
 		if (user2.getID() == -1)
 			vsBot = true;
 		p2.setBot(true);
@@ -166,62 +169,77 @@ public class Game {
 		p1.setEndpoint(p1Endpoint);
 		p2.setEndpoint(p2Endpoint);
 		p2.setBot(vsBot);
+
+		// Safe from frame 1—no background thread races for State trackers
 		users[0] = user1;
 		users[1] = user2;
+
 		turnOrchestrator = new TurnOrchestrator(UUID.randomUUID().toString(), gameLogger);
-		if (botIsAi && aiBrain == null) {
-			System.out.println("Initializing AI Brain and Weights...");
-			try {
 
-				// 1. Setup a dedicated temp directory for the model files
-				Path tempDir = Files.createTempDirectory("wilderchess-model");
+		// 2. Map pre-warmed global AI elements smoothly
+		if (botIsAi && featurizer != null && aiBrain != null) {
 
-				// 2. Define the paths in the temp folder
-				Path modelPath = tempDir.resolve("wilderchess.onnx");
-				Path dataPath = tempDir.resolve("wilderchess.onnx.data");
+			// FIX: Give BOTH players the featurizer baseline so humans can evaluate states,
+			// while selectively giving only the bots the deep ONNX inference engine.
+			p1.setFeaturizer(featurizer);
+			p2.setFeaturizer(featurizer);
 
-				// 3. Extract the .onnx file
-				try (InputStream is = Game.class.getClassLoader().getResourceAsStream("wilderchess.onnx")) {
-					if (is == null)
-						throw new RuntimeException("wilderchess.onnx not found!");
-					Files.copy(is, modelPath, StandardCopyOption.REPLACE_EXISTING);
-				}
+			Stream.of(p1, p2)
+					.filter(Player::isBot)
+					.forEach(p -> p.setInference(aiBrain));
 
-				// 4. Extract the .onnx.data file (CRITICAL STEP)
-				try (InputStream isData = Game.class.getClassLoader().getResourceAsStream("wilderchess.onnx.data")) {
-					if (isData == null)
-						throw new RuntimeException("wilderchess.onnx.data not found!");
-					Files.copy(isData, dataPath, StandardCopyOption.REPLACE_EXISTING);
-				}
-
-				// 5. Load the model from the new temp location
-				aiBrain = new Inference(modelPath.toAbsolutePath().toString());
-				featurizer = new GameFeaturizer();
-
-				System.out.println("AI Brain and Weights loaded successfully at: " + tempDir);
-
-			} catch (Exception e) {
-				System.err.println("AI Initialization Failed!");
-				e.printStackTrace();
-				botIsAi = false;
+			if (botVsBot) {
+				Thread simulationThread = new Thread(this::runBotVsBot);
+				simulationThread
+						.setName("Wilderchess-Simulation-Runner-" + UUID.randomUUID().toString().substring(0, 8));
+				simulationThread.setDaemon(true);
+				simulationThread.start();
 			}
 		}
-		Stream.of(p1, p2)
-				.filter(Player::isBot)
-				.forEach(p -> {
-					p.setFeaturizer(featurizer);
-					p.setInference(aiBrain);
-				});
-		if (botVsBot) {
-
-			runBotVsBot();
-
-		}
-
 	}
 
-	public synchronized void runBotVsBot() {
-		System.out.println("runBotvsBot");
+	public static void loadAiModelOnStartup() {
+		System.out.println("🧠 [STARTUP] Extracting and compiling ONNX inference engine...");
+		try {
+			Path tempDir = Files.createTempDirectory("wilderchess-model-global");
+			Path modelPath = tempDir.resolve("wilderchess.onnx");
+			Path dataPath = tempDir.resolve("wilderchess.onnx.data");
+
+			Files.deleteIfExists(modelPath);
+			Files.deleteIfExists(dataPath);
+
+			try (InputStream is = Game.class.getClassLoader().getResourceAsStream("wilderchess.onnx")) {
+				if (is == null)
+					throw new RuntimeException("wilderchess.onnx not found!");
+				Files.copy(is, modelPath);
+			}
+
+			try (InputStream isData = Game.class.getClassLoader().getResourceAsStream("wilderchess.onnx.data")) {
+				if (isData == null)
+					throw new RuntimeException("wilderchess.onnx.data not found!");
+				Files.copy(isData, dataPath);
+			}
+
+			// 1. Compile the model structures into RAM
+			Game.aiBrain = new Inference(modelPath.toAbsolutePath().toString());
+			Game.featurizer = new GameFeaturizer();
+
+			// 2. Automatically size the dummy input array based on the model itself!
+			int inputSize = Game.aiBrain.getInputSize();
+			float[] dummyInput = new float[inputSize];
+
+			Game.aiBrain.predict(dummyInput);
+			System.out.println("🚀 [STARTUP] ONNX engine fully compiled, executed once, and ready in RAM!");
+		} catch (Exception e) {
+			System.err.println("❌ [STARTUP] Critical Failure loading AI Engine!");
+			e.printStackTrace();
+			Game.botIsAi = false;
+		}
+	}
+
+	public void runBotVsBot() {
+		System.out.println("runBotvsBot initialized");
+
 		while (true) {
 			System.out.println("runBotvsBot top of while(true)");
 			init();
@@ -525,19 +543,34 @@ public class Game {
 				p1.fillActionQueue(p2);
 				p2.fillActionQueue(p1);
 			} else {
-				if (player.isBot())
-					player.fillActionQueue(otherPlayer);
+				aiWorkerPool.submit(() -> {
+					this.aiThinking = true;
+					if (player.isBot()) {
+						player.fillActionQueue(otherPlayer);
+						this.aiThinking = false;
+						if (otherPlayer.isReadied())
+							ready(otherPlayer, player);
+					}
 
-				if (otherPlayer.isBot())
-					otherPlayer.fillActionQueue(player);
+					if (otherPlayer.isBot()) {
+						otherPlayer.fillActionQueue(player);
+						this.aiThinking = false;
+						if (player.isReadied())
+							ready(player, otherPlayer);
+					}
+				});
 			}
 
 		}
 	}
 
 	public synchronized void ready(final Player player, final Player otherPlayer) {
+
 		player.setReadied(true);
 		str = "indicatespots,no moves";
+
+		if (aiThinking)
+			return;
 
 		player.sendString(str);
 		str = "";

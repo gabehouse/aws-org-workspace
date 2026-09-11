@@ -5,7 +5,6 @@ import torch.nn as nn
 class AnimaliaNet(nn.Module):
     def __init__(self, input_dim):
         super(AnimaliaNet, self).__init__()
-        # ... (Your layer definitions are perfect) ...
         self.fc1 = nn.Linear(input_dim, 256)
         self.bn1 = nn.BatchNorm1d(256)
         self.fc2 = nn.Linear(256, 128)
@@ -17,7 +16,6 @@ class AnimaliaNet(nn.Module):
         self.dropout = nn.Dropout(0.4)
         self.relu = nn.ReLU()
 
-    # --- INDENT THIS WHOLE BLOCK ---
     def forward(self, x):
         # 1. Shared Base
         x = self.relu(self.bn1(self.fc1(x)))

@@ -1,2 +1,2 @@
 mvn clean package
-java -Dport=8080 -jar target/wilderchess-app.jar
+java -Dport=8086 -jar target/wilderchess-app.jar

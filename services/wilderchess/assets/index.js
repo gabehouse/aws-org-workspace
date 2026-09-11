@@ -237,6 +237,8 @@ function enterCritterPit(str) {
 		enterClickRect.remove();
 		enterText.remove();
 
+		// Wrap it so it executes after all background images finish rendering
+
 
 
 	} else {
@@ -315,7 +317,10 @@ var searchButton = new Button(critterSelectPaper.rect(WIDTH / 2 - 155, 10, 150, 
 	critterSelectPaper.text(WIDTH / 2 - 80, 30, "Vs. Player").attr("font-family", buttonFont).attr("font-size", 18),
 	critterSelectPaper, searchForOpponent);
 
-// Define this so the constructor has a function to call initially
+var critterSelectableSize = 80;
+var critterSelectableMargin = 3;
+var critterSelectableSizeWithMargin = critterSelectableSize + critterSelectableMargin;
+
 
 // 1. Initial declaration with a placeholder click
 var empty = function () { console.log("Vs. AI button clicked - dropdown layer active."); };
@@ -326,7 +331,13 @@ var battleAiButton = new Button(
 	critterSelectPaper,
 	empty
 );
-var critterScrollPaper = Raphael(paperX + WIDTH / 2 - 115 * 3, 60 + paperY, selectableAreaWidth, 130);
+
+var visibleSelectableCapacity = 12;
+var selectableAreaWidth = critterSelectableSizeWithMargin * visibleSelectableCapacity;
+var critterScrollPaper = Raphael(paperX + (WIDTH - selectableAreaWidth) / 2, 60 + paperY, selectableAreaWidth, 130);
+// critterScrollPaper.canvas.parentNode.style.overflow = "visible";
+// critterScrollPaper.canvas.style.overflow = "visible";
+
 // 2. Create the Dedicated Overlay Layer (Sits on top of everything)
 var botOptionsPaper = Raphael(uiX, uiY, WIDTH, HEIGHT);
 botOptionsPaper.canvas.style.pointerEvents = "none"; // Clicks pass through empty space
@@ -445,11 +456,90 @@ itemSelectables.forEach(function (is) {
 
 
 
-var cSHelpText = critterSelectPaper.text(WIDTH / 2, 210, "Select four fighters").attr({ "font-size": 20, "font-family": tipFont });
-var iSHelpText = critterSelectPaper.text(WIDTH / 2, 550, "...and three items").attr({ "font-size": 20, "font-family": tipFont });
-var critterSelectHelpText = gridPaper.set(cSHelpText, iSHelpText);
-cSHelpText.node.setAttribute("class", "donthighlight");
-iSHelpText.node.setAttribute("class", "donthighlight");
+
+// // 1. Initialize the set on the CORRECT paper
+// var instructionBox = critterSelectPaper.set();
+
+// var boxX = 10;
+// var boxY = 10;
+
+// // 2. Create the background
+// var boxBg = critterSelectPaper.rect(boxX, boxY, 170, 30).attr({
+// 	"fill": "#F5F5DC",
+// 	"stroke": "#704000",
+// 	"stroke-width": 2,
+// 	"fill-opacity": 1
+// });
+
+// // 3. Create the text (Padded inwards: boxX + 15px, and vertically centered: boxY + 22px)
+// var boxText = critterSelectPaper.text(boxX + 10, boxY + 14, "Select 4 critters and 3 items").attr({
+// 	"font-family": "Nunito, sans-serif",
+// 	"font-size": "12px",
+// 	"font-weight": "bold",
+// 	"fill": "#000000",
+// 	"text-anchor": "start"
+// });
+
+// // 4. Group and push to front cleanly
+// instructionBox.push(boxBg, boxText);
+// instructionBox.toFront();
+
+
+function createAutoSizingTextBox(paper, x, y, message, fontSize, fontFamily) {
+	// 1. Create a set to group the background and text together
+	var containerSet = paper.set();
+
+	// 2. Create the text first so we can measure it
+	var textElement = paper.text(x, y, message).attr({
+		"font-family": fontFamily || "Arial, sans-serif",
+		"font-size": fontSize || "15px",
+		"font-weight": "bold",
+		"fill": "#000000",
+		"text-anchor": "start" // Anchors left so padding math stays simple
+	});
+
+	textElement.node.setAttribute("class", "donthighlight");
+
+	// 3. Get the exact rendered dimensions of the text block
+	var textBounds = textElement.getBBox();
+
+	// 4. Define your internal padding
+	var paddingX = 15;
+	var paddingY = 10;
+
+	// 5. Create the background rectangle using the text's dimensions
+	var rectElement = paper.rect(
+		textBounds.x - paddingX,               // Shift left for left padding
+		textBounds.y - paddingY,               // Shift up for top padding
+		textBounds.width + (paddingX * 2),     // Text width + both sides padding
+		textBounds.height + (paddingY * 2)     // Text height + top/bottom padding
+	).attr({
+		"fill": "#F5F5DC",
+		"stroke": "#704000",
+		"stroke-width": 2,
+		"fill-opacity": 1
+	});
+
+	// 6. Push to the set in the correct layer order (Rect behind Text)
+	containerSet.push(rectElement, textElement);
+
+	// Bring the text element explicitly to the front inside the set hierarchy
+	textElement.toFront();
+
+	return containerSet;
+}
+
+
+var instructionBox = createAutoSizingTextBox(critterSelectPaper, 20, 20, "Select 4 critters and 3 items.", "12px", "Arial");
+
+
+// var cSHelpText = critterSelectPaper.text(WIDTH / 2, 210, "Select four fighters").attr({ "font-size": 20, "font-family": tipFont });
+// var iSHelpText = critterSelectPaper.text(WIDTH / 2, 550, "...and three items").attr({ "font-size": 20, "font-family": tipFont });
+// var critterSelectHelpText = gridPaper.set(cSHelpText, iSHelpText);
+// cSHelpText.node.setAttribute("class", "donthighlight");
+// iSHelpText.node.setAttribute("class", "donthighlight");
+
+
 
 
 var topAbilRectY = 197;
@@ -486,8 +576,8 @@ abilRects.forEach(function (a) {
 	a.getRect().hide();
 	a.getRect().attr({ "stroke": "#704000", "stroke-width": 1.5 });
 });
-var visibleSelectableCapacity = 6;
-var selectableAreaWidth = 6 * 115;
+
+
 
 //var critterScrollPaperframe = critterScrollPaper.rect(0,0, selectableAreaWidth,120).attr({'fill': 'white', 'opacity': 0, 'stroke-opacity': 0});
 
@@ -501,7 +591,7 @@ function MiniItemSelectable(selectable, name, parentSelectable) {
 	this.name = name;
 	this.getName = function () { return this.name; }
 	this.selectable.animate({ transform: 's0' }, 100);
-	this.x = 750;
+	this.x = 650;
 	this.setX = function (x) { this.x = x };
 	this.getX = function () { return this.x };
 	var ps = this.parentSelectable;
@@ -520,7 +610,7 @@ function MiniItemSelectable(selectable, name, parentSelectable) {
 			} else if (onleft) {
 				var lMS = selectedItems[i].getMiniItemSelectable();
 				lMS.setX(lMS.getX() + 35);
-				lMS.getSelectable().animate({ x: lMS.getX() }, 700, 'bounce');
+				lMS.getSelectable().animate({ x: lMS.getX() }, 650, 'bounce');
 			}
 		}
 
@@ -559,7 +649,7 @@ function MiniItemSelectable(selectable, name, parentSelectable) {
 	});
 
 	this.show = function () {
-		this.x = 860 - itemsSelected.length * 36;
+		this.x = 820 - itemsSelected.length * 36;
 
 		this.selectable.attr({ x: this.x });
 		this.selectable.animate({ transform: 's1' }, 200, function () {
@@ -568,6 +658,9 @@ function MiniItemSelectable(selectable, name, parentSelectable) {
 	}
 	this.hide = function () { this.selectable.hide(); }
 }
+
+
+
 
 
 function MiniCritterSelectable(selectable, name, parentSelectable) {
@@ -609,19 +702,19 @@ function MiniCritterSelectable(selectable, name, parentSelectable) {
 			}
 		}
 
-		var cx = ps.getPortrait()[1].attr('cx');
-		var cy = ps.getPortrait()[1].attr('cy');
-		var oldKnobX = selectKnob.attr('x');
-		var oldKnobW = selectKnob.attr('width');
-		var newKnobW = WIDTH / ((critterSelectables.length + 1 - crittersSelected.length) / (critterSelectables.length / 2));
-		var newpct = oldKnobX / (WIDTH - oldKnobW);
-		knobMultiplier = WIDTH / ((critterSelectables.length + 1 - crittersSelected.length) * 115);
-		titleScreenMultiplier = 72 / (WIDTH - newKnobW) * knobMultiplier;
-		var newScrollKnobX = scrollKnob.attr('x') - (newKnobW - oldKnobW) * newpct;
-		var newSelectKnobX = selectKnob.attr('x') - (newKnobW - oldKnobW) * newpct;
-		scrollXOffset -= 57 - 115 * newpct;
-		var pctDiff = ps.getPct() - newpct;
-		selectKnob.animate({ 'x': newSelectKnobX, 'width': newKnobW }, 100);
+		// var cx = ps.getPortrait()[1].attr('cx');
+		// var cy = ps.getPortrait()[1].attr('cy');
+		// var oldKnobX = selectKnob.attr('x');
+		// var oldKnobW = selectKnob.attr('width');
+		// var newKnobW = WIDTH / ((critterSelectables.length + 1 - crittersSelected.length) / visibleSelectableCapacity);
+		// var newpct = oldKnobX / (WIDTH - oldKnobW);
+		// knobMultiplier = WIDTH / ((critterSelectables.length + 1 - crittersSelected.length) * critterSelectableSizeWithMargin);
+		// titleScreenMultiplier = 72 / (WIDTH - newKnobW) * knobMultiplier;
+		// var newScrollKnobX = scrollKnob.attr('x') - (newKnobW - oldKnobW) * newpct;
+		// var newSelectKnobX = selectKnob.attr('x') - (newKnobW - oldKnobW) * newpct;
+		// scrollXOffset -= critterSelectableSizeWithMargin / 2 - critterSelectableSizeWithMargin * newpct;
+		// var pctDiff = ps.getPct() - newpct;
+		// selectKnob.animate({ 'x': newSelectKnobX, 'width': newKnobW }, critterSelectableSize);
 		ps.setSelected(false);
 		var index = crittersSelected.indexOf(n);
 		if (searching) {
@@ -632,50 +725,12 @@ function MiniCritterSelectable(selectable, name, parentSelectable) {
 		battleAiButton.disable();
 		selectedCritters.splice(index, 1);
 		crittersSelected.splice(index, 1);
-		var newx = 0;
-		var prevcs = critterSelectables[ps.getPos() - 1];
-		for (var j = ps.getPos(); j >= 0; j--) {
-
-			if (!ps.getSelected()) {
-				newx = ps.getX() + 115 * pctDiff;
-			}
-		}
-		if (newx == 0) {
-			newx = selectableAreaWidth / 2 - (totalCritters / 2) * 115 + 115 * pctDiff;
-		}
-		ps.setX(newx);
-		ps.getPortrait()[0].attr('x', ps.getX() - ps.getWidth() / 2);
-		ps.getPortrait()[1].attr('cx', newx);
-
-
-		scrollKnob.attr({ 'x': newScrollKnobX, 'width': newKnobW });
-		var selectKnobBlock = critterSelectPaper.rect(0, selectKnob.attr('y'), WIDTH, selectKnob.attr('height')).attr({ 'stroke-opacity': 0, 'fill-opacity': 0, 'fill': 'yellow' });
-		scrollKnob.hide();
-
-		var onleft = true;
-
-		for (var i = 0; i < critterSelectables.length; i++) {
-
-			if (critterSelectables[i] == ps) {
-				onleft = false;
-			} else if (onleft) {
-				critterSelectables[i].setX(critterSelectables[i].getX() - 115 * newpct);
-				critterSelectables[i].getPortrait()[0].animate({ x: critterSelectables[i].getX() - critterSelectables[i].getWidth() / 2 }, 200, ">");
-				critterSelectables[i].getPortrait()[1].animate({ cx: critterSelectables[i].getX() }, 200, ">");
-			} else {
-				critterSelectables[i].setX(critterSelectables[i].getX() + 115 * (1 - newpct));
-				critterSelectables[i].getPortrait()[0].animate({ x: critterSelectables[i].getX() - critterSelectables[i].getWidth() / 2 }, 200, ">");
-				critterSelectables[i].getPortrait()[1].animate({ cx: critterSelectables[i].getX() }, 200, ">", function () { selectKnobBlock.remove(); scrollKnob.show() });
-			}
-		}
 		ps.getPortrait().transform("s0").show();
-
-		//	ps.getPortrait().animate({transform : 's0'},1).show();
 		ps.getPortrait().animate({ transform: 's1' }, 200);
 	});
 
 	this.show = function () {
-		this.x = 150 + crittersSelected.length * 36;
+		this.x = 190 + crittersSelected.length * 36;
 
 		this.selectable[0].attr({ x: this.x });
 		this.selectable[1].attr({ cx: this.x + 15 });
@@ -704,31 +759,35 @@ for (var i = 0; i < totalCritterNames.length; i++) {
 	critterSelectElements.push(newCritterSelectable.getPortrait());
 }
 // var scrollStrip = critterSelectPaper.rect(0,80,WIDTH,120).attr({'fill': 'white', 'opacity': 0.4, 'stroke-opacity': 0});
-critterSelectElements.push(critterSelectables, itemSelectables, critterSelectHelpText, searchButton.getRect(), battleAiButton.getRect());
+critterSelectElements.push(critterSelectables, itemSelectables, searchButton.getRect(), battleAiButton.getRect(), instructionBox);
 var knobActiveColor = 'white';
 var knobIdleColor = '#FFFBC4';
-var knobMultiplier = WIDTH / (critterSelectables.length * 115);
-var knobWidth = WIDTH / (critterSelectables.length / 6);
-var titleScreenMultiplier = 72 / (WIDTH - knobWidth) * knobMultiplier;
-var leftArrow = critterSelectPaper.path('M ' + (WIDTH / 2 - 115 * 3 - 10) + ',' + 60 + ' L ' + (WIDTH / 2 - 115 * 3 - 10) + ',' + 190 + ' L ' + (WIDTH / 2 - 115 * 3 - 50) + ',' + 125 + ' L ' + (WIDTH / 2 - 115 * 3 - 10) + ',' + 60).attr({ 'fill': knobIdleColor, 'stroke-opacity': 0, 'opacity': 0.8 });
-var rightArrow = critterSelectPaper.path('M ' + (WIDTH / 2 - 115 * 3 + selectableAreaWidth + 10) + ',' + 60 + ' L ' + (WIDTH / 2 - 115 * 3 + selectableAreaWidth + 10) + ',' + 190 + ' L ' + (WIDTH / 2 - 115 * 3 + 40 + selectableAreaWidth + 10) + ',' + 125 + ' L ' + (WIDTH / 2 - 115 * 3 + selectableAreaWidth + 10) + ',' + 60).attr({ 'fill': knobIdleColor, 'stroke-opacity': 0, 'opacity': 0.8 });
-//var attackRect = critterSelectPaper.rect(0,115,WIDTH/3,20).attr({'fill':attackColor});
-//var blockRect = critterSelectPaper.rect(WIDTH/3,115,WIDTH/3,20).attr({'fill':blockColor});
-//var supportRect = critterSelectPaper.rect(2*WIDTH/3,115,WIDTH/3,20).attr({'fill':supportColor});
-//var typeRects = critterSelectPaper.set(attackRect,blockRect,supportRect);
-//typeRects.attr({'opacity':0.8, 'stroke-opacity':0, 'stroke':'#704000'});
-var arrows = critterSelectPaper.set(leftArrow, rightArrow);
-var blinkIn = function (arrow) { arrow.animate({ 'opacity': 0 }, 1500, function () { blinkOut(arrow) }); };
-var blinkOut = function (arrow) { arrow.animate({ 'opacity': 0.8 }, 1500, function () { blinkIn(arrow) }); };
-blinkIn(arrows);
+var knobMultiplier = WIDTH / (critterSelectables.length * critterSelectableSizeWithMargin);
+var knobWidth = WIDTH / (critterSelectables.length / visibleSelectableCapacity);
+// var titleScreenMultiplier = 72 / (WIDTH - knobWidth) * knobMultiplier;
+// var leftArrow = critterSelectPaper.path('M ' + (WIDTH / 2 - critterSelectableSizeWithMargin * 3 - 10) + ',' + 60 + ' L ' + (WIDTH / 2 - critterSelectableSizeWithMargin * 3 - 10) + ',' + 190 + ' L ' + (WIDTH / 2 - critterSelectableSizeWithMargin * 3 - 50) + ',' + 125 + ' L ' + (WIDTH / 2 - critterSelectableSizeWithMargin * 3 - 10) + ',' + 60).attr({ 'fill': knobIdleColor, 'stroke-opacity': 0, 'opacity': 0.8 });
+// var rightArrow = critterSelectPaper.path('M ' + (WIDTH / 2 - critterSelectableSizeWithMargin * 3 + selectableAreaWidth + 10) + ',' + 60 + ' L ' + (WIDTH / 2 - critterSelectableSizeWithMargin * 3 + selectableAreaWidth + 10) + ',' + 190 + ' L ' + (WIDTH / 2 - critterSelectableSizeWithMargin * 3 + 40 + selectableAreaWidth + 10) + ',' + 125 + ' L ' + (WIDTH / 2 - critterSelectableSizeWithMargin * 3 + selectableAreaWidth + 10) + ',' + 60).attr({ 'fill': knobIdleColor, 'stroke-opacity': 0, 'opacity': 0.8 });
+// //var attackRect = critterSelectPaper.rect(0,115,WIDTH/3,20).attr({'fill':attackColor});
+// //var blockRect = critterSelectPaper.rect(WIDTH/3,115,WIDTH/3,20).attr({'fill':blockColor});
+// //var supportRect = critterSelectPaper.rect(2*WIDTH/3,115,WIDTH/3,20).attr({'fill':supportColor});
+// //var typeRects = critterSelectPaper.set(attackRect,blockRect,supportRect);
+// //typeRects.attr({'opacity':0.8, 'stroke-opacity':0, 'stroke':'#704000'});
+// var arrows = critterSelectPaper.set(leftArrow, rightArrow);
+// var blinkIn = function (arrow) { arrow.animate({ 'opacity': 0 }, 1500, function () { blinkOut(arrow) }); };
+// var blinkOut = function (arrow) { arrow.animate({ 'opacity': 0.8 }, 1500, function () { blinkIn(arrow) }); };
+// blinkIn(arrows);
+
+
 var selectKnob = critterSelectPaper.rect(WIDTH / 2 - knobWidth / 2, 60, knobWidth, 130).attr({ 'fill': '#FFFBC4', 'opacity': 0.5, 'stroke-opacity': 0 });
 var scrollKnob = critterScrollPaper.rect(selectableAreaWidth / 2 - knobWidth / 2, 0, knobWidth, 130).attr({ 'fill': 'yellow', 'opacity': 0, 'stroke-opacity': 0 }).hide();
 if (quickStartEnabled) {
 	scrollKnob.show();
 	textField.parentNode.removeChild(textField);
 }
+
+
 var scrollPaperElements = critterScrollPaper.set(scrollKnob);
-critterSelectElements.push(selectKnob, arrows, itemHoverRect);
+critterSelectElements.push(selectKnob, itemHoverRect);
 if (!quickStartEnabled) {
 	critterSelectElements.hide();
 }
@@ -743,111 +802,111 @@ var knobHovering = false;
 var knobClicking = false;
 
 
-itemHoverRect.hover(
-	function () {
-		itemHoverRect.animate({ 'fill': knobActiveColor }, 350);
-		arrows.animate({ 'fill': knobActiveColor }, 350);
-	},
-	function () {
-		itemHoverRect.animate({ 'fill': knobIdleColor }, 350);
-		arrows.animate({ 'fill': knobIdleColor }, 350);
+// itemHoverRect.hover(
+// 	function () {
+// 		itemHoverRect.animate({ 'fill': knobActiveColor }, 350);
+// 		arrows.animate({ 'fill': knobActiveColor }, 350);
+// 	},
+// 	function () {
+// 		itemHoverRect.animate({ 'fill': knobIdleColor }, 350);
+// 		arrows.animate({ 'fill': knobIdleColor }, 350);
 
-	});
+// 	});
 knobs.forEach(function (k) {
-	k.hover(
-		function () {
-			knobHovering = true;
-			selectKnob.animate({ 'fill': knobActiveColor }, 350);
-			arrows.animate({ 'fill': knobActiveColor }, 350);
-			document.body.style.cursor = 'pointer';
+	// k.hover(
+	// 	function () {
+	// 		knobHovering = true;
+	// 		selectKnob.animate({ 'fill': knobActiveColor }, 350);
+	// 		arrows.animate({ 'fill': knobActiveColor }, 350);
+	// 		document.body.style.cursor = 'pointer';
 
-		},
-		function () {
-			knobHovering = false;
-			if (!knobClicking) {
-				selectKnob.animate({ 'fill': knobIdleColor }, 350);
-				arrows.animate({ 'fill': knobIdleColor }, 350);
-				document.body.style.cursor = 'auto';
-			}
-		});
+	// 	},
+	// 	function () {
+	// 		knobHovering = false;
+	// 		if (!knobClicking) {
+	// 			selectKnob.animate({ 'fill': knobIdleColor }, 350);
+	// 			arrows.animate({ 'fill': knobIdleColor }, 350);
+	// 			document.body.style.cursor = 'auto';
+	// 		}
+	// 	});
 
-	k.drag(
-		function (dx, dy) {
-			var cutOffCritterCount = (critterSelectables.length - crittersSelected.length - 6) / 2;
-			var restricteddx = dx;
-			if (dx + scrollXOffset < -cutOffCritterCount * 115) {
-				restricteddx = -cutOffCritterCount * 115 - scrollXOffset;
-			} else if (dx + scrollXOffset > cutOffCritterCount * 115) {
-				restricteddx = cutOffCritterCount * 115 - scrollXOffset;
-			}
-			critterSelectables.forEach(function (cs) {
+	// k.drag(
+	// 	function (dx, dy) {
+	// 		var cutOffCritterCount = (critterSelectables.length - crittersSelected.length - visibleSelectableCapacity) / 2;
+	// 		var restricteddx = dx;
+	// 		if (dx + scrollXOffset < -cutOffCritterCount * critterSelectableSizeWithMargin) {
+	// 			restricteddx = -cutOffCritterCount * critterSelectableSizeWithMargin - scrollXOffset;
+	// 		} else if (dx + scrollXOffset > cutOffCritterCount * critterSelectableSizeWithMargin) {
+	// 			restricteddx = cutOffCritterCount * critterSelectableSizeWithMargin - scrollXOffset;
+	// 		}
+	// 		critterSelectables.forEach(function (cs) {
 
-				cs.getPortrait().transform('T' + -restricteddx + ',' + 0);
-			});
-			titleScreen.transform('T' + restricteddx * -titleScreenMultiplier + ',' + 0);
-			selectKnob.transform('T' + restricteddx * knobMultiplier + ',' + 0);
-			scrollKnob.transform('T' + restricteddx * knobMultiplier + ',' + 0);
-			draglx = restricteddx;
-		},
-		function () {
-			draglx = 0;
-			knobClicking = true;
-			arrows.hide();
-		},
+	// 			cs.getPortrait().transform('T' + -restricteddx + ',' + 0);
+	// 		});
+	// 		titleScreen.transform('T' + restricteddx * -titleScreenMultiplier + ',' + 0);
+	// 		selectKnob.transform('T' + restricteddx * knobMultiplier + ',' + 0);
+	// 		scrollKnob.transform('T' + restricteddx * knobMultiplier + ',' + 0);
+	// 		draglx = restricteddx;
+	// 	},
+	// 	function () {
+	// 		draglx = 0;
+	// 		knobClicking = true;
+	// 		arrows.hide();
+	// 	},
 
-		function (dx, dy) {
-			var cutOffCritterCount = (critterSelectables.length - crittersSelected.length - 6) / 2;
-			knobClicking = false;
-			if (!knobHovering) {
-				selectKnob.animate({ 'fill': knobIdleColor }, 250);
-				arrows.animate({ 'fill': knobIdleColor }, 250);
-			}
-			var restricteddx = draglx;
-			var firstCritterSelectable;
-			var lastCritterSelectable;
-			for (var i = 0; i < critterSelectables.length; i++) {
-				if (!critterSelectables[i].getSelected()) {
-					firstCritterSelectable = critterSelectables[i];
-					break;
-				}
-			}
-			for (var i = critterSelectables.length - 1; i >= 0; i--) {
-				if (!critterSelectables[i].getSelected()) {
-					lastCritterSelectable = critterSelectables[i];
-					break;
-				}
-			}
-
-
+	// 	function (dx, dy) {
+	// 		var cutOffCritterCount = (critterSelectables.length - crittersSelected.length - visibleSelectableCapacity) / 2;
+	// 		knobClicking = false;
+	// 		if (!knobHovering) {
+	// 			selectKnob.animate({ 'fill': knobIdleColor }, 250);
+	// 			arrows.animate({ 'fill': knobIdleColor }, 250);
+	// 		}
+	// 		var restricteddx = draglx;
+	// 		var firstCritterSelectable;
+	// 		var lastCritterSelectable;
+	// 		for (var i = 0; i < critterSelectables.length; i++) {
+	// 			if (!critterSelectables[i].getSelected()) {
+	// 				firstCritterSelectable = critterSelectables[i];
+	// 				break;
+	// 			}
+	// 		}
+	// 		for (var i = critterSelectables.length - 1; i >= 0; i--) {
+	// 			if (!critterSelectables[i].getSelected()) {
+	// 				lastCritterSelectable = critterSelectables[i];
+	// 				break;
+	// 			}
+	// 		}
 
 
-			selectKnob.transform('T' + (-restricteddx * knobMultiplier) - ',' + 0);
-			scrollKnob.transform('T' + (-restricteddx * knobMultiplier) - ',' + 0);
-			titleScreen.transform('T' + (-restricteddx * -titleScreenMultiplier) - ',' + 0);
-			critterSelectables.forEach(function (cs) {
-				cs.getPortrait().transform('T' - restricteddx + ',' + 0);
-			});
 
-			scrollXOffset += restricteddx;
-			critterSelectables.forEach(function (cs) {
-				var tmp = cs.getX() - restricteddx;
-				cs.getPortrait()[0].attr('x', tmp - cs.getWidth() / 2);
-				cs.getPortrait()[1].attr('cx', tmp);
-				cs.setX(tmp);
-			});
 
-			if (firstCritterSelectable.getPortrait()[0].attr('x') + 100 > 0) {
-				rightArrow.show();
-			} else if (lastCritterSelectable.getPortrait()[0].attr('x') < selectableAreaWidth) {
-				leftArrow.show();
-			} else {
-				arrows.show();
-			}
+	// 		selectKnob.transform('T' + (-restricteddx * knobMultiplier) - ',' + 0);
+	// 		scrollKnob.transform('T' + (-restricteddx * knobMultiplier) - ',' + 0);
+	// 		titleScreen.transform('T' + (-restricteddx * -titleScreenMultiplier) - ',' + 0);
+	// 		critterSelectables.forEach(function (cs) {
+	// 			cs.getPortrait().transform('T' - restricteddx + ',' + 0);
+	// 		});
 
-			selectKnob.attr('x', selectKnob.attr('x') + restricteddx * knobMultiplier);
-			scrollKnob.attr('x', scrollKnob.attr('x') + restricteddx * knobMultiplier);
-			titleScreen.attr('x', titleScreen.attr('x') + restricteddx * -titleScreenMultiplier);
-		});
+	// 		scrollXOffset += restricteddx;
+	// 		critterSelectables.forEach(function (cs) {
+	// 			var tmp = cs.getX() - restricteddx;
+	// 			cs.getPortrait()[0].attr('x', tmp - cs.getWidth() / 2);
+	// 			cs.getPortrait()[1].attr('cx', tmp);
+	// 			cs.setX(tmp);
+	// 		});
+
+	// 		if (firstCritterSelectable.getPortrait()[0].attr('x') + 100 > 0) {
+	// 			rightArrow.show();
+	// 		} else if (lastCritterSelectable.getPortrait()[0].attr('x') < selectableAreaWidth) {
+	// 			leftArrow.show();
+	// 		} else {
+	// 			arrows.show();
+	// 		}
+
+	// 		selectKnob.attr('x', selectKnob.attr('x') + restricteddx * knobMultiplier);
+	// 		scrollKnob.attr('x', scrollKnob.attr('x') + restricteddx * knobMultiplier);
+	// 		titleScreen.attr('x', titleScreen.attr('x') + restricteddx * -titleScreenMultiplier);
+	// 	});
 });
 
 var nameRect = critterSelectPaper.rect(365, 210, 90, 36).attr('fill', 'yellow');
@@ -880,7 +939,7 @@ function selectInit(str) {
 							comingSoonText.node.setAttribute("class", "donthighlight");
 							document.body.style.cursor = 'pointer';
 							cs.getFullImage().show();
-							critterSelectHelpText.hide();
+
 							nameRect.attr({ 'x': nameText.getBBox().x - 10, 'y': nameText.getBBox().y - 3, 'width': nameText.getBBox().width + 20, 'height': nameText.getBBox().height + 6 });
 						},
 						function () {
@@ -911,7 +970,7 @@ function selectInit(str) {
 								a.getRect().show();
 							});
 							cs.getFullImage().show();
-							critterSelectHelpText.hide();
+							// critterSelectHelpText.hide();
 							setColorBasedOnType(abil1Rect, cs.getAbilTypes()[0]);
 							abil1Rect.setInfo(cs.getAbilInfo()[0]);
 							setColorBasedOnType(abil2Rect, cs.getAbilTypes()[1]);
@@ -955,7 +1014,7 @@ function selectInit(str) {
 						is.getHoverBox().show();
 						is.getHoverBox().toFront();
 						is.getHoverImage().toFront();
-						critterSelectHelpText.hide();
+						// critterSelectHelpText.hide();
 						is.getItemRectBackground().show();
 						document.body.style.cursor = 'pointer';
 						itemRect.setInfo(is.getInfo());
@@ -1004,20 +1063,20 @@ critterSelectables.forEach(function (fs) {
 					selectedCritters.push(fs);
 					var cx = fs.getPortrait()[1].attr('cx');
 					var cy = fs.getPortrait()[1].attr('cy');
-					var oldKnobX = selectKnob.attr('x');
-					var oldKnobW = selectKnob.attr('width');
-					var newKnobW = WIDTH / ((critterSelectables.length - crittersSelected.length) / (critterSelectables.length / 2));
-					var oldpct = oldKnobX / (WIDTH - oldKnobW);
-					fs.setPct(oldpct);
-					knobMultiplier = WIDTH / ((critterSelectables.length - crittersSelected.length) * 115);
-					titleScreenMultiplier = 72 / (WIDTH - newKnobW) * knobMultiplier;
-					var newScrollKnobX = scrollKnob.attr('x') - (newKnobW - oldKnobW) * oldpct;
-					var newSelectKnobX = selectKnob.attr('x') - (newKnobW - oldKnobW) * oldpct;
-					scrollXOffset += 57 - 115 * oldpct;
-					scrollKnob.attr({ 'x': newScrollKnobX, 'width': newKnobW });
-					var selectKnobBlock = critterSelectPaper.rect(0, selectKnob.attr('y'), WIDTH, selectKnob.attr('height')).attr({ 'stroke-opacity': 0, 'fill-opacity': 0, 'fill': 'yellow' });
-					scrollKnob.hide();
-					selectKnob.animate({ 'x': newSelectKnobX, 'width': newKnobW }, 100);
+					// var oldKnobX = selectKnob.attr('x');
+					// var oldKnobW = selectKnob.attr('width');
+					// var newKnobW = WIDTH / ((critterSelectables.length - crittersSelected.length) / visibleSelectableCapacity);
+					// var oldpct = oldKnobX / (WIDTH - oldKnobW);
+					// fs.setPct(oldpct);
+					// knobMultiplier = WIDTH / ((critterSelectables.length - crittersSelected.length) * critterSelectableSizeWithMargin);
+					// titleScreenMultiplier = 72 / (WIDTH - newKnobW) * knobMultiplier;
+					// var newScrollKnobX = scrollKnob.attr('x') - (newKnobW - oldKnobW) * oldpct;
+					// var newSelectKnobX = selectKnob.attr('x') - (newKnobW - oldKnobW) * oldpct;
+					// scrollXOffset += 57 - critterSelectableSizeWithMargin * oldpct;
+					// scrollKnob.attr({ 'x': newScrollKnobX, 'width': newKnobW });
+					// var selectKnobBlock = critterSelectPaper.rect(0, selectKnob.attr('y'), WIDTH, selectKnob.attr('height')).attr({ 'stroke-opacity': 0, 'fill-opacity': 0, 'fill': 'yellow' });
+					// scrollKnob.hide();
+					// selectKnob.animate({ 'x': newSelectKnobX, 'width': newKnobW }, 100);
 					fs.getPortrait()[0].animate({ transform: 's0' }, 100);
 					fs.getPortrait()[1].animate({ transform: 's0' }, 100, function () {
 						fs.getPortrait().hide();
@@ -1026,19 +1085,19 @@ critterSelectables.forEach(function (fs) {
 					fs.getMiniCritterSelectable().show();
 
 					var onleft = true;
-					for (var i = 0; i < critterSelectables.length; i++) {
-						if (critterSelectables[i] == fs) {
-							onleft = false;
-						} else if (onleft) {
-							critterSelectables[i].setX(critterSelectables[i].getX() + 115 * oldpct);
-							critterSelectables[i].getPortrait()[0].animate({ x: critterSelectables[i].getX() - critterSelectables[i].getWidth() / 2 }, 200, ">");
-							critterSelectables[i].getPortrait()[1].animate({ cx: critterSelectables[i].getX() }, 200, ">");
-						} else {
-							critterSelectables[i].setX(critterSelectables[i].getX() - 115 * (1 - oldpct));
-							critterSelectables[i].getPortrait()[0].animate({ x: critterSelectables[i].getX() - critterSelectables[i].getWidth() / 2 }, 200, ">");
-							critterSelectables[i].getPortrait()[1].animate({ cx: critterSelectables[i].getX() }, 200, ">", function () { selectKnobBlock.remove(); scrollKnob.show() });
-						}
-					}
+					// for (var i = 0; i < critterSelectables.length; i++) {
+					// 	if (critterSelectables[i] == fs) {
+					// 		onleft = false;
+					// 	} else if (onleft) {
+					// 		critterSelectables[i].setX(critterSelectables[i].getX() + critterSelectableSizeWithMargin * 0.5);
+					// 		critterSelectables[i].getPortrait()[0].animate({ x: critterSelectables[i].getX() - critterSelectables[i].getWidth() / 2 }, 200, ">");
+					// 		critterSelectables[i].getPortrait()[1].animate({ cx: critterSelectables[i].getX() }, 200, ">");
+					// 	} else {
+					// 		critterSelectables[i].setX(critterSelectables[i].getX() - critterSelectableSizeWithMargin * (0.5));
+					// 		critterSelectables[i].getPortrait()[0].animate({ x: critterSelectables[i].getX() - critterSelectables[i].getWidth() / 2 }, 200, ">");
+					// 		critterSelectables[i].getPortrait()[1].animate({ cx: critterSelectables[i].getX() }, 200, ">", function () { selectKnobBlock.remove(); scrollKnob.show() });
+					// 	}
+					// }
 				}
 				if (crittersSelected.length == 4 && itemsSelected.length == 3 && !searching) {
 					searchButton.enable();
@@ -1073,14 +1132,20 @@ function searchCancel() {
 }
 
 function CritterSelectable(imageName, pos, name, fullImage, backgroundImage) {
-	this.x = selectableAreaWidth / 2 - (totalCritters / 2) * 115 + 115 * pos + 55;
+	var baseFormY = 85;      // Your original Y baseline
+	var staggerOffset = 40;  // How much higher the odd items sit
+
+	this.x = (pos * critterSelectableSizeWithMargin) + critterSelectableSizeWithMargin / 2;
+
+	// If pos % 2 is 1 (odd), subtract the offset to move it higher on the screen
+	this.y = baseFormY - ((pos % 2) * staggerOffset);
+
 	this.setX = function (x) { this.x = x };
 	this.getX = function () { return this.x };
-	this.y = 70;
-	this.width = 100;
+	this.width = critterSelectableSize;
 	this.getWidth = function () { return this.width };
-	this.image = critterScrollPaper.image(imageName, this.x - 50, this.y - 50, 100, 100);
-	this.circle = critterScrollPaper.circle(this.x, this.y, 50).attr("fill", "#fff").attr('fill-opacity', '0').attr('stroke-width', '3').attr('stroke', '#704000');
+	this.image = critterScrollPaper.image(imageName, this.x - critterSelectableSize / 2, this.y - critterSelectableSize / 2, critterSelectableSize, critterSelectableSize);
+	this.circle = critterScrollPaper.circle(this.x, this.y, critterSelectableSize / 2).attr("fill", "#fff").attr('fill-opacity', '0').attr('stroke-width', '3').attr('stroke', '#704000');
 	this.portrait = critterScrollPaper.set(this.image, this.circle);
 	this.fullImage = fullImage;
 	this.getFullImage = function () { return this.fullImage; };
@@ -1124,18 +1189,18 @@ function CritterSelectable(imageName, pos, name, fullImage, backgroundImage) {
 }
 
 function ItemSelectable(imageName, pos, name, hoverImage, hoverBox, pressedImage, backgroundImage) {
-
+	this.size = 90;
 	this.x = WIDTH / 2 + 10 - 110 * 3 + 110 * pos;
 	this.getX = function () { return this.x }
 	this.setX = function (x) { this.x = x }
-	this.y = 570;
-	this.image = critterSelectPaper.image(imageName, this.x, this.y, 100, 100);
+	this.y = 580;
+	this.image = critterSelectPaper.image(imageName, this.x, this.y, this.size, this.size);
 	//	var itemRectBackground = critterSelectPaper.image(imageName, WIDTH/2 - HEIGHT/2-150, -150,  975, 975);
 	var itemRectBackground = backgroundImage.hide();
 	itemRectBackground.attr({ "clip-rect": itemRectX + " " + itemRectY + " " + itemRectWidth + " " + itemRectHeight, 'opacity': 0.4 }).hide();
 	this.getItemRectBackground = function () { return itemRectBackground };
 	this.pressedImage = pressedImage;
-	this.pressedImage.attr({ x: this.x, y: this.y, width: 100, height: 100 });
+	this.pressedImage.attr({ x: this.x, y: this.y, width: this.size, height: this.size });
 	this.pic = critterSelectPaper.set(this.image, this.pressedImage);
 	this.name = name;
 	this.getName = function () { return this.name };
@@ -1187,8 +1252,10 @@ var SIDE;
 var sideCritters;
 
 var calculating = false;
-var positionHelpText = gridPaper.text(WIDTH / 2, HEIGHT / 2 + 20, "Drag and drop your Fighter Tokens to set their initial position").attr({ "font-size": 20, "font-family": tipFont });
-positionHelpText.node.setAttribute("class", "donthighlight");
+// var positionHelpText = gridPaper.text(WIDTH / 2, HEIGHT / 2 + 20, "Drag and drop your Fighter Tokens to set their initial position").attr({ "font-size": 20, "font-family": tipFont });
+
+var positionHelpText = createAutoSizingTextBox(gridPaper, 200, HEIGHT / 2 + 20, "Drag and drop your critter tokens\nto set your starting formation.", "12px", "Arial");
+// positionHelpText.node.setAttribute("class", "donthighlight");
 var abilityPaper;
 var abilities = [];
 var icons = [];
@@ -3843,7 +3910,6 @@ function slide(newX, icon) {
 
 
 
-
 function Button(rect, text, paper, onclick) {
 	this.rect = rect;
 	this.text = text;
@@ -5044,3 +5110,5 @@ function identifyCritter(name, side) {
 		}
 	}
 }
+
+

@@ -31,6 +31,14 @@
   "customizations": {
     "vscode": {
       "settings": {
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "/usr/bin/zsh",
+            "args": [
+              "-l"
+            ]
+          }
+        },
         "terraform.languageServer.enable": true,
         "terraform.validation.enableLocalCodeCheck": true,
         "editor.defaultFormatter": "hashicorp.terraform",

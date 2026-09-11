@@ -48,12 +48,13 @@ body {
 }
 
 #block {
- 		position:absolute;
- 		left:100px;
- 		top:100px;
- 		z-index:2;
- 		overflow-y: hidden;
-		overflow-x: hidden;
+        position: absolute;
+        left: 100px;
+        top: 100px;
+        z-index: 2;
+        width: 800px;  /* Set this to your desired visual window width */
+        height: 220px; /* Tall enough to fit both rows of your new trapezoid layout */
+        overflow: hidden; /* CRITICAL: This acts as the physical window frame slicing off assets */
 }
 
 form{

@@ -1,7 +1,15 @@
 import React, { useRef, useState, useEffect } from 'react';
 import ColorGrid from './ColorGrid';
 import Markdown from 'react-markdown';
-import { GithubLogo, LinkedinLogo, Envelope, Cloud, CaretDown, CaretUp, Browser, Gear, Books } from "@phosphor-icons/react";
+import { GithubLogo } from "@phosphor-icons/react/dist/icons/GithubLogo";
+import { LinkedinLogo } from "@phosphor-icons/react/dist/icons/LinkedinLogo";
+import { Envelope } from "@phosphor-icons/react/dist/icons/Envelope";
+import { Cloud } from "@phosphor-icons/react/dist/icons/Cloud";
+import { CaretDown } from "@phosphor-icons/react/dist/icons/CaretDown";
+import { CaretUp } from "@phosphor-icons/react/dist/icons/CaretUp";
+import { Browser } from "@phosphor-icons/react/dist/icons/Browser";
+import { Gear } from "@phosphor-icons/react/dist/icons/Gear";
+import { Books } from "@phosphor-icons/react/dist/icons/Books"
 
 const App = () => {
     const homeRef = useRef(null);
@@ -124,7 +132,7 @@ const App = () => {
     );
 };
 
-function Popup({ height }) {
+function Popup() {
     const [showPopup, setShowPopup] = useState(true);
 
     const closePopup = () => {
@@ -186,7 +194,7 @@ function Popup({ height }) {
     );
 }
 
-const NavigationMenu = ({ currentPage, scrollToHome, scrollToProjects, scrollToContact, isMobile }) => {
+const NavigationMenu = ({ currentPage, scrollToHome, scrollToProjects, scrollToContact }) => {
     const getButtonStyle = (page) => ({
         border: 'none',
         background: 'none',
@@ -610,7 +618,8 @@ const Projects = ({ isMobile }) => {
                 "Deployed a high-availability **Java Corretto 21** stack on Elastic Beanstalk, utilizing **ALB Sticky Sessions** to maintain persistent WebSocket state for active games.",
                 "Implemented **Infrastructure-as-Code** via modular Terraform, managing environment state with S3 backends and enforcing granular IAM security boundaries.",
                 "Optimized **Real-Time Inference** by integrating the ONNX Runtime directly into the Java server, enabling the RL model to execute moves in under 1ms.",
-                "Developed a **secure CI/CD Pipeline** using **GitHub Actions** and **OpenID Connect (OIDC)**, automating **Maven builds** and **Terraform deployments** to AWS without persistent credentials, ensuring **100% reproducible environments**."
+                "Developed a **secure CI/CD Pipeline** using **GitHub Actions** and **OpenID Connect (OIDC)**, automating **Maven builds** and **Terraform deployments** to AWS without persistent credentials, ensuring **100% reproducible environments**.",
+                "Architected a local **Jenkins CI pipeline using Docker-out-of-Docker (DooD)**, automating containerized builds on every `dev` branch push to ensure local environment health before cloud staging."
             ]
         },
         {

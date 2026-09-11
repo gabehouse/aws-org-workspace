@@ -16,7 +16,7 @@ applications:
       artifacts:
         baseDirectory: dist
         files:
-          - '**/*'
+          - "**/*"
     backend:
       phases:
         build:
