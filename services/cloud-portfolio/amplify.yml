@@ -6,22 +6,23 @@ applications:
         preBuild:
           commands:
             - corepack enable
-            # Install monorepo scope using the root context
-            - pnpm install --filter cloud-portfolio... --no-frozen-lockfile
+            - pnpm install --filter cloud-portfolio --no-frozen-lockfile
         build:
           commands:
-            # Set the memory allocation buffer
+            # Memory allocation fix for the Vite/Next build engine
             - export NODE_OPTIONS="--max-old-space-size=6144"
-
-            # 1. First, synthesize and deploy the backend resources
-            - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID --debug
-
-            # 2. Now run the application build using the newly minted backend configs
             - pnpm run build
       artifacts:
-        baseDirectory: dist
+        baseDirectory: dist # Change to '.next' if you are using Next.js instead of Vite
         files:
           - "**/*"
-      cache:
-        paths:
-          - node_modules/**/*
+    backend:
+      phases:
+        build:
+          commands:
+            - corepack enable
+            # Fetch dependencies from the monorepo context with reduced concurrency overhead
+            - pnpm install --filter cloud-portfolio --no-frozen-lockfile --child-concurrency=1
+            # Memory allocation buffer for the AWS CDK backend synthesis engine
+            - export NODE_OPTIONS="--max-old-space-size=6144"
+            - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID

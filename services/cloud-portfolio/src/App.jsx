@@ -1,13 +1,11 @@
 import React, { useRef, useState, useEffect } from 'react';
 import ColorGrid from './ColorGrid';
 import Markdown from 'react-markdown';
+import './ProjectCards.css';
 import { GithubLogo } from "@phosphor-icons/react/dist/icons/GithubLogo";
 import { LinkedinLogo } from "@phosphor-icons/react/dist/icons/LinkedinLogo";
 import { Envelope } from "@phosphor-icons/react/dist/icons/Envelope";
-import { Cloud } from "@phosphor-icons/react/dist/icons/Cloud";
-import { CaretDown } from "@phosphor-icons/react/dist/icons/CaretDown";
-import { CaretUp } from "@phosphor-icons/react/dist/icons/CaretUp";
-import { Browser } from "@phosphor-icons/react/dist/icons/Browser";
+import { X } from "@phosphor-icons/react/dist/icons/X";
 import { Gear } from "@phosphor-icons/react/dist/icons/Gear";
 import { Books } from "@phosphor-icons/react/dist/icons/Books"
 
@@ -247,8 +245,8 @@ const ProfileHeader = () => {
     );
 };
 
-const ProjectCard = ({ project }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
+const ProjectCard = ({ project, index = 0 }) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [zoomIndex, setZoomIndex] = useState(null);
 
     const navigateGallery = (direction, e) => {
@@ -262,22 +260,21 @@ const ProjectCard = ({ project }) => {
         }
     };
 
-    // Updated Helper: Fixes thumbnail readability
-    const renderMedia = (item, isLightbox = false) => {
+    const renderMedia = (item, isLightbox = false, className = '') => {
         const src = item.video || item.image;
         if (!src) return null;
 
         const isVideo = src.endsWith('.webm') || src.endsWith('.mp4');
-
-        // CHANGE: Use 'contain' for thumbnails to show the full diagram/text
-        const mediaStyle = isLightbox
-            ? { maxHeight: '70vh', borderRadius: '4px', cursor: 'default' }
-            : {
-                width: '100%',
-                height: 'auto',
-                objectFit: 'contain', // Changed from 'cover'
-                backgroundColor: '#f8f9fa' // Matches the container to hide "bars"
-            };
+        const mediaStyle = className
+            ? undefined
+            : isLightbox
+                ? { maxHeight: '70vh', borderRadius: '4px', cursor: 'default' }
+                : {
+                    width: '100%',
+                    height: 'auto',
+                    objectFit: 'contain',
+                    backgroundColor: '#f8f4ec'
+                };
 
         if (isVideo) {
             return (
@@ -288,6 +285,7 @@ const ProjectCard = ({ project }) => {
                     playsInline
                     muted={!isLightbox}
                     controls={isLightbox}
+                    className={className || undefined}
                     style={mediaStyle}
                     onClick={(e) => isLightbox && e.stopPropagation()}
                 />
@@ -298,8 +296,9 @@ const ProjectCard = ({ project }) => {
             <img
                 src={src}
                 alt={item.label}
+                className={className || undefined}
                 style={mediaStyle}
-                loading="lazy" // Performance optimization for gallery
+                loading="lazy"
                 onClick={(e) => isLightbox && e.stopPropagation()}
             />
         );
@@ -307,255 +306,261 @@ const ProjectCard = ({ project }) => {
 
     useEffect(() => {
         const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                if (zoomIndex !== null) {
+                    setZoomIndex(null);
+                    return;
+                }
+                if (isModalOpen) setIsModalOpen(false);
+                return;
+            }
             if (zoomIndex === null) return;
             if (e.key === 'ArrowRight') navigateGallery('next');
             if (e.key === 'ArrowLeft') navigateGallery('prev');
-            if (e.key === 'Escape') setZoomIndex(null);
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [zoomIndex]);
+    }, [zoomIndex, isModalOpen]);
+
+    useEffect(() => {
+        if (!isModalOpen) return;
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [isModalOpen]);
+
+    const hasLiveEndpoint = project.link && !project.link.includes('github.com');
+    const preview = project.insights?.[0];
+    const cardNumber = String(index + 1).padStart(2, '0');
+    const openModal = () => setIsModalOpen(true);
+    const closeModal = () => {
+        setZoomIndex(null);
+        setIsModalOpen(false);
+    };
+
+    const details = (
+        <div className="project-card__details">
+            {project.featuredProduct && (
+                <div className="project-card__featured">
+                    <h4>Featured: {project.featuredProduct.title}</h4>
+                    <p>{project.featuredProduct.description}</p>
+                    <div className="project-card__featured-tech">
+                        {project.featuredProduct.tech.map((t, i) => (
+                            <span key={i}>{t}</span>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            <ul className="project-card__highlights">
+                {project.cloudHighlights.map((highlight, i) => (
+                    <li key={i}>
+                        <Markdown>{highlight}</Markdown>
+                    </li>
+                ))}
+            </ul>
+
+            {project.insights && (
+                <div>
+                    <h3 className="project-card__gallery-label">
+                        System Architecture & Performance
+                    </h3>
+                    <div className="project-card__gallery">
+                        {project.insights.map((item, i) => (
+                            <div key={i} className="project-card__gallery-item">
+                                <div
+                                    className="project-card__gallery-thumb"
+                                    onClick={() => setZoomIndex(i)}
+                                >
+                                    {renderMedia(item, false)}
+                                </div>
+                                <span>{item.label}</span>
+                                <p>{item.description}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            <div className="project-card__links">
+                {project.infraRepo ? (
+                    <>
+                        <a
+                            href={project.infraRepo}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="project-card__source is-infra"
+                        >
+                            <Gear size={16} weight="bold" />
+                            Infra Source
+                        </a>
+                        <a
+                            href={project.repo || project.serviceRepo}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="project-card__source"
+                        >
+                            <GithubLogo size={16} weight="bold" />
+                            Service Source
+                        </a>
+                    </>
+                ) : (
+                    (project.repo || (project.link && project.link.includes('github.com'))) && (
+                        <a
+                            href={project.repo || project.link}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="project-card__source"
+                        >
+                            <GithubLogo size={16} weight="bold" />
+                            View Source
+                        </a>
+                    )
+                )}
+            </div>
+        </div>
+    );
 
     return (
-        <div
-            style={{
-                marginBottom: '25px',
-                padding: '24px',
-                backgroundColor: '#fcfaf2',
-                borderRadius: '8px',
-                boxShadow: isExpanded ? '0 10px 30px rgba(0,0,0,0.1)' : '0 2px 8px rgba(0,0,0,0.05)',
-                transition: 'all 0.3s ease',
-                border: '1px solid #e0d0b0', // Restored beige border
-                width: '100%',
-                boxSizing: 'border-box'
-            }}
-        >
-            {/* LIGHTBOX */}
+        <>
+            <article className={`project-card${isModalOpen ? ' is-open' : ''}`}>
+                {preview && (
+                    <div className="project-card__media">
+                        {renderMedia(preview, false, 'project-card__media-asset')}
+                        <span className="project-card__index">{cardNumber}</span>
+                    </div>
+                )}
+
+                <div className="project-card__body">
+                    <div className="project-card__header">
+                        <div className="project-card__heading">
+                            <h2 className="project-card__title">
+                                {!preview && <span className="project-card__index-inline">{cardNumber}</span>}
+                                {project.title}
+                            </h2>
+                            <div className="project-card__actions">
+                                {hasLiveEndpoint && (
+                                    <a
+                                        href={project.link}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="project-card__chip project-card__chip--live"
+                                    >
+                                        Live Demo ↗
+                                    </a>
+                                )}
+                                <button
+                                    type="button"
+                                    className="project-card__chip project-card__chip--details"
+                                    onClick={openModal}
+                                    aria-haspopup="dialog"
+                                    aria-expanded={isModalOpen}
+                                    aria-label="Details"
+                                >
+                                    ℹ️ Details
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="project-card__desc">
+                        <Markdown>{project.description}</Markdown>
+                    </div>
+
+                    <div className="project-card__tags">
+                        {project.technologies.map((tech, i) => (
+                            <span key={i} className="project-card__tag">{tech}</span>
+                        ))}
+                    </div>
+                </div>
+            </article>
+
+            {isModalOpen && (
+                <div className="project-modal-overlay" onClick={closeModal}>
+                    <div
+                        className="project-modal"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby={`project-modal-title-${index}`}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            type="button"
+                            className="project-modal__close"
+                            onClick={closeModal}
+                            aria-label="Close project details"
+                        >
+                            <X size={18} weight="bold" />
+                        </button>
+
+                        <div className="project-modal__header">
+                            <p className="project-modal__index">{cardNumber}</p>
+                            <h2 id={`project-modal-title-${index}`} className="project-modal__title">
+                                {project.title}
+                            </h2>
+                            {hasLiveEndpoint && (
+                                <a
+                                    href={project.link}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="project-card__chip project-card__chip--live"
+                                >
+                                    Live Demo ↗
+                                </a>
+                            )}
+                        </div>
+
+                        <div className="project-modal__desc">
+                            <Markdown>{project.description}</Markdown>
+                        </div>
+
+                        <div className="project-card__tags">
+                            {project.technologies.map((tech, i) => (
+                                <span key={i} className="project-card__tag">{tech}</span>
+                            ))}
+                        </div>
+
+                        {details}
+                    </div>
+                </div>
+            )}
+
             {zoomIndex !== null && project.insights && (
                 <div
+                    className="project-lightbox"
                     onClick={() => setZoomIndex(null)}
-                    style={{
-                        position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-                        backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 1000,
-                        display: 'flex', justifyContent: 'center', alignItems: 'center',
-                        cursor: 'zoom-out'
-                    }}
                 >
                     <button
+                        type="button"
+                        className="project-lightbox__nav project-lightbox__nav--prev"
                         onClick={(e) => navigateGallery('prev', e)}
-                        style={{ position: 'absolute', left: '30px', background: 'none', border: 'none', color: '#fff', fontSize: '3rem', cursor: 'pointer' }}
                     >‹</button>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '85%' }}>
+                    <div className="project-lightbox__content">
                         {renderMedia(project.insights[zoomIndex], true)}
-                        <div style={{ color: '#fff', marginTop: '20px', textAlign: 'center' }}>
-                            <h3 style={{ margin: '0' }}>{project.insights[zoomIndex].label}</h3>
-                            <p style={{ opacity: 0.8 }}>{project.insights[zoomIndex].description}</p>
-                            <div style={{ fontSize: '0.8rem', opacity: 0.5, marginTop: '10px' }}>
+                        <div className="project-lightbox__caption">
+                            <h3>{project.insights[zoomIndex].label}</h3>
+                            <p>{project.insights[zoomIndex].description}</p>
+                            <div className="project-lightbox__count">
                                 {zoomIndex + 1} / {project.insights.length}
                             </div>
                         </div>
                     </div>
 
                     <button
+                        type="button"
+                        className="project-lightbox__nav project-lightbox__nav--next"
                         onClick={(e) => navigateGallery('next', e)}
-                        style={{ position: 'absolute', right: '30px', background: 'none', border: 'none', color: '#fff', fontSize: '3rem', cursor: 'pointer' }}
                     >›</button>
                 </div>
             )}
-
-            {/* HEADER */}
-            <div
-                onClick={() => setIsExpanded(!isExpanded)}
-                style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                    padding: '4px 0'
-                }}
-            >
-                <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#333' }}>{project.title}</h2>
-
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '8px 16px',
-                    backgroundColor: isExpanded ? '#e0d0b0' : 'transparent',
-                    border: '1.5px solid #007bff',
-                    borderRadius: '6px',
-                    color: isExpanded ? '#333' : '#007bff',
-                    transition: 'all 0.2s ease',
-                }}>
-                    <Cloud size={20} weight={isExpanded ? "fill" : "light"} />
-                    <span style={{ fontSize: '0.9rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                        {isExpanded ? 'Hide Architecture' : 'View Cloud Infra'}
-                    </span>
-                    {isExpanded ? <CaretUp size={16} /> : <CaretDown size={16} />}
-                </div>
-            </div>
-
-            <div style={{ color: '#555', margin: '15px 0', lineHeight: '1.5' }}>
-                <Markdown>{project.description}</Markdown>
-            </div>
-
-            {/* TECH STACK */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: isExpanded ? '20px' : '0' }}>
-                {project.technologies.map((tech, i) => (
-                    <span key={i} style={{ fontSize: '0.8rem', padding: '4px 10px', backgroundColor: '#f0f0f0', borderRadius: '12px', color: '#666' }}>
-                        {tech}
-                    </span>
-                ))}
-            </div>
-
-            {isExpanded && (
-                <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #eee' }}>
-
-                    {/* RESTORED BEIGE FEATURED PRODUCT SECTION */}
-                    {project.featuredProduct && (
-                        <div style={{
-                            backgroundColor: '#faf7f2', // Classic beige background
-                            border: '1px solid #e0d0b0',
-                            borderRadius: '6px',
-                            padding: '20px',
-                            marginBottom: '25px'
-                        }}>
-                            <h4 style={{ margin: '0 0 10px 0', color: '#8b5e3c', fontSize: '1.1rem' }}>
-                                🎹 Featured: {project.featuredProduct.title}
-                            </h4>
-                            <p style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: '#555', lineHeight: '1.5' }}>
-                                {project.featuredProduct.description}
-                            </p>
-                            <div style={{ display: 'flex', gap: '10px' }}>
-                                {project.featuredProduct.tech.map((t, i) => (
-                                    <span key={i} style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#8b5e3c' }}>{t}</span>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* CLOUD HIGHLIGHTS */}
-                    <div style={{ marginBottom: '25px' }}>
-                        <ul style={{ paddingLeft: '1.2rem', margin: 0 }}>
-                            {project.cloudHighlights.map((highlight, i) => (
-                                <li key={i} style={{ color: '#444', fontSize: '0.95rem', marginBottom: '8px' }}>
-                                    <Markdown>{highlight}</Markdown>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* GALLERY */}
-                    {project.insights && (
-                        <div style={{ marginBottom: '25px' }}>
-                            <h3 style={{
-                                fontSize: '0.85rem',
-                                color: '#8b5e3c',
-                                textTransform: 'uppercase',
-                                letterSpacing: '1px',
-                                marginBottom: '12px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                            }}>
-                                <span style={{ fontSize: '1.1rem' }}>🏗️</span>
-                                System Architecture & Performance Validation
-                            </h3>
-                            <div style={{ display: 'flex', gap: '15px', overflowX: 'auto', paddingBottom: '10px' }}>
-                                {project.insights.map((item, i) => (
-                                    <div key={i} style={{ flex: '0 0 280px' }}>
-                                        <div
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setZoomIndex(i);
-                                            }}
-                                            style={{
-                                                width: '100%',
-                                                maxHeight: '260px',
-                                                // height: '160px', // REMOVE THIS
-                                                backgroundColor: '#f8f9fa',
-                                                borderRadius: '6px',
-                                                overflow: 'hidden',
-                                                marginBottom: '8px',
-                                                cursor: 'zoom-in',
-                                                border: '1px solid #eee',
-                                                display: 'flex', // Ensures content aligns correctly
-                                                alignItems: 'center'
-                                            }}
-                                        >
-                                            {renderMedia(item, false)}
-                                        </div>
-                                        <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>{item.label}</span>
-                                        <p style={{ fontSize: '0.75rem', color: '#666', marginTop: '4px' }}>{item.description}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* LINKS SECTION */}
-                    <div style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '24px',
-                        marginTop: '20px',
-                        paddingTop: '15px',
-                        borderTop: '1px dashed #e0d0b0'
-                    }}>
-
-                        {/* 1. Live Endpoint (Production URL) */}
-                        {project.link && !project.link.includes('github.com') && (
-                            <a href={project.link} target="_blank" rel="noreferrer"
-                                style={{ ...linkStyle, color: '#007bff' }}>
-                                <Browser size={18} weight="bold" />
-                                Live Endpoint ↗
-                            </a>
-                        )}
-
-                        {/* 2. Split Source (Monorepo / IaC Logic) */}
-                        {project.infraRepo ? (
-                            <>
-                                <a href={project.infraRepo} target="_blank" rel="noreferrer"
-                                    style={{ ...linkStyle, color: '#8b5e3c' }}>
-                                    <Gear size={18} weight="bold" />
-                                    Infra Source (Terraform) ↗
-                                </a>
-                                <a href={project.repo || project.serviceRepo} target="_blank" rel="noreferrer"
-                                    style={{ ...linkStyle, color: '#333' }}>
-                                    <GithubLogo size={18} weight="bold" />
-                                    Service Source ↗
-                                </a>
-                            </>
-                        ) : (
-                            /* 3. Single Source (Standalone Repo Logic) */
-                            (project.repo || (project.link && project.link.includes('github.com'))) && (
-                                <a href={project.repo || project.link} target="_blank" rel="noreferrer"
-                                    style={{ ...linkStyle, color: '#333' }}>
-                                    <GithubLogo size={18} weight="bold" />
-                                    View Source ↗
-                                </a>
-                            )
-                        )}
-                    </div>
-                </div>
-            )}
-        </div>
+        </>
     );
 };
-const linkStyle = {
-    textDecoration: 'none',
-    fontWeight: '700',
-    fontSize: '0.85rem',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    letterSpacing: '0.3px',
-    textTransform: 'uppercase'
-};
 // 2. The updated Projects component
-const Projects = ({ isMobile }) => {
+const Projects = () => {
     const projects = [
         {
             title: "AWS Multi-Account Platform Template",
@@ -655,25 +660,25 @@ const Projects = ({ isMobile }) => {
             ]
         },
         {
-            title: "Grand River Tennis Lessons",
-            link: "https://master.dkskd07qtjixa.amplifyapp.com/",
-            repo: "https://github.com/gabehouse/aws-org-workspace/tree/master/services/tennis-site",
+            title: "Courts: Matchmaking Platform",
+            link: "https://master.dt5mmfwcef1et.amplifyapp.com//",
+            repo: "https://github.com/gabehouse/aws-org-workspace/tree/master/services/court-app",
             // Focus on "Event-Driven" and "Secure" in the summary
-            description: "A full-stack booking platform featuring an event-driven serverless backend and secure OIDC-based identity federation.",
-            technologies: ["React", "Amplify Gen 2", "TypeScript", "Lambda", "DynamoDB", "Cognito", "OIDC"],
+            description: "A real-time geospatial matchmaking platform enabling players to discover local courts, broadcast availability, and challenge opponents.",
+            technologies: ["React", "Amplify Gen 2", "TypeScript", "AppSync", "DynamoDB", "Cognito", "Leaflet/Maps"],
             insights: [
                 {
                     label: "Event-Driven Booking Pipeline",
                     image: "/assets/diagram-tennis-booking-architecture.svg",
-                    description: "Amplify Gen 2 backend where DynamoDB Streams trigger Lambda functions for automated SES alerts. This decouples the booking logic from the notification system, ensuring high availability during peak registration windows."
+                    description: "An event-driven serverless architecture using Amplify Gen 2 and AppSync WebSockets to sync live challenge requests and player coordinates across active map sessions."
                 }
             ],
             cloudHighlights: [
-                "Architected using **Amplify Gen 2**, utilizing a Git-based **CI/CD Pipeline** that automates full-stack deployments on every branch push.",
-                "Engineered **Social Identity Federation** via AWS Cognito and OIDC, managing secure user sessions without managing sensitive credential data.",
-                "Implemented **Infrastructure-from-Code (IfC)** using TypeScript to define scalable backend resources including AppSync (GraphQL) and DynamoDB.",
-                "Built a real-time notification engine using **DynamoDB Streams**, decoupling high-latency email/SMS tasks from the core booking transaction.",
-                "Configured **RBAC (Role-Based Access Control)** to strictly isolate administrative dashboard access from student booking views."
+                "Architected using **Amplify Gen 2** with TypeScript-defined backend infrastructure (AppSync GraphQL, DynamoDB, and Cognito) for type-safe cloud development.",
+                "Implemented real-time **Challenge and Messaging Workflows** using WebSockets to ensure instant updates when players accept or request matches.",
+                "Integrated **Geospatial Query Patterns** in DynamoDB to efficiently filter and render nearby players and courts dynamically on the map UI.",
+                "Configured secure **Social Identity Federation** via AWS Cognito and OIDC, streamlining user onboarding while preserving strict data isolation.",
+                "Automated continuous deployment via Git-based CI/CD pipelines, spinning up isolated full-stack preview environments on every branch push."
             ]
         },
         {
@@ -745,19 +750,21 @@ const Projects = ({ isMobile }) => {
     ];
 
     return (
-        <div style={{ padding: '80px 5%', maxWidth: '900px', margin: '0 auto' }}>
-            <h1 style={{
-                marginBottom: '60px',
-                color: 'inherit', // Uses color from your CSS :root
-                textAlign: isMobile ? 'left' : 'center' // Optional: Centers header on desktop
-            }}>Technical Projects</h1>
-            {projects.map((project, index) => (
-                <ProjectCard
-                    key={index}
-                    project={project}
-                    isMobile={isMobile} // <--- Pass it here
-                />
-            ))}
+        <div className="projects-section">
+            <p className="projects-section__eyebrow">Selected Work</p>
+            <h1 className="projects-section__title">Technical Projects</h1>
+            <p className="projects-section__lede">
+                Cloud-native systems spanning multi-account AWS platforms, real-time inference, and serverless product delivery.
+            </p>
+            <div className="projects-section__grid">
+                {projects.map((project, index) => (
+                    <ProjectCard
+                        key={index}
+                        project={project}
+                        index={index}
+                    />
+                ))}
+            </div>
         </div>
     );
 };
