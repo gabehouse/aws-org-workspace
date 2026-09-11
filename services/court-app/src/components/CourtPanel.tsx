@@ -19,6 +19,7 @@ import {
 } from '../lib/data'
 import { formatCeloLabel } from '../lib/celoDisplay'
 import { isMatchViewed, markMatchesViewed } from '../lib/seenState'
+import { useAuthGate } from '../lib/authGate'
 import { MatchRulesPopover, RulesButton } from './MatchRulesPopover'
 import { DirectionsButton } from './DirectionsButton'
 import { MatchRow } from './MatchRow'
@@ -63,6 +64,8 @@ export function CourtPanel({
   isAdmin = false,
   onCourtDeleted,
 }: CourtPanelProps) {
+  const { requireAuth } = useAuthGate()
+  const signedIn = Boolean(currentUserId)
   const [showDropForm, setShowDropForm] = useState(false)
   const [courtMatches, setCourtMatches] = useState<Match[] | null>(null)
   const courtMatchesRef = useRef(courtMatches)
@@ -149,6 +152,7 @@ export function CourtPanel({
   // Thumbnails count as seen when the panel closes or the user switches courts.
   useEffect(() => {
     return () => {
+      if (!currentUserId) return
       const matches = courtMatchesRef.current
       if (!matches?.length) return
       markMatchesViewed(
@@ -162,6 +166,7 @@ export function CourtPanel({
   const allHandles = { ...handles, ...matchHandles, ...ownerLabels }
 
   const dropGauntlet = async () => {
+    if (!requireAuth()) return
     setSubmitting(true)
     setFormError(null)
     try {
@@ -183,6 +188,7 @@ export function CourtPanel({
   }
 
   const sendChallenge = async (gauntlet: Gauntlet) => {
+    if (!requireAuth()) return
     const start = new Date(proposedStart)
     if (!isValidChallengeStartTime(start.toISOString())) {
       setFormError('Pick a time today (play-now times are OK)')
@@ -260,9 +266,13 @@ export function CourtPanel({
             key={m.id}
             match={m}
             handles={allHandles}
-            isNew={matchSeenVersion >= 0 && !isMatchViewed(currentUserId, m.id)}
+            isNew={
+              signedIn && matchSeenVersion >= 0 && !isMatchViewed(currentUserId, m.id)
+            }
             layout="court"
-            onOpenMatch={onOpenMatch}
+            onOpenMatch={(matchId) => {
+              if (!requireAuth(() => onOpenMatch(matchId))) return
+            }}
             onViewProfile={onViewProfile}
           />
         ))}
@@ -316,8 +326,10 @@ export function CourtPanel({
                   type="button"
                   className="btn btn--primary btn--small"
                   onClick={() => {
-                    setChallengingId(g.id)
-                    setFormError(null)
+                    requireAuth(() => {
+                      setChallengingId(g.id)
+                      setFormError(null)
+                    })
                   }}
                 >
                   Request match
@@ -378,12 +390,14 @@ export function CourtPanel({
           type="button"
           className="btn btn--primary"
           onClick={() => {
-            setShowDropForm(true)
-            setFormError(null)
+            requireAuth(() => {
+              setShowDropForm(true)
+              setFormError(null)
+            })
           }}
-          disabled={ownGauntlet}
+          disabled={signedIn && ownGauntlet}
         >
-          {ownGauntlet ? 'You posted a challenge here' : 'Post challenge'}
+          {signedIn && ownGauntlet ? 'You posted a challenge here' : 'Post challenge'}
         </button>
       ) : (
         <form

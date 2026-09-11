@@ -17,12 +17,15 @@ import { ProfileCard, ProfileMatchHistory } from './ProfileCard'
 import { ProfileIcon } from './MapIcons'
 
 interface ProfileDropdownProps {
-  /** null while the profile is bootstrapping on first sign-in */
+  /** null while guest or while the profile is bootstrapping on first sign-in */
   profile: PlayerProfile | null
   onProfileUpdated: (profile: PlayerProfile) => void
   onViewProfile: (userId: string) => void
   onOpenMatch: (matchId: string) => void
   signOut: () => void
+  /** Open Cognito sign-in / sign-up (guest account pane) */
+  onSignIn?: () => void
+  onCreateAccount?: () => void
   /** Compact icon button for the map toolbar */
   compact?: boolean
   menuZIndex?: number
@@ -45,6 +48,8 @@ export function ProfileDropdown({
   onViewProfile,
   onOpenMatch,
   signOut,
+  onSignIn,
+  onCreateAccount,
   compact = false,
   menuZIndex = 200,
   portalRoot,
@@ -194,6 +199,54 @@ export function ProfileDropdown({
 
   const availability = profile ? handleChangeAvailability(profile) : null
 
+  const darkModeToggle = (
+    <label className="gauntlet-form__checkbox profile-dropdown__toggle">
+      <input
+        type="checkbox"
+        checked={darkModeEnabled}
+        onChange={(e) => {
+          const enabled = e.target.checked
+          setDarkModeEnabled(enabled)
+          setDarkMode(enabled)
+        }}
+      />
+      Dark mode
+    </label>
+  )
+
+  const guestMenu = open && !profile && (
+    <div
+      ref={menuRef}
+      className={`profile-dropdown__menu${menuFillHeight ? ' profile-dropdown__menu--fill' : ''}`}
+      style={menuStyle}
+    >
+      <div className="profile-dropdown__account">
+        <p className="panel__meta">Browse the map freely. Sign in to challenge players, post, and place courts.</p>
+        {darkModeToggle}
+        <button
+          type="button"
+          className="btn btn--primary btn--small"
+          onClick={() => {
+            setMenuOpen(false)
+            onSignIn?.()
+          }}
+        >
+          Sign in
+        </button>
+        <button
+          type="button"
+          className="btn btn--ghost btn--small"
+          onClick={() => {
+            setMenuOpen(false)
+            onCreateAccount?.()
+          }}
+        >
+          Create account
+        </button>
+      </div>
+    </div>
+  )
+
   const menu = open && profile && (
     <div
       ref={menuRef}
@@ -307,18 +360,7 @@ export function ProfileDropdown({
           </label>
         )}
 
-        <label className="gauntlet-form__checkbox profile-dropdown__toggle">
-          <input
-            type="checkbox"
-            checked={darkModeEnabled}
-            onChange={(e) => {
-              const enabled = e.target.checked
-              setDarkModeEnabled(enabled)
-              setDarkMode(enabled)
-            }}
-          />
-          Dark mode
-        </label>
+        {darkModeToggle}
 
         <button type="button" className="btn btn--ghost btn--small" onClick={signOut}>
           Sign out
@@ -348,24 +390,24 @@ export function ProfileDropdown({
             ? `map-util-btn map-util-btn--profile${open ? ' map-util-btn--toggled' : ''}`
             : `btn btn--ghost${open ? ' btn--toggled' : ''}`
         }
-        disabled={!profile}
         onClick={() => setMenuOpen(!open)}
-        aria-label={profile ? `Profile: ${profile.handle}` : 'Profile'}
-        title={profile?.handle}
+        aria-label={profile ? `Profile: ${profile.handle}` : 'Account'}
+        title={profile?.handle ?? 'Account'}
       >
         {compact ? (
           <>
             <ProfileIcon />
             <span className="map-util-btn__profile-handle">
-              {profile?.handle?.[0]?.toUpperCase() ?? '…'}
+              {profile?.handle?.[0]?.toUpperCase() ?? '?'}
             </span>
           </>
         ) : (
-          <>{profile ? `${profile.handle} ▾` : '…'}</>
+          <>{profile ? `${profile.handle} ▾` : 'Account ▾'}</>
         )}
       </button>
 
-      {menu && createPortal(menu, portalRoot?.current ?? document.body)}
+      {(menu || guestMenu) &&
+        createPortal(menu || guestMenu, portalRoot?.current ?? document.body)}
     </div>
   )
 }

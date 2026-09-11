@@ -7,6 +7,7 @@ import Map, {
 } from 'react-map-gl/maplibre'
 import type { MapLayerMouseEvent } from 'maplibre-gl'
 import { useAuthenticator } from '@aws-amplify/ui-react'
+import { useAuthGate } from '../lib/authGate'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import {
   ensureMyProfile,
@@ -69,7 +70,13 @@ function courtMarkerScaleForZoom(zoom: number): number {
 }
 
 export function MapScreen() {
-  const { user, signOut } = useAuthenticator((ctx) => [ctx.user])
+  const { user, signOut, authStatus } = useAuthenticator((ctx) => [
+    ctx.user,
+    ctx.authStatus,
+  ])
+  const { requireAuth, openAuth } = useAuthGate()
+  const userId = user?.userId
+  const signedIn = authStatus === 'authenticated' && Boolean(userId)
   const mapRef = useRef<MapRef>(null)
   const mapScreenRef = useRef<HTMLDivElement>(null)
   const requestsButtonRef = useRef<HTMLButtonElement>(null)
@@ -89,13 +96,9 @@ export function MapScreen() {
   const [draftCourtPos, setDraftCourtPos] = useState<{ lat: number; lng: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [seenVersion, setSeenVersion] = useState(0)
-  const [roboCaddyEnabled, setRoboCaddyEnabledState] = useState(() =>
-    isRoboCaddyEnabled(user.userId),
-  )
+  const [roboCaddyEnabled, setRoboCaddyEnabledState] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [adminUiEnabled, setAdminUiEnabledState] = useState(() =>
-    isAdminUiEnabled(user.userId),
-  )
+  const [adminUiEnabled, setAdminUiEnabledState] = useState(false)
   const [requestSentToast, setRequestSentToast] = useState(false)
   const [mapReady, setMapReady] = useState(false)
   const [mapZoom, setMapZoom] = useState(INITIAL_VIEW.zoom)
@@ -124,7 +127,7 @@ export function MapScreen() {
   )
   const { focus, blur, zIndex, stack } = usePanelStack()
   const { challenges, ongoingMatches, disputes, refresh: refreshRequests } =
-    useRequestsLiveUpdates(user.userId)
+    useRequestsLiveUpdates(userId ?? '', { enabled: signedIn })
 
   const gauntletsByCourt = useMemo(() => {
     const grouped: Record<string, Gauntlet[]> = {}
@@ -171,12 +174,22 @@ export function MapScreen() {
   }, [reloadGauntlets, reloadCourts])
 
   useEffect(() => {
+    if (!signedIn || !userId) {
+      setIsAdmin(false)
+      return
+    }
     void fetchIsAdmin().then(setIsAdmin)
-  }, [user.userId])
+  }, [signedIn, userId])
 
   useEffect(() => {
-    setAdminUiEnabledState(isAdminUiEnabled(user.userId))
-  }, [user.userId])
+    if (!userId) {
+      setAdminUiEnabledState(false)
+      setRoboCaddyEnabledState(true)
+      return
+    }
+    setAdminUiEnabledState(isAdminUiEnabled(userId))
+    setRoboCaddyEnabledState(isRoboCaddyEnabled(userId))
+  }, [userId])
 
   useEffect(() => {
     const unlock = () => primeRequestNotificationAudio()
@@ -186,7 +199,11 @@ export function MapScreen() {
 
   // First sign-in bootstrap: create a profile with a generated handle
   useEffect(() => {
-    void ensureMyProfile(user.userId)
+    if (!signedIn || !userId) {
+      setMyProfile(null)
+      return
+    }
+    void ensureMyProfile(userId)
       .then(async (profile) => {
         setMyProfile(profile)
         await reloadGauntlets()
@@ -194,29 +211,30 @@ export function MapScreen() {
       .catch((e: unknown) =>
         setError(e instanceof Error ? e.message : 'Failed to load your profile'),
       )
-    void syncPendingMatchRatings(user.userId).then(() =>
-      fetchProfileByUserId(user.userId).then((p) => {
+    void syncPendingMatchRatings(userId).then(() =>
+      fetchProfileByUserId(userId).then((p) => {
         if (p) {
           setMyProfile(p)
           void reloadGauntlets()
         }
       }),
     )
-  }, [user.userId, reloadGauntlets])
+  }, [signedIn, userId, reloadGauntlets])
 
   useEffect(() => {
     homeAreaFlownRef.current = false
-  }, [user.userId])
+  }, [userId])
 
   const requestsBadgeCount = useMemo(() => {
+    if (!userId) return 0
     void seenVersion
     return unviewedRequestsNotificationKeys(
       challenges,
       ongoingMatches,
       disputes,
-      user.userId,
+      userId,
     ).size
-  }, [challenges, ongoingMatches, disputes, user.userId, seenVersion])
+  }, [challenges, ongoingMatches, disputes, userId, seenVersion])
 
   const flyToPlace = useCallback((place: GeocodeResult) => {
     const map = mapRef.current
@@ -341,18 +359,20 @@ export function MapScreen() {
 
   const handleRoboCaddyPrefChange = useCallback(
     (enabled: boolean) => {
-      setRoboCaddyEnabled(user.userId, enabled)
+      if (!userId) return
+      setRoboCaddyEnabled(userId, enabled)
       setRoboCaddyEnabledState(enabled)
     },
-    [user.userId],
+    [userId],
   )
 
   const handleAdminUiPrefChange = useCallback(
     (enabled: boolean) => {
-      setAdminUiEnabled(user.userId, enabled)
+      if (!userId) return
+      setAdminUiEnabled(userId, enabled)
       setAdminUiEnabledState(enabled)
     },
-    [user.userId],
+    [userId],
   )
 
   const bumpMatchSeen = useCallback(() => setSeenVersion((v) => v + 1), [])
@@ -365,20 +385,32 @@ export function MapScreen() {
   const dismissRequestSentToast = useCallback(() => setRequestSentToast(false), [])
 
   const openRequestsFromToast = useCallback(() => {
-    setRequestSentToast(false)
-    setShowChallenges(true)
-    setAddingCourt(false)
-    setDraftCourtPos(null)
-    markRequestsNotificationsSeen(
-      challenges,
-      ongoingMatches,
-      disputes,
-      user.userId,
-    )
-    setSeenVersion((n) => n + 1)
-    void refreshRequests()
-    focus('challenges')
-  }, [challenges, disputes, focus, ongoingMatches, refreshRequests, user.userId])
+    requireAuth(() => {
+      setRequestSentToast(false)
+      setShowChallenges(true)
+      setAddingCourt(false)
+      setDraftCourtPos(null)
+      if (userId) {
+        markRequestsNotificationsSeen(
+          challenges,
+          ongoingMatches,
+          disputes,
+          userId,
+        )
+      }
+      setSeenVersion((n) => n + 1)
+      void refreshRequests()
+      focus('challenges')
+    })
+  }, [
+    challenges,
+    disputes,
+    focus,
+    ongoingMatches,
+    refreshRequests,
+    requireAuth,
+    userId,
+  ])
 
   const handleAccountOpenChange = useCallback(
     (open: boolean) => {
@@ -403,49 +435,51 @@ export function MapScreen() {
 
   const openMatch = useCallback(
     (matchId: string, options?: { keepProfile?: boolean }) => {
-      if (!options?.keepProfile) {
-        setViewProfileUserId(null)
-        blur('profile')
-      }
-      void fetchMatch(matchId).then((m) => {
-        if (!m) return
-        const sameCourtOpen = Boolean(
-          m.courtId && selectedCourtId && selectedCourtId === m.courtId,
-        )
-
-        setOpenMatchId(matchId)
-        if (m.courtId) {
-          setMatchCourtId(m.courtId)
+      requireAuth(() => {
+        if (!options?.keepProfile) {
+          setViewProfileUserId(null)
+          blur('profile')
         }
+        void fetchMatch(matchId).then((m) => {
+          if (!m) return
+          const sameCourtOpen = Boolean(
+            m.courtId && selectedCourtId && selectedCourtId === m.courtId,
+          )
 
-        if (sameCourtOpen) {
-          // Keep selectedCourtId so court panel restores when match closes.
-        } else {
-          setSelectedCourtId(null)
-          blur('court')
-        }
-
-        if (m.courtId) {
-          const court = courts[m.courtId]
-          if (court && mapRef.current) {
-            focusPinForPanels(mapRef.current.getMap(), court)
+          setOpenMatchId(matchId)
+          if (m.courtId) {
+            setMatchCourtId(m.courtId)
           }
-        }
-        focus('match')
+
+          if (sameCourtOpen) {
+            // Keep selectedCourtId so court panel restores when match closes.
+          } else {
+            setSelectedCourtId(null)
+            blur('court')
+          }
+
+          if (m.courtId) {
+            const court = courts[m.courtId]
+            if (court && mapRef.current) {
+              focusPinForPanels(mapRef.current.getMap(), court)
+            }
+          }
+          focus('match')
+        })
       })
     },
-    [blur, courts, focus, selectedCourtId],
+    [blur, courts, focus, requireAuth, selectedCourtId],
   )
 
   const closeMatch = useCallback(() => {
-    if (openMatchId) {
-      markMatchViewed(user.userId, openMatchId)
+    if (openMatchId && userId) {
+      markMatchViewed(userId, openMatchId)
       setSeenVersion((v) => v + 1)
     }
     setOpenMatchId(null)
     setMatchCourtId(null)
     blur('match')
-  }, [blur, openMatchId, user.userId])
+  }, [blur, openMatchId, userId])
 
   const openCourt = useCallback(
     (courtId: string, options?: { keepChallenges?: boolean }) => {
@@ -497,27 +531,40 @@ export function MapScreen() {
   const focusPinCourtId = matchPanelOpen ? matchCourtId : null
 
   const toggleChallenges = useCallback(() => {
-    setRequestSentToast(false)
-    setShowChallenges((v) => {
-      const next = !v
-      if (next) {
-        setAddingCourt(false)
-        setDraftCourtPos(null)
-        markRequestsNotificationsSeen(
-          challenges,
-          ongoingMatches,
-          disputes,
-          user.userId,
-        )
-        setSeenVersion((n) => n + 1)
-        void refreshRequests()
-        focus('challenges')
-      } else {
-        blur('challenges')
-      }
-      return next
+    requireAuth(() => {
+      setRequestSentToast(false)
+      setShowChallenges((v) => {
+        const next = !v
+        if (next) {
+          setAddingCourt(false)
+          setDraftCourtPos(null)
+          if (userId) {
+            markRequestsNotificationsSeen(
+              challenges,
+              ongoingMatches,
+              disputes,
+              userId,
+            )
+          }
+          setSeenVersion((n) => n + 1)
+          void refreshRequests()
+          focus('challenges')
+        } else {
+          blur('challenges')
+        }
+        return next
+      })
     })
-  }, [blur, challenges, disputes, focus, ongoingMatches, refreshRequests, user.userId])
+  }, [
+    blur,
+    challenges,
+    disputes,
+    focus,
+    ongoingMatches,
+    refreshRequests,
+    requireAuth,
+    userId,
+  ])
 
   const handleMapClick = useCallback(
     (e: MapLayerMouseEvent) => {
@@ -620,7 +667,7 @@ export function MapScreen() {
           >
             <HomeMarker
               regionLabel={homeArea?.regionLabel ?? 'Home'}
-              userId={user.userId}
+              userId={userId!}
               globalElo={myProfile?.globalElo ?? 1200}
               popoverOpen={homePopoverOpen}
               dragging={homePinDragging}
@@ -721,18 +768,18 @@ export function MapScreen() {
             aria-label={addingCourt ? 'Cancel add court' : 'Add court'}
             title={addingCourt ? 'Cancel' : 'Add court'}
             onClick={() => {
-              setAddingCourt((v) => {
-                const next = !v
-                if (next) {
-                  setDraftCourtPos(null)
-                  closeCourt()
-                  setShowChallenges(false)
-                  blur('challenges')
-                  focus('addCourt')
-                } else {
-                  blur('addCourt')
-                }
-                return next
+              if (addingCourt) {
+                setAddingCourt(false)
+                blur('addCourt')
+                return
+              }
+              requireAuth(() => {
+                setAddingCourt(true)
+                setDraftCourtPos(null)
+                closeCourt()
+                setShowChallenges(false)
+                blur('challenges')
+                focus('addCourt')
               })
             }}
           >
@@ -745,14 +792,16 @@ export function MapScreen() {
             onViewProfile={openProfile}
             onOpenMatch={openMatch}
             signOut={signOut}
+            onSignIn={() => openAuth('signIn')}
+            onCreateAccount={() => openAuth('signUp')}
             menuZIndex={zIndex('account')}
             portalRoot={mapScreenRef}
             onOpenChange={handleAccountOpenChange}
             roboCaddyEnabled={roboCaddyEnabled}
-            onRoboCaddyPrefChange={handleRoboCaddyPrefChange}
+            onRoboCaddyPrefChange={signedIn ? handleRoboCaddyPrefChange : undefined}
             isAdmin={isAdmin}
             adminUiEnabled={adminUiEnabled}
-            onAdminUiPrefChange={handleAdminUiPrefChange}
+            onAdminUiPrefChange={signedIn ? handleAdminUiPrefChange : undefined}
             placingHomePin={placingHomePin}
             placingHomePinBusy={placingHomePinBusy}
             onStartPlacingHomePin={startPlacingHomePin}
@@ -804,7 +853,7 @@ export function MapScreen() {
           )}
           <MatchModal
             matchId={openMatchId}
-            currentUserId={user.userId}
+            currentUserId={userId ?? ''}
             isAdmin={showAdminUi}
             courts={courts}
             panelStyle={panelLayout?.match}
@@ -813,8 +862,9 @@ export function MapScreen() {
               void refreshRequests()
               void reloadGauntlets()
               setCourtMatchRefresh((n) => n + 1)
-              void syncPendingMatchRatings(user.userId).then(() =>
-                fetchProfileByUserId(user.userId).then((p) => {
+              if (!userId) return
+              void syncPendingMatchRatings(userId).then(() =>
+                fetchProfileByUserId(userId).then((p) => {
                   if (p) setMyProfile(p)
                 }),
               )
@@ -845,7 +895,7 @@ export function MapScreen() {
             gauntlets={gauntletsByCourt[selectedCourt.id] ?? []}
             challenges={challenges}
             handles={handles}
-            currentUserId={user.userId}
+            currentUserId={userId ?? ''}
             matchRefreshKey={courtMatchRefresh}
             panelStyle={panelLayout?.court}
             onClose={closeCourt}
@@ -865,12 +915,12 @@ export function MapScreen() {
         </PanelLayer>
       )}
 
-      {showChallenges && (
+      {showChallenges && userId && (
         <PanelLayer zIndex={zIndex('challenges')}>
           <ChallengesPanel
             challenges={challenges}
             courts={courts}
-            currentUserId={user.userId}
+            currentUserId={userId}
             onClose={() => {
               setShowChallenges(false)
               blur('challenges')
@@ -903,13 +953,15 @@ export function MapScreen() {
         </PanelLayer>
       )}
 
-      <RoboCaddy
-        enabled={roboCaddyEnabled}
-        userId={user.userId}
-        scene={roboCaddyScene}
-        matchId={openMatchId}
-        court={matchCourtId ? courts[matchCourtId] ?? null : null}
-      />
+      {signedIn && userId && (
+        <RoboCaddy
+          enabled={roboCaddyEnabled}
+          userId={userId}
+          scene={roboCaddyScene}
+          matchId={openMatchId}
+          court={matchCourtId ? courts[matchCourtId] ?? null : null}
+        />
+      )}
     </div>
   )
 }

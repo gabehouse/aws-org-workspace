@@ -1,4 +1,5 @@
 import { generateClient } from 'aws-amplify/data'
+import { fetchAuthSession } from 'aws-amplify/auth'
 import ngeohash from 'ngeohash'
 import type { Schema } from '../../amplify/data/resource'
 import { generateHandle, validateHandle } from './handles'
@@ -6,6 +7,17 @@ import type { HomeArea } from './homeRegion'
 import { toAwsJson, type SetScore } from './scores'
 
 export const client = generateClient<Schema>()
+
+/** Guest map browsing uses Cognito Identity Pool; signed-in calls use the user pool. */
+export async function readAuthMode(): Promise<'userPool' | 'identityPool'> {
+  try {
+    const session = await fetchAuthSession()
+    if (session.tokens?.accessToken) return 'userPool'
+  } catch {
+    /* guest */
+  }
+  return 'identityPool'
+}
 
 export type Court = Schema['Court']['type']
 export type Gauntlet = Schema['Gauntlet']['type']
@@ -37,12 +49,14 @@ export {
  * index remains for viewport-scoped queries if the dataset ever outgrows this.
  */
 export async function fetchAllCourts(): Promise<Court[]> {
+  const authMode = await readAuthMode()
   const all: Court[] = []
   let nextToken: string | null | undefined
   do {
     const { data, errors, nextToken: token } = await client.models.Court.list({
       limit: 500,
       nextToken,
+      authMode,
     })
     if (errors?.length) throw new Error(errors[0].message)
     all.push(...data)
@@ -53,13 +67,14 @@ export async function fetchAllCourts(): Promise<Court[]> {
 
 /** All ACTIVE gauntlets (open "I'm accepting matches" flags on the map). */
 export async function fetchActiveGauntlets(): Promise<Gauntlet[]> {
+  const authMode = await readAuthMode()
   const all: Gauntlet[] = []
   let nextToken: string | null | undefined
   do {
     const { data, errors, nextToken: token } =
       await client.models.Gauntlet.listGauntletByStatus(
         { status: 'ACTIVE' },
-        { limit: 200, nextToken },
+        { limit: 200, nextToken, authMode },
       )
     if (errors?.length) throw new Error(errors[0].message)
     all.push(...data)
@@ -366,10 +381,11 @@ export const HANDLE_CHANGE_COOLDOWN_DAYS = 90
 export async function fetchProfileByUserId(
   userId: string,
 ): Promise<PlayerProfile | null> {
+  const authMode = await readAuthMode()
   const { data, errors } =
     await client.models.PlayerProfile.listPlayerProfileByUserId(
       { userId },
-      { limit: 1 },
+      { limit: 1, authMode },
     )
   if (errors?.length) throw new Error(errors[0].message)
   return data[0] ?? null
@@ -525,10 +541,11 @@ export async function fetchMatchesAtCourt(
   courtId: string,
   limit = 20,
 ): Promise<Match[]> {
+  const authMode = await readAuthMode()
   const { data, errors } =
     await client.models.Match.listMatchByCourtIdAndScheduledAt(
       { courtId },
-      { sortDirection: 'DESC', limit },
+      { sortDirection: 'DESC', limit, authMode },
     )
   if (errors?.length) throw new Error(errors[0].message)
   return data
@@ -540,6 +557,10 @@ export async function fetchOngoingMatchesAtCourt(
   limit = 20,
 ): Promise<Match[]> {
   const all = await fetchMatchesAtCourt(courtId, limit)
+  const authMode = await readAuthMode()
+  if (authMode !== 'userPool') {
+    return all.filter(isOngoingMatch)
+  }
   const reconciled = await Promise.all(all.map((m) => reconcileStaleMatch(m)))
   return reconciled.filter(isOngoingMatch)
 }
