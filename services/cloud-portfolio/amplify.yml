@@ -6,22 +6,24 @@ applications:
         preBuild:
           commands:
             - corepack enable
-            # Install monorepo scope using the root context
-            - pnpm install --filter cloud-portfolio... --no-frozen-lockfile
+            - pnpm install --no-frozen-lockfile
         build:
           commands:
-            # Set the memory allocation buffer
             - export NODE_OPTIONS="--max-old-space-size=6144"
-
-            # 1. First, synthesize and deploy the backend resources
-            - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID --debug
-
-            # 2. Now run the application build using the newly minted backend configs
-            - pnpm run build
+            - pnpm --filter cloud-portfolio run build
       artifacts:
         baseDirectory: dist
         files:
           - "**/*"
-      cache:
-        paths:
-          - node_modules/**/*
+    backend:
+      phases:
+        build:
+          commands:
+            - corepack enable
+            - export NODE_OPTIONS="--max-old-space-size=6144"
+            - pnpm install --no-frozen-lockfile
+            # Localize the backend package inside appRoot to satisfy the PathNotUnderRoot boundary check
+            - mkdir -p node_modules/@aws-amplify
+            - rm -rf node_modules/@aws-amplify/backend
+            - cp -r ../../node_modules/@aws-amplify/backend node_modules/@aws-amplify/backend
+            - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
