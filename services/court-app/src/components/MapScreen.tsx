@@ -648,6 +648,7 @@ export function MapScreen() {
             longitude={pinDisplay.lng}
             latitude={pinDisplay.lat}
             anchor="bottom"
+            style={{ zIndex: homePopoverOpen || homePinDragging ? 30 : 3 }}
             draggable
             onClick={(e) => {
               e.originalEvent.stopPropagation()

@@ -29,7 +29,9 @@ export function HomeMarker({
   saving = false,
 }: HomeMarkerProps) {
   return (
-    <div className={`home-marker-wrap${dragging ? ' home-marker-wrap--dragging' : ''}`}>
+    <div
+      className={`home-marker-wrap${dragging ? ' home-marker-wrap--dragging' : ''}${popoverOpen ? ' home-marker-wrap--open' : ''}`}
+    >
       {popoverOpen && !dragging && (
         <HomePinPopover
           regionLabel={regionLabel}

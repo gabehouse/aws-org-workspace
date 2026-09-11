@@ -89,6 +89,7 @@
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
+  /* Let taps reach map markers in empty header space */
   pointer-events: none;
 }
 
@@ -101,6 +102,10 @@
   justify-content: flex-end;
   gap: 6px;
   min-width: 0;
+  pointer-events: none;
+}
+
+.map-header__toolbar > * {
   pointer-events: auto;
 }
 
@@ -572,8 +577,9 @@ button.court-marker {
   pointer-events: auto;
 }
 
-.home-marker-wrap--dragging {
-  z-index: 20;
+.home-marker-wrap--dragging,
+.home-marker-wrap--open {
+  z-index: 30;
 }
 
 .home-marker {
@@ -631,7 +637,7 @@ button.court-marker {
   left: 50%;
   bottom: calc(100% + 10px);
   transform: translateX(-50%);
-  z-index: 5;
+  z-index: 1;
   min-width: 200px;
   max-width: 260px;
   padding: 10px 12px;
