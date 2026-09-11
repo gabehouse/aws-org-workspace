@@ -6,14 +6,13 @@ applications:
         preBuild:
           commands:
             - corepack enable
-            - pnpm install --filter cloud-portfolio --no-frozen-lockfile
+            - pnpm install --no-frozen-lockfile
         build:
           commands:
-            # Memory allocation fix for the Vite/Next build engine
             - export NODE_OPTIONS="--max-old-space-size=6144"
-            - pnpm run build
+            - pnpm --filter cloud-portfolio run build
       artifacts:
-        baseDirectory: dist # Change to '.next' if you are using Next.js instead of Vite
+        baseDirectory: dist
         files:
           - "**/*"
     backend:
@@ -21,8 +20,8 @@ applications:
         build:
           commands:
             - corepack enable
-            # Fetch dependencies from the monorepo context with reduced concurrency overhead
-            - pnpm install --filter cloud-portfolio --no-frozen-lockfile --child-concurrency=1
-            # Memory allocation buffer for the AWS CDK backend synthesis engine
             - export NODE_OPTIONS="--max-old-space-size=6144"
+            # Explicitly install from root workspace to make hoisted modules available
+            - pnpm install --no-frozen-lockfile
+            # Run pipeline-deploy while referencing the relative project path or local context
             - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
