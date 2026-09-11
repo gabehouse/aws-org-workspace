@@ -22,5 +22,8 @@ applications:
             - corepack enable
             - export NODE_OPTIONS="--max-old-space-size=6144"
             - pnpm install --no-frozen-lockfile
-            # Removed the redundant 'cd' because Amplify already runs inside appRoot
+            # Localize the backend package inside appRoot to satisfy the PathNotUnderRoot boundary check
+            - mkdir -p node_modules/@aws-amplify
+            - rm -rf node_modules/@aws-amplify/backend
+            - cp -r ../../node_modules/@aws-amplify/backend node_modules/@aws-amplify/backend
             - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
