@@ -22,4 +22,5 @@ applications:
             - corepack enable
             - export NODE_OPTIONS="--max-old-space-size=6144"
             - pnpm install --no-frozen-lockfile
-            - cd services/cloud-portfolio && npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+            # Removed the redundant 'cd' because Amplify already runs inside appRoot
+            - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
