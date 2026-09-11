@@ -21,7 +21,5 @@ applications:
           commands:
             - corepack enable
             - export NODE_OPTIONS="--max-old-space-size=6144"
-            # Explicitly install from root workspace to make hoisted modules available
             - pnpm install --no-frozen-lockfile
-            # Run pipeline-deploy while referencing the relative project path or local context
-            - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+            - cd services/cloud-portfolio && npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
