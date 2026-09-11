@@ -9,7 +9,22 @@ import App from './App.tsx'
 
 initTheme()
 
-Amplify.configure(outputs)
+// Match relaxed Cognito policy in amplify/backend.ts (min length only).
+const amplifyConfig = {
+  ...outputs,
+  auth: {
+    ...outputs.auth,
+    password_policy: {
+      min_length: 8,
+      require_lowercase: false,
+      require_numbers: false,
+      require_symbols: false,
+      require_uppercase: false,
+    },
+  },
+}
+
+Amplify.configure(amplifyConfig)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

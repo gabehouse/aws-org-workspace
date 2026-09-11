@@ -33,6 +33,7 @@ import {
   setScoresToSetInputs,
   type SetInput,
 } from '../lib/scores'
+import { formatCeloLabel } from '../lib/celoDisplay'
 import { googleCalendarUrlForMatch } from '../lib/calendar'
 import { AddToCalendarButton } from './AddToCalendarButton'
 import { MatchRulesPopover, RulesButton } from './MatchRulesPopover'
@@ -238,7 +239,7 @@ export function MatchModal({
       <button type="button" className="name-link matchup-card__name" onClick={() => onViewProfile(userId)}>
         {handles[userId] ?? 'Unknown player'}
       </button>
-      <div className="matchup-card__elo">{elos[userId] ?? 1200} Elo</div>
+      <div className="matchup-card__elo">{formatCeloLabel(elos[userId] ?? 1200)}</div>
     </div>
   )
 

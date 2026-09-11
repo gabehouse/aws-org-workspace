@@ -13,6 +13,19 @@ const backend = defineBackend({
   applyMatchRatingsFunction,
 });
 
+// Relaxed password policy: min length only (no symbol/number/case rules) so
+// typical password-manager generated passwords are accepted.
+const { cfnUserPool } = backend.auth.resources.cfnResources;
+cfnUserPool.policies = {
+  passwordPolicy: {
+    minimumLength: 8,
+    requireLowercase: false,
+    requireUppercase: false,
+    requireNumbers: false,
+    requireSymbols: false,
+  },
+};
+
 const emailLambda = backend.sendMatchLockedEmailFunction.resources.lambda as lambda.Function;
 
 emailLambda.addToRolePolicy(

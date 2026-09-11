@@ -10,6 +10,8 @@ import {
   fetchMyOngoingMatches,
   formatDateTime,
   isOngoingMatch,
+  isValidChallengeStartTime,
+  localDayInputBounds,
   localInputValue,
   notifyMatchLocked,
   nudgeChallenge,
@@ -21,7 +23,7 @@ import {
   type Match,
 } from '../lib/data'
 import { googleCalendarUrlForMatch } from '../lib/calendar'
-import { isMatchViewed, markMatchesViewed } from '../lib/seenState'
+import { isChallengeViewed, isMatchViewed, markMatchesViewed } from '../lib/seenState'
 import { MatchLockedModal } from './MatchLockedModal'
 import { MatchRow } from './MatchRow'
 
@@ -38,6 +40,7 @@ interface ChallengesPanelProps {
   onOpenMatch: (matchId: string) => void
   onOpenCourt?: (courtId: string) => void
   matchSeenVersion?: number
+  challengeSeenVersion?: number
   onMatchesSeen?: () => void
 }
 
@@ -51,6 +54,7 @@ export function ChallengesPanel({
   onOpenMatch,
   onOpenCourt,
   matchSeenVersion = 0,
+  challengeSeenVersion = 0,
   onMatchesSeen,
 }: ChallengesPanelProps) {
   const [handles, setHandles] = useState<Record<string, string>>({})
@@ -58,7 +62,8 @@ export function ChallengesPanel({
   // gauntletId -> courtId, resolved for challenges whose gauntlet isn't loaded
   const [gauntletCourts, setGauntletCourts] = useState<Record<string, string>>({})
   const [nudgingId, setNudgingId] = useState<string | null>(null)
-  const [nudgeStart, setNudgeStart] = useState(() => localInputValue(60))
+  const [nudgeStart, setNudgeStart] = useState(() => localInputValue(0))
+  const dayBounds = localDayInputBounds()
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [matchByChallenge, setMatchByChallenge] = useState<Record<string, Match | null>>({})
@@ -243,6 +248,11 @@ export function ChallengesPanel({
   }, [currentUserId, onMatchesSeen])
 
   const renderCard = (c: Challenge, mode: 'yours' | 'theirs') => {
+    const isNew =
+      mode === 'yours' &&
+      challengeSeenVersion >= 0 &&
+      !isChallengeViewed(currentUserId, c.id)
+
     return (
     <div key={c.id} className="gauntlet-card">
       <div className="gauntlet-card__owner">
@@ -254,6 +264,7 @@ export function ChallengesPanel({
           {handles[otherPlayerId(c)] ?? 'Unknown player'}
         </button>{' '}
         · {courtLink(c)}
+        {isNew && <span className="gauntlet-card__new">New</span>}
       </div>
       <div className="gauntlet-card__window">
         {formatDateTime(c.proposedStart)}
@@ -263,7 +274,7 @@ export function ChallengesPanel({
 
       {mode === 'yours' && !canAcceptChallenge(c) && (
         <p className="panel__meta">
-          Less than 2 hours until this time — nudge a new time or decline.
+          Only same-day times can be accepted — nudge to today or decline.
         </p>
       )}
 
@@ -283,7 +294,7 @@ export function ChallengesPanel({
             disabled={busyId === c.id}
             onClick={() => {
               setNudgingId(c.id)
-              setNudgeStart(localInputValue(60))
+              setNudgeStart(localInputValue(0))
             }}
           >
             Nudge time
@@ -304,7 +315,12 @@ export function ChallengesPanel({
           className="gauntlet-form"
           onSubmit={(e) => {
             e.preventDefault()
-            void act(c.id, () => nudgeChallenge(c, currentUserId, new Date(nudgeStart).toISOString()))
+            const start = new Date(nudgeStart)
+            if (!isValidChallengeStartTime(start.toISOString())) {
+              setError('Pick a time today (play-now times are OK)')
+              return
+            }
+            void act(c.id, () => nudgeChallenge(c, currentUserId, start.toISOString()))
           }}
         >
           <label>
@@ -312,6 +328,8 @@ export function ChallengesPanel({
             <input
               type="datetime-local"
               value={nudgeStart}
+              min={dayBounds.min}
+              max={dayBounds.max}
               onChange={(e) => setNudgeStart(e.target.value)}
               required
             />

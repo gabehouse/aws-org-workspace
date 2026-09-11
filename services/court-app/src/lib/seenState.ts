@@ -14,6 +14,7 @@ function saveSet(key: string, set: Set<string>): void {
 
 const ackKey = (userId: string) => `court-app-ack-challenges-${userId}`
 const viewedMatchesKey = (userId: string) => `court-app-viewed-matches-${userId}`
+const viewedChallengesKey = (userId: string) => `court-app-viewed-challenges-${userId}`
 
 export function getAcknowledgedChallenges(userId: string): Set<string> {
   return loadSet(ackKey(userId))
@@ -47,6 +48,21 @@ export function markMatchesViewed(userId: string, matchIds: string[]): void {
 
 export function isMatchViewed(userId: string, matchId: string): boolean {
   return getViewedMatches(userId).has(matchId)
+}
+
+export function getViewedChallenges(userId: string): Set<string> {
+  return loadSet(viewedChallengesKey(userId))
+}
+
+export function markChallengesViewed(userId: string, challengeIds: string[]): void {
+  if (challengeIds.length === 0) return
+  const set = getViewedChallenges(userId)
+  for (const id of challengeIds) set.add(id)
+  saveSet(viewedChallengesKey(userId), set)
+}
+
+export function isChallengeViewed(userId: string, challengeId: string): boolean {
+  return getViewedChallenges(userId).has(challengeId)
 }
 
 /** Accepted requests where the user was waiting on the opponent. */

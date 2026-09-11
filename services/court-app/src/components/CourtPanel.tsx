@@ -5,27 +5,34 @@ import {
   fetchHandles,
   fetchOngoingMatchesAtCourt,
   fetchProfileByUserId,
+  playerDisplayName,
+  isValidChallengeStartTime,
+  localDayInputBounds,
   localInputValue,
   withdrawGauntlet,
   DEFAULT_FORMAT,
   DEFAULT_STAKES,
   type Court,
+  type Challenge,
   type Gauntlet,
   type Match,
 } from '../lib/data'
+import { formatCeloLabel } from '../lib/celoDisplay'
 import { isMatchViewed, markMatchesViewed } from '../lib/seenState'
 import { MatchRulesPopover, RulesButton } from './MatchRulesPopover'
+import { DirectionsButton } from './DirectionsButton'
 import { MatchRow } from './MatchRow'
 import { AdminCourtTools } from './AdminCourtTools'
 
 interface CourtPanelProps {
   court: Court
   gauntlets: Gauntlet[]
+  challenges: Challenge[]
   handles: Record<string, string>
   currentUserId: string
   onClose: () => void
   onGauntletDropped: () => void
-  onChallengeSent: () => void
+  onChallengeSent: () => void | Promise<void>
   onViewProfile: (userId: string) => void
   onOpenMatch: (matchId: string) => void
   matchRefreshKey?: number
@@ -36,9 +43,12 @@ interface CourtPanelProps {
   onCourtDeleted?: () => void
 }
 
+const OPEN_REQUEST_STATUSES = new Set(['PENDING', 'COUNTERED'])
+
 export function CourtPanel({
   court,
   gauntlets,
+  challenges,
   handles,
   currentUserId,
   onClose,
@@ -63,12 +73,22 @@ export function CourtPanel({
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [ownerElos, setOwnerElos] = useState<Record<string, number>>({})
+  const [ownerLabels, setOwnerLabels] = useState<Record<string, string>>({})
 
   // Which gauntlet has its challenge form open, plus that form's fields
   const [challengingId, setChallengingId] = useState<string | null>(null)
-  const [proposedStart, setProposedStart] = useState(() => localInputValue(60))
+  const [proposedStart, setProposedStart] = useState(() => localInputValue(0))
+  const dayBounds = localDayInputBounds()
   const [message, setMessage] = useState('')
-  const [sentForId, setSentForId] = useState<string | null>(null)
+
+  const isWaitingOnTheirReply = (gauntletId: string) =>
+    challenges.some(
+      (c) =>
+        c.gauntletId === gauntletId &&
+        c.challengerUserId === currentUserId &&
+        OPEN_REQUEST_STATUSES.has(c.status) &&
+        c.proposedByUserId === currentUserId,
+    )
 
   const ownGauntlet = gauntlets.some((g) => g.ownerUserId === currentUserId)
 
@@ -76,16 +96,27 @@ export function CourtPanel({
     const ownerIds = [...new Set(gauntlets.map((g) => g.ownerUserId))]
     if (!ownerIds.length) {
       setOwnerElos({})
+      setOwnerLabels({})
       return
     }
     let cancelled = false
     void Promise.all(
       ownerIds.map(async (userId) => {
         const profile = await fetchProfileByUserId(userId)
-        return [userId, profile?.globalElo ?? 1200] as const
+        return [userId, profile] as const
       }),
     ).then((pairs) => {
-      if (!cancelled) setOwnerElos(Object.fromEntries(pairs))
+      if (cancelled) return
+      setOwnerElos(
+        Object.fromEntries(pairs.map(([userId, profile]) => [userId, profile?.globalElo ?? 1200])),
+      )
+      setOwnerLabels(
+        Object.fromEntries(
+          pairs
+            .map(([userId, profile]) => [userId, playerDisplayName(profile)] as const)
+            .filter((p): p is [string, string] => Boolean(p[1])),
+        ),
+      )
     })
     return () => {
       cancelled = true
@@ -128,7 +159,7 @@ export function CourtPanel({
     }
   }, [court.id, currentUserId, onMatchesSeen])
 
-  const allHandles = { ...handles, ...matchHandles }
+  const allHandles = { ...handles, ...matchHandles, ...ownerLabels }
 
   const dropGauntlet = async () => {
     setSubmitting(true)
@@ -153,8 +184,8 @@ export function CourtPanel({
 
   const sendChallenge = async (gauntlet: Gauntlet) => {
     const start = new Date(proposedStart)
-    if (start < new Date()) {
-      setFormError('Pick a time in the future')
+    if (!isValidChallengeStartTime(start.toISOString())) {
+      setFormError('Pick a time today (play-now times are OK)')
       return
     }
     setSubmitting(true)
@@ -168,8 +199,7 @@ export function CourtPanel({
       })
       setChallengingId(null)
       setMessage('')
-      setSentForId(gauntlet.id)
-      onChallengeSent()
+      await onChallengeSent()
     } catch (e) {
       setFormError(e instanceof Error ? e.message : 'Failed to send request')
     } finally {
@@ -207,9 +237,12 @@ export function CourtPanel({
           {details.length > 0 && <p className="panel__meta">{details.join(' · ')}</p>}
           {court.address && <p className="panel__meta">{court.address}</p>}
         </div>
-        <button type="button" className="btn btn--icon" onClick={onClose} aria-label="Close">
-          ×
-        </button>
+        <div className="panel__header-actions">
+          <DirectionsButton lat={court.lat} lng={court.lng} compact />
+          <button type="button" className="btn btn--icon" onClick={onClose} aria-label="Close">
+            ×
+          </button>
+        </div>
       </div>
 
       {formError && <p className="form-error">{formError}</p>}
@@ -251,7 +284,7 @@ export function CourtPanel({
                     className="name-link"
                     onClick={() => onViewProfile(g.ownerUserId)}
                   >
-                    {handles[g.ownerUserId] ?? 'Unknown player'}
+                    {allHandles[g.ownerUserId] ?? 'Unknown player'}
                   </button>
                   {isMine && ' (you)'}
                 </div>
@@ -268,17 +301,17 @@ export function CourtPanel({
                 )}
               </div>
               <div className="gauntlet-card__elo">
-                {ownerElos[g.ownerUserId] ?? 1200} Elo
+                {formatCeloLabel(ownerElos[g.ownerUserId] ?? 1200)}
               </div>
               {g.note && <div className="gauntlet-card__note">“{g.note}”</div>}
 
-              {!isMine && sentForId === g.id && (
+              {!isMine && isWaitingOnTheirReply(g.id) && (
                 <p className="gauntlet-card__sent">
                   Request sent — watch for their reply under Requests.
                 </p>
               )}
 
-              {!isMine && sentForId !== g.id && challengingId !== g.id && (
+              {!isMine && !isWaitingOnTheirReply(g.id) && challengingId !== g.id && (
                 <button
                   type="button"
                   className="btn btn--primary btn--small"
@@ -304,6 +337,8 @@ export function CourtPanel({
                     <input
                       type="datetime-local"
                       value={proposedStart}
+                      min={dayBounds.min}
+                      max={dayBounds.max}
                       onChange={(e) => setProposedStart(e.target.value)}
                       required
                     />

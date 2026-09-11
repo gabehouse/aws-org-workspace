@@ -2,6 +2,7 @@ import { generateClient } from 'aws-amplify/data'
 import ngeohash from 'ngeohash'
 import type { Schema } from '../../amplify/data/resource'
 import { generateHandle, validateHandle } from './handles'
+import type { HomeArea } from './homeRegion'
 import { toAwsJson, type SetScore } from './scores'
 
 export const client = generateClient<Schema>()
@@ -68,17 +69,27 @@ export async function fetchActiveGauntlets(): Promise<Gauntlet[]> {
 }
 
 /** Best-effort handle lookup for gauntlet owners; unknown ids are omitted. */
+export function playerDisplayName(
+  profile: Pick<PlayerProfile, 'handle' | 'displayName'> | null | undefined,
+): string | undefined {
+  const handle = profile?.handle?.trim()
+  if (handle) return handle
+  const name = profile?.displayName?.trim()
+  if (name) return name
+  return undefined
+}
+
 export async function fetchHandles(
   userIds: string[],
 ): Promise<Record<string, string>> {
+  const unique = [...new Set(userIds.filter(Boolean))]
+  if (!unique.length) return {}
+
   const pairs = await Promise.all(
-    userIds.map(async (userId) => {
+    unique.map(async (userId) => {
       try {
-        const { data } = await client.models.PlayerProfile.listPlayerProfileByUserId(
-          { userId },
-          { limit: 1 },
-        )
-        return [userId, data[0]?.handle] as const
+        const profile = await fetchProfileByUserId(userId)
+        return [userId, playerDisplayName(profile)] as const
       } catch {
         return [userId, undefined] as const
       }
@@ -154,6 +165,7 @@ export async function createChallenge(input: {
   message?: string
 }): Promise<Challenge> {
   const { gauntlet, challengerUserId, proposedStart, message } = input
+  assertValidChallengeStartTime(proposedStart)
   const { data, errors } = await client.models.Challenge.create({
     gauntletId: gauntlet.id,
     challengerUserId,
@@ -196,6 +208,7 @@ export async function nudgeChallenge(
   userId: string,
   newStart: string,
 ): Promise<void> {
+  assertValidChallengeStartTime(newStart)
   const { errors } = await client.models.Challenge.update({
     id: challenge.id,
     proposedStart: newStart,
@@ -205,12 +218,59 @@ export async function nudgeChallenge(
   if (errors?.length) throw new Error(errors[0].message)
 }
 
-export const ACCEPT_MIN_HOURS_BEFORE = 2
+export const CANCELLATION_PENALTY_HOURS = 2
 
-/** True when the proposed start is at least 2 hours from now. */
+/** Local calendar day match (year/month/date). */
+export function isSameLocalCalendarDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  )
+}
+
+/** Challenge/match times must fall on today (past times today are OK for play-now). */
+export function isValidChallengeStartTime(iso: string, now = Date.now()): boolean {
+  return isSameLocalCalendarDay(new Date(iso), new Date(now))
+}
+
+export function assertValidChallengeStartTime(iso: string, now = Date.now()): void {
+  if (!isValidChallengeStartTime(iso, now)) {
+    throw new Error('Pick a time today — same-day and play-now matches only')
+  }
+}
+
+/** True when the proposed start is on today's local calendar date. */
 export function canAcceptChallenge(challenge: Challenge, now = Date.now()): boolean {
-  const start = new Date(challenge.proposedStart).getTime()
-  return start - now >= ACCEPT_MIN_HOURS_BEFORE * 3_600_000
+  return isValidChallengeStartTime(challenge.proposedStart, now)
+}
+
+/**
+ * Cancellations hurt completion rate only after the match has been locked in
+ * for more than CANCELLATION_PENALTY_HOURS (play-now backouts are grace).
+ */
+export function cancellationCountsAgainstCompletion(
+  match: Pick<Match, 'status' | 'contractedAt' | 'cancelledAt'>,
+  now = Date.now(),
+): boolean {
+  if (match.status !== 'CANCELLED') return false
+  const contractedAt = match.contractedAt
+  if (!contractedAt) return true
+  const cancelledAt = match.cancelledAt ?? new Date(now).toISOString()
+  const lockedMs =
+    new Date(cancelledAt).getTime() - new Date(contractedAt).getTime()
+  return lockedMs > CANCELLATION_PENALTY_HOURS * 3_600_000
+}
+
+/** Matches that count in the completion-rate denominator. */
+export function countsTowardCompletionDenominator(match: Match): boolean {
+  if (match.status === 'FINAL' || match.status === 'VOIDED' || match.status === 'RAINED_OUT') {
+    return true
+  }
+  if (match.status === 'CANCELLED') {
+    return cancellationCountsAgainstCompletion(match)
+  }
+  return false
 }
 
 /**
@@ -225,7 +285,7 @@ export async function acceptChallenge(
 ): Promise<Match> {
   if (!canAcceptChallenge(challenge)) {
     throw new Error(
-      'This time is less than 2 hours away — nudge a new time or decline',
+      'Only same-day times can be accepted — nudge to today or decline',
     )
   }
 
@@ -240,6 +300,7 @@ export async function acceptChallenge(
   })
   if (updateErrors?.length) throw new Error(updateErrors[0].message)
 
+  const contractedAt = new Date().toISOString()
   const { data: match, errors: matchErrors } = await client.models.Match.create({
     gauntletId: challenge.gauntletId,
     challengeId: challenge.id,
@@ -249,6 +310,7 @@ export async function acceptChallenge(
     participants: [challenge.challengerUserId, challenge.defenderUserId],
     status: 'CONTRACTED',
     scheduledAt: challenge.proposedStart,
+    contractedAt,
     stakes: gauntlet.stakes,
     format: gauntlet.format,
   })
@@ -375,6 +437,33 @@ export async function changeHandle(
   })
   if (errors?.length || !data) {
     throw new Error(errors?.[0]?.message ?? 'Rename failed')
+  }
+  return data
+}
+
+export async function updateHomeArea(
+  profile: PlayerProfile,
+  area: HomeArea | null,
+): Promise<PlayerProfile> {
+  const patch = area
+    ? {
+        id: profile.id,
+        homeRegionLabel: area.regionLabel,
+        homeLat: area.lat,
+        homeLng: area.lng,
+        homeBbox: null,
+      }
+    : {
+        id: profile.id,
+        homeRegionLabel: null,
+        homeLat: null,
+        homeLng: null,
+        homeBbox: null,
+      }
+
+  const { data, errors } = await client.models.PlayerProfile.update(patch)
+  if (errors?.length || !data) {
+    throw new Error(errors?.[0]?.message ?? 'Failed to update home pin')
   }
   return data
 }
@@ -1067,11 +1156,33 @@ export async function cancelMatch(match: Match, userId: string): Promise<void> {
     throw new Error('This match can no longer be cancelled')
   }
 
+  const cancelledAt = new Date().toISOString()
+  const penalize = cancellationCountsAgainstCompletion({
+    status: 'CANCELLED',
+    contractedAt: match.contractedAt,
+    cancelledAt,
+  })
+
   const { errors } = await client.models.Match.update({
     id: match.id,
     status: 'CANCELLED',
+    cancelledAt,
   })
   if (errors?.length) throw new Error(errors[0].message)
+
+  if (penalize) {
+    try {
+      const profile = await fetchProfileByUserId(userId)
+      if (profile) {
+        await client.models.PlayerProfile.update({
+          id: profile.id,
+          matchesAbandoned: (profile.matchesAbandoned ?? 0) + 1,
+        })
+      }
+    } catch {
+      // best-effort
+    }
+  }
 
   try {
     const { data: challenge } = await client.models.Challenge.get({ id: match.challengeId })
@@ -1330,4 +1441,20 @@ export function localInputValue(offsetMinutes: number): string {
   const d = new Date(Date.now() + offsetMinutes * 60_000)
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset(), 0, 0)
   return d.toISOString().slice(0, 16)
+}
+
+/** Min/max for datetime-local inputs limited to today (local time). */
+export function localDayInputBounds(now = new Date()): { min: string; max: string } {
+  const start = new Date(now)
+  start.setHours(0, 0, 0, 0)
+  start.setMinutes(start.getMinutes() - start.getTimezoneOffset(), 0, 0)
+
+  const end = new Date(now)
+  end.setHours(23, 59, 0, 0)
+  end.setMinutes(end.getMinutes() - end.getTimezoneOffset(), 0, 0)
+
+  return {
+    min: start.toISOString().slice(0, 16),
+    max: end.toISOString().slice(0, 16),
+  }
 }

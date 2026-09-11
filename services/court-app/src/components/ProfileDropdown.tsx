@@ -11,6 +11,8 @@ import {
   type PlayerProfile,
 } from '../lib/data'
 import { isDarkMode, setDarkMode } from '../lib/themePrefs'
+import { homeAreaFromProfile } from '../lib/homeArea'
+import { HomePinSetting } from './HomePinSetting'
 import { ProfileCard, ProfileMatchHistory } from './ProfileCard'
 import { ProfileIcon } from './MapIcons'
 
@@ -32,6 +34,9 @@ interface ProfileDropdownProps {
   isAdmin?: boolean
   adminUiEnabled?: boolean
   onAdminUiPrefChange?: (enabled: boolean) => void
+  placingHomePin?: boolean
+  placingHomePinBusy?: boolean
+  onStartPlacingHomePin?: () => void
 }
 
 export function ProfileDropdown({
@@ -49,6 +54,9 @@ export function ProfileDropdown({
   isAdmin = false,
   adminUiEnabled = true,
   onAdminUiPrefChange,
+  placingHomePin = false,
+  placingHomePinBusy = false,
+  onStartPlacingHomePin,
 }: ProfileDropdownProps) {
   const [open, setOpen] = useState(false)
   const [menuStyle, setMenuStyle] = useState<CSSProperties>({})
@@ -147,7 +155,7 @@ export function ProfileDropdown({
       return Boolean(
         target.closest('.robo-caddy') ||
           target.closest('.map-header') ||
-          target.closest('.court-pin') ||
+          target.closest('.court-marker') ||
           target.closest('.panel--profile') ||
           target.closest('.panel--match') ||
           target.closest('.panel--court') ||
@@ -266,6 +274,16 @@ export function ProfileDropdown({
           </form>
         )}
         {error && <p className="form-error">{error}</p>}
+
+        <HomePinSetting
+          regionLabel={homeAreaFromProfile(profile)?.regionLabel ?? null}
+          placing={placingHomePin}
+          busy={placingHomePinBusy}
+          onStartPlacingHomePin={() => {
+            setMenuOpen(false)
+            onStartPlacingHomePin?.()
+          }}
+        />
 
         {onRoboCaddyPrefChange && (
           <label className="gauntlet-form__checkbox profile-dropdown__toggle">

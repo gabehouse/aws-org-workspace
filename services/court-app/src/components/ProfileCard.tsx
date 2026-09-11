@@ -1,11 +1,15 @@
-import type { Dispute, Match, PlayerProfile } from '../lib/data'
+import { formatCeloLabel } from '../lib/celoDisplay'
+import {
+  countsTowardCompletionDenominator,
+  type Dispute,
+  type Match,
+  type PlayerProfile,
+} from '../lib/data'
 import { MatchRow } from './MatchRow'
 
 function completionRate(matches: Match[] | null): string {
   if (!matches?.length) return '—'
-  const decided = matches.filter((m) =>
-    ['FINAL', 'CANCELLED', 'VOIDED', 'RAINED_OUT'].includes(m.status),
-  )
+  const decided = matches.filter(countsTowardCompletionDenominator)
   if (!decided.length) return '—'
   const finals = decided.filter((m) => m.status === 'FINAL').length
   return `${Math.round((finals / decided.length) * 100)}%`
@@ -74,8 +78,8 @@ export function ProfileCard({
 
       <div className="profile-card__stats">
         <div className="stat-tile">
-          <strong>{profile.globalElo ?? 1200}</strong>
-          <span>Elo</span>
+          <strong>{formatCeloLabel(profile.globalElo ?? 1200)}</strong>
+          <span>Rating</span>
         </div>
         <div className="stat-tile">
           <strong>

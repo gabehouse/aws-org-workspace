@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { adminUpdatePlayerStats, type PlayerProfile } from '../lib/data'
+import { celoToElo, CELO_MAX, CELO_MIN, eloToCelo } from '../lib/celoDisplay'
 
 interface AdminProfileToolsProps {
   profile: PlayerProfile
@@ -7,7 +8,9 @@ interface AdminProfileToolsProps {
 }
 
 export function AdminProfileTools({ profile, onUpdated }: AdminProfileToolsProps) {
-  const [globalElo, setGlobalElo] = useState(String(profile.globalElo ?? 1200))
+  const [displayCelo, setDisplayCelo] = useState(() =>
+    eloToCelo(profile.globalElo ?? 1200).toFixed(1),
+  )
   const [wins, setWins] = useState(String(profile.wins ?? 0))
   const [losses, setLosses] = useState(String(profile.losses ?? 0))
   const [matchesCompleted, setMatchesCompleted] = useState(String(profile.matchesCompleted ?? 0))
@@ -15,7 +18,7 @@ export function AdminProfileTools({ profile, onUpdated }: AdminProfileToolsProps
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    setGlobalElo(String(profile.globalElo ?? 1200))
+    setDisplayCelo(eloToCelo(profile.globalElo ?? 1200).toFixed(1))
     setWins(String(profile.wins ?? 0))
     setLosses(String(profile.losses ?? 0))
     setMatchesCompleted(String(profile.matchesCompleted ?? 0))
@@ -25,6 +28,14 @@ export function AdminProfileTools({ profile, onUpdated }: AdminProfileToolsProps
     const n = Number(raw)
     if (!Number.isInteger(n) || n < 0) throw new Error(`Invalid ${label}`)
     return n
+  }
+
+  const parseCeloField = (raw: string): number => {
+    const n = Number(raw)
+    if (!Number.isFinite(n) || n < CELO_MIN || n > CELO_MAX) {
+      throw new Error(`Celo must be between ${CELO_MIN} and ${CELO_MAX}`)
+    }
+    return celoToElo(Math.round(n * 10) / 10)
   }
 
   return (
@@ -40,7 +51,7 @@ export function AdminProfileTools({ profile, onUpdated }: AdminProfileToolsProps
             try {
               const updated = await adminUpdatePlayerStats({
                 profile,
-                globalElo: parseIntField('Elo', globalElo),
+                globalElo: parseCeloField(displayCelo),
                 wins: parseIntField('wins', wins),
                 losses: parseIntField('losses', losses),
                 matchesCompleted: parseIntField('matches completed', matchesCompleted),
@@ -55,13 +66,14 @@ export function AdminProfileTools({ profile, onUpdated }: AdminProfileToolsProps
         }}
       >
         <label>
-          Global Elo
+          Celo (display rating)
           <input
             type="number"
-            min={0}
-            step={1}
-            value={globalElo}
-            onChange={(e) => setGlobalElo(e.target.value)}
+            min={CELO_MIN}
+            max={CELO_MAX}
+            step={0.1}
+            value={displayCelo}
+            onChange={(e) => setDisplayCelo(e.target.value)}
             required
           />
         </label>

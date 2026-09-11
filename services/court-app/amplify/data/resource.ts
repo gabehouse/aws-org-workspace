@@ -32,6 +32,11 @@ const schema = a.schema({
       displayName: a.string(),
       bio: a.string(),
       homeCourtId: a.id(),
+      homeRegionLabel: a.string(),
+      homeLat: a.float(),
+      homeLng: a.float(),
+      // JSON [south, north, west, east] — region zoom scope
+      homeBbox: a.string(),
       globalElo: a.integer().default(1200),
       territorialRating: a.integer().default(1200),
       wins: a.integer().default(0),
@@ -41,7 +46,7 @@ const schema = a.schema({
       matchesCompleted: a.integer().default(0),
       matchesAbandoned: a.integer().default(0),
     })
-    .secondaryIndexes((index) => [index('userId'), index('handle')])
+    .secondaryIndexes((index) => [index('userId'), index('handle'), index('homeRegionLabel')])
     .authorization((allow) => [
       allow.ownerDefinedIn('userId'),
       allow.authenticated().to(['read']),
@@ -171,6 +176,9 @@ const schema = a.schema({
       participants: a.string().required().array().required(),
       status: a.ref('MatchStatus').required(),
       scheduledAt: a.datetime().required(),
+      /** When both players locked in (match created). Used for cancellation grace. */
+      contractedAt: a.datetime(),
+      cancelledAt: a.datetime(),
       stakes: a.string(),
       format: a.string(),
       defenderCheckedInAt: a.datetime(),

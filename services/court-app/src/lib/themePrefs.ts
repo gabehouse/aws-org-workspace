@@ -1,4 +1,7 @@
 const STORAGE_KEY = 'court-app-dark-mode'
+const THEME_CHANGE_EVENT = 'court-app-theme-change'
+
+export type ThemeMode = 'light' | 'dark'
 
 export function isDarkMode(): boolean {
   try {
@@ -6,6 +9,15 @@ export function isDarkMode(): boolean {
   } catch {
     return false
   }
+}
+
+export function getThemeMode(): ThemeMode {
+  return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'
+}
+
+export function subscribeThemeMode(onStoreChange: () => void): () => void {
+  window.addEventListener(THEME_CHANGE_EVENT, onStoreChange)
+  return () => window.removeEventListener(THEME_CHANGE_EVENT, onStoreChange)
 }
 
 export function setDarkMode(enabled: boolean): void {
@@ -24,4 +36,5 @@ export function initTheme(): void {
 
 function applyTheme(dark: boolean): void {
   document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+  window.dispatchEvent(new Event(THEME_CHANGE_EVENT))
 }

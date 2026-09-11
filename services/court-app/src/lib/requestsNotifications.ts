@@ -7,7 +7,14 @@ import {
   type Dispute,
   type Match,
 } from './data'
-import { isChallengeAcknowledged } from './seenState'
+import {
+  acknowledgeChallenges,
+  isChallengeAcknowledged,
+  isChallengeViewed,
+  isMatchViewed,
+  markChallengesViewed,
+  markMatchesViewed,
+} from './seenState'
 
 export type RequestsSnapshot = {
   challenges: Challenge[]
@@ -66,6 +73,60 @@ export function requestsNotificationKeys(
   }
 
   return keys
+}
+
+/** Notification keys the user has not opened or cleared yet. */
+export function unviewedRequestsNotificationKeys(
+  challenges: Challenge[],
+  ongoingMatches: Match[],
+  disputes: Record<string, Dispute | null>,
+  userId: string,
+): Set<string> {
+  const keys = requestsNotificationKeys(challenges, ongoingMatches, disputes, userId)
+  const unviewed = new Set<string>()
+
+  for (const key of keys) {
+    if (key.startsWith('challenge-move:')) {
+      const id = key.slice('challenge-move:'.length)
+      if (!isChallengeViewed(userId, id)) unviewed.add(key)
+    } else if (key.startsWith('challenge-accepted:')) {
+      const id = key.slice('challenge-accepted:'.length)
+      if (!isChallengeAcknowledged(userId, id)) unviewed.add(key)
+    } else if (key.startsWith('match-move:')) {
+      const matchId = key.split(':')[1]
+      if (matchId && !isMatchViewed(userId, matchId)) unviewed.add(key)
+    }
+  }
+
+  return unviewed
+}
+
+/** Mark every current Requests notification item as seen. */
+export function markRequestsNotificationsSeen(
+  challenges: Challenge[],
+  ongoingMatches: Match[],
+  disputes: Record<string, Dispute | null>,
+  userId: string,
+): void {
+  const keys = requestsNotificationKeys(challenges, ongoingMatches, disputes, userId)
+  const challengeIds: string[] = []
+  const matchIds: string[] = []
+  const acceptedIds: string[] = []
+
+  for (const key of keys) {
+    if (key.startsWith('challenge-move:')) {
+      challengeIds.push(key.slice('challenge-move:'.length))
+    } else if (key.startsWith('challenge-accepted:')) {
+      acceptedIds.push(key.slice('challenge-accepted:'.length))
+    } else if (key.startsWith('match-move:')) {
+      const matchId = key.split(':')[1]
+      if (matchId) matchIds.push(matchId)
+    }
+  }
+
+  markChallengesViewed(userId, challengeIds)
+  markMatchesViewed(userId, matchIds)
+  acknowledgeChallenges(userId, acceptedIds)
 }
 
 let audioContext: AudioContext | null = null
