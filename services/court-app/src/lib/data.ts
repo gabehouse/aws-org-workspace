@@ -236,6 +236,9 @@ export async function nudgeChallenge(
 export const CANCELLATION_PENALTY_HOURS = 2
 
 /** Local calendar day match (year/month/date). */
+/** Challenge/match times must be now (play-now) or any future time. */
+const CHALLENGE_TIME_PAST_GRACE_MS = 2 * 60_000
+
 export function isSameLocalCalendarDay(a: Date, b: Date): boolean {
   return (
     a.getFullYear() === b.getFullYear() &&
@@ -244,18 +247,20 @@ export function isSameLocalCalendarDay(a: Date, b: Date): boolean {
   )
 }
 
-/** Challenge/match times must fall on today (past times today are OK for play-now). */
+/** True for "now" (small grace) or any later time — not the past. */
 export function isValidChallengeStartTime(iso: string, now = Date.now()): boolean {
-  return isSameLocalCalendarDay(new Date(iso), new Date(now))
+  const t = new Date(iso).getTime()
+  if (Number.isNaN(t)) return false
+  return t >= now - CHALLENGE_TIME_PAST_GRACE_MS
 }
 
 export function assertValidChallengeStartTime(iso: string, now = Date.now()): void {
   if (!isValidChallengeStartTime(iso, now)) {
-    throw new Error('Pick a time today — same-day and play-now matches only')
+    throw new Error('Pick a time from now on — past times aren’t allowed')
   }
 }
 
-/** True when the proposed start is on today's local calendar date. */
+/** True when the proposed start is still now/future (stale past proposals need a nudge). */
 export function canAcceptChallenge(challenge: Challenge, now = Date.now()): boolean {
   return isValidChallengeStartTime(challenge.proposedStart, now)
 }
@@ -300,7 +305,7 @@ export async function acceptChallenge(
 ): Promise<Match> {
   if (!canAcceptChallenge(challenge)) {
     throw new Error(
-      'Only same-day times can be accepted — nudge to today or decline',
+      'That time is in the past — nudge to a new time or decline',
     )
   }
 
@@ -1464,18 +1469,14 @@ export function localInputValue(offsetMinutes: number): string {
   return d.toISOString().slice(0, 16)
 }
 
-/** Min/max for datetime-local inputs limited to today (local time). */
-export function localDayInputBounds(now = new Date()): { min: string; max: string } {
-  const start = new Date(now)
-  start.setHours(0, 0, 0, 0)
-  start.setMinutes(start.getMinutes() - start.getTimezoneOffset(), 0, 0)
+/** Min for datetime-local inputs: now onward (no upper bound). */
+export function localChallengeInputMin(now = new Date()): string {
+  const d = new Date(now)
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset(), 0, 0)
+  return d.toISOString().slice(0, 16)
+}
 
-  const end = new Date(now)
-  end.setHours(23, 59, 0, 0)
-  end.setMinutes(end.getMinutes() - end.getTimezoneOffset(), 0, 0)
-
-  return {
-    min: start.toISOString().slice(0, 16),
-    max: end.toISOString().slice(0, 16),
-  }
+/** @deprecated Use localChallengeInputMin — kept for any leftover same-day callers. */
+export function localDayInputBounds(now = new Date()): { min: string; max?: string } {
+  return { min: localChallengeInputMin(now) }
 }

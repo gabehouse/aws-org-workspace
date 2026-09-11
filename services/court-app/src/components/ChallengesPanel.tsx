@@ -11,7 +11,7 @@ import {
   formatDateTime,
   isOngoingMatch,
   isValidChallengeStartTime,
-  localDayInputBounds,
+  localChallengeInputMin,
   localInputValue,
   notifyMatchLocked,
   nudgeChallenge,
@@ -63,7 +63,7 @@ export function ChallengesPanel({
   const [gauntletCourts, setGauntletCourts] = useState<Record<string, string>>({})
   const [nudgingId, setNudgingId] = useState<string | null>(null)
   const [nudgeStart, setNudgeStart] = useState(() => localInputValue(0))
-  const dayBounds = localDayInputBounds()
+  const inputMin = localChallengeInputMin()
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [matchByChallenge, setMatchByChallenge] = useState<Record<string, Match | null>>({})
@@ -274,7 +274,7 @@ export function ChallengesPanel({
 
       {mode === 'yours' && !canAcceptChallenge(c) && (
         <p className="panel__meta">
-          Only same-day times can be accepted — nudge to today or decline.
+          That time is in the past — nudge to a new time or decline.
         </p>
       )}
 
@@ -317,7 +317,7 @@ export function ChallengesPanel({
             e.preventDefault()
             const start = new Date(nudgeStart)
             if (!isValidChallengeStartTime(start.toISOString())) {
-              setError('Pick a time today (play-now times are OK)')
+              setError('Pick a time from now on (play-now is OK)')
               return
             }
             void act(c.id, () => nudgeChallenge(c, currentUserId, start.toISOString()))
@@ -328,8 +328,7 @@ export function ChallengesPanel({
             <input
               type="datetime-local"
               value={nudgeStart}
-              min={dayBounds.min}
-              max={dayBounds.max}
+              min={inputMin}
               onChange={(e) => setNudgeStart(e.target.value)}
               required
             />
