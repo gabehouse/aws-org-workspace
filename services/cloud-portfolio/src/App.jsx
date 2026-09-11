@@ -628,7 +628,7 @@ const Projects = () => {
             ]
         },
         {
-            title: "House Audio (Full-Stack Engine)",
+            title: "House Audio (Full-Stack Engine) ",
             link: "https://houseaudio.net",
             infraRepo: "https://github.com/gabehouse/aws-org-workspace/tree/master/infra/workloads/prod/vstshop",
             serviceRepo: "https://github.com/gabehouse/aws-org-workspace/tree/master/services/vstshop-frontend",
