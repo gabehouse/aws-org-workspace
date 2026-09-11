@@ -72,7 +72,7 @@ body,
   margin: 0;
 }
 
-/* Center the Authenticator when signed out (full-page legacy + modal) */
+/* Full-page Authenticator (unused when signed-out map is shown; kept for safety) */
 [data-amplify-authenticator] {
   min-height: 100svh;
   background:
@@ -86,23 +86,38 @@ body,
   z-index: 1000;
   display: grid;
   place-items: center;
-  padding: 16px;
+  padding: 24px 16px;
   background: rgba(15, 23, 42, 0.55);
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .auth-modal {
   position: relative;
   width: min(420px, 100%);
-  max-height: calc(100svh - 32px);
-  overflow: auto;
+  margin: auto;
   border-radius: 16px;
+  background: var(--surface);
   box-shadow: 0 16px 48px rgba(15, 23, 42, 0.35);
+  /* Size to content — don’t force a scrollport unless the viewport is tiny */
+  overflow: visible;
 }
 
 .auth-modal [data-amplify-authenticator] {
-  min-height: 0;
+  display: block;
+  min-height: unset;
+  height: auto;
+  width: 100%;
   background: transparent;
+}
+
+.auth-modal [data-amplify-authenticator] [data-amplify-router] {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  width: 100%;
+  max-width: none;
 }
 
 .auth-modal__close {
@@ -115,13 +130,11 @@ body,
 
 .auth-modal__lead {
   margin: 0;
-  padding: 18px 20px 0;
+  padding: 18px 48px 0 20px;
   text-align: center;
   font-size: 14px;
   font-weight: 600;
   color: var(--ink);
-  background: var(--surface);
-  border-radius: 16px 16px 0 0;
 }
 
 [data-theme='dark'] [data-amplify-authenticator] {
@@ -130,12 +143,21 @@ body,
     linear-gradient(160deg, #142018, #1a2e22);
 }
 
+[data-theme='dark'] .auth-modal {
+  background: var(--surface);
+}
+
 [data-theme='dark'] .auth-modal [data-amplify-authenticator] {
   background: transparent;
 }
 
+[data-theme='dark'] .auth-modal [data-amplify-authenticator] [data-amplify-router] {
+  background: transparent;
+  border: none;
+  color: var(--ink);
+}
+
 [data-theme='dark'] .auth-modal__lead {
-  background: var(--surface);
   color: var(--ink);
 }
 
