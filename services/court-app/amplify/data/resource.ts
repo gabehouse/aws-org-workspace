@@ -50,6 +50,7 @@ const schema = a.schema({
     .authorization((allow) => [
       allow.ownerDefinedIn('userId'),
       allow.authenticated().to(['read']),
+      allow.guest().to(['read']),
       allow.groups(['Admins']),
     ]),
 
@@ -75,6 +76,7 @@ const schema = a.schema({
     .secondaryIndexes((index) => [index('geohash')])
     .authorization((allow) => [
       allow.authenticated().to(['read', 'create']),
+      allow.guest().to(['read']),
       allow.groups(['Admins']),
     ]),
 
@@ -114,6 +116,7 @@ const schema = a.schema({
     .authorization((allow) => [
       allow.ownerDefinedIn('ownerUserId'),
       allow.authenticated().to(['read']),
+      allow.guest().to(['read']),
       allow.groups(['Admins']),
     ]),
 
@@ -150,6 +153,7 @@ const schema = a.schema({
     .authorization((allow) => [
       allow.ownersDefinedIn('participants'),
       allow.authenticated().to(['read']),
+      allow.guest().to(['read']),
       allow.groups(['Admins']),
     ]),
 
@@ -204,6 +208,7 @@ const schema = a.schema({
     .authorization((allow) => [
       allow.ownersDefinedIn('participants'),
       allow.authenticated().to(['read']),
+      allow.guest().to(['read']),
       allow.groups(['Admins']),
     ]),
 
