@@ -724,28 +724,6 @@ const Projects = () => {
                 "Designed the algorithmic core with **Functional Programming principles**, allowing for isolated testing and modular extension of different scoring matrices (e.g., BLOSUM62).",
                 "Leveraged **GitHub Pages** for production hosting, ensuring a reliable, SSL-encrypted entry point for the professional portfolio."
             ]
-        },
-        {
-            title: "JS Physics Lab: Kinetic Engine",
-            link: "https://gabehouse.github.io/js-physics-demo/",
-            repo: "https://github.com/gabehouse/js-physics-demo",
-            description: "A high-performance 2D physics simulation engineered in vanilla JavaScript, featuring real-time collision detection and momentum conservation logic.",
-            technologies: ["JavaScript", "HTML5 Canvas", "CSS3", "GitHub Pages"],
-            insights: [
-                {
-                    label: "Collision & Momentum Transfer",
-                    image: "../assets/ball-physics-demo.webm",
-                    description: "Visualizing impulse-based collision resolution and energy conservation. The engine utilizes a custom vector math library to calculate reflection vectors and resolve kinetic energy transfer across high-velocity entities."
-                }
-            ],
-            cloudHighlights: [
-                "Engineered a high-performance **2D Rendering Engine** using HTML5 Canvas, decoupling physics state updates from browser draw calls to maintain a smooth user experience.",
-                "Optimized the **Animation Render Loop** using `requestAnimationFrame`, achieving a consistent 60 FPS under varying computational loads.",
-                "Developed a custom **Vector Mathematics Library** from scratch to handle Euclidean distance calculations and reflection vectors for realistic kinetic interactions.",
-                "Implemented an efficient **Collision Detection Algorithm** designed to minimize O(n²) computational overhead, allowing for high-density particle simulations.",
-                "Leveraged **GitHub Pages** for static site delivery, utilizing a global CDN to ensure high availability and low-latency access for international users.",
-                "Designed the engine with a **Modular Architecture**, enabling the easy addition of physical properties like gravity, friction, and elasticity without refactoring core logic."
-            ]
         }
     ];
 
