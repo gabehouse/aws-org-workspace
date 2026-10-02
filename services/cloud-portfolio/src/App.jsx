@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import ColorGrid from './ColorGrid';
 import Markdown from 'react-markdown';
 import './ProjectCards.css';
@@ -245,7 +246,7 @@ const ProfileHeader = () => {
     );
 };
 
-const ProjectCard = ({ project, index = 0 }) => {
+const ProjectCard = ({ project, index = 0, variant = 'core' }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [zoomIndex, setZoomIndex] = useState(null);
 
@@ -268,7 +269,7 @@ const ProjectCard = ({ project, index = 0 }) => {
         const mediaStyle = className
             ? undefined
             : isLightbox
-                ? { maxHeight: '70vh', borderRadius: '4px', cursor: 'default' }
+                ? { maxHeight: '70vh', borderRadius: '4px', cursor: 'default', backgroundColor: '#000' }
                 : {
                     width: '100%',
                     height: 'auto',
@@ -334,7 +335,10 @@ const ProjectCard = ({ project, index = 0 }) => {
     const hasLiveEndpoint = project.link && !project.link.includes('github.com');
     const preview = project.insights?.[0];
     const cardNumber = String(index + 1).padStart(2, '0');
-    const openModal = () => setIsModalOpen(true);
+    const openModal = (e) => {
+        if (e?.target?.closest?.('a')) return;
+        setIsModalOpen(true);
+    };
     const closeModal = () => {
         setZoomIndex(null);
         setIsModalOpen(false);
@@ -425,7 +429,10 @@ const ProjectCard = ({ project, index = 0 }) => {
 
     return (
         <>
-            <article className={`project-card${isModalOpen ? ' is-open' : ''}`}>
+            <article
+                className={`project-card project-card--${variant}${isModalOpen ? ' is-open' : ''}`}
+                onClick={openModal}
+            >
                 {preview && (
                     <div className="project-card__media">
                         {renderMedia(preview, false, 'project-card__media-asset')}
@@ -477,7 +484,7 @@ const ProjectCard = ({ project, index = 0 }) => {
                 </div>
             </article>
 
-            {isModalOpen && (
+            {isModalOpen && createPortal(
                 <div className="project-modal-overlay" onClick={closeModal}>
                     <div
                         className="project-modal"
@@ -524,10 +531,11 @@ const ProjectCard = ({ project, index = 0 }) => {
 
                         {details}
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
-            {zoomIndex !== null && project.insights && (
+            {zoomIndex !== null && project.insights && createPortal(
                 <div
                     className="project-lightbox"
                     onClick={() => setZoomIndex(null)}
@@ -554,7 +562,8 @@ const ProjectCard = ({ project, index = 0 }) => {
                         className="project-lightbox__nav project-lightbox__nav--next"
                         onClick={(e) => navigateGallery('next', e)}
                     >›</button>
-                </div>
+                </div>,
+                document.body
             )}
         </>
     );
@@ -660,28 +669,6 @@ const Projects = () => {
             ]
         },
         {
-            title: "Courts: Matchmaking Platform",
-            link: "https://master.dt5mmfwcef1et.amplifyapp.com//",
-            repo: "https://github.com/gabehouse/aws-org-workspace/tree/master/services/court-app",
-            // Focus on "Event-Driven" and "Secure" in the summary
-            description: "A real-time geospatial matchmaking platform enabling players to discover local courts, broadcast availability, and challenge opponents.",
-            technologies: ["React", "Amplify Gen 2", "TypeScript", "AppSync", "DynamoDB", "Cognito", "Leaflet/Maps"],
-            insights: [
-                {
-                    label: "Event-Driven Booking Pipeline",
-                    image: "/assets/diagram-tennis-booking-architecture.svg",
-                    description: "An event-driven serverless architecture using Amplify Gen 2 and AppSync WebSockets to sync live challenge requests and player coordinates across active map sessions."
-                }
-            ],
-            cloudHighlights: [
-                "Architected using **Amplify Gen 2** with TypeScript-defined backend infrastructure (AppSync GraphQL, DynamoDB, and Cognito) for type-safe cloud development.",
-                "Implemented real-time **Challenge and Messaging Workflows** using WebSockets to ensure instant updates when players accept or request matches.",
-                "Integrated **Geospatial Query Patterns** in DynamoDB to efficiently filter and render nearby players and courts dynamically on the map UI.",
-                "Configured secure **Social Identity Federation** via AWS Cognito and OIDC, streamlining user onboarding while preserving strict data isolation.",
-                "Automated continuous deployment via Git-based CI/CD pipelines, spinning up isolated full-stack preview environments on every branch push."
-            ]
-        },
-        {
             title: "Cloud-Native Engineering Portfolio",
             link: "https://master.d1gyqq9jpvj1mt.amplifyapp.com/",
             repo: "https://github.com/gabehouse/aws-org-workspace/tree/master/services/cloud-portfolio",
@@ -717,15 +704,38 @@ const Projects = () => {
                 }
             ],
             cloudHighlights: [
-                "Implemented rigorous **Unit Testing via Jest** for the core Dynamic Programming recurrence, ensuring 100% accuracy for edge-case biological sequence comparisons.",
                 "Optimized client-side compute to handle large-scale matrices without blocking the **Main UI Thread**, maintaining a fluid 60 FPS experience during heavy algorithmic processing.",
                 "Engineered a **Static Site Delivery** strategy leveraging GitHub's global CDN, providing a zero-cost, high-availability hosting model with minimal latency.",
                 "Optimized the **Frontend Rendering Engine** to manage large grid states efficiently, preventing memory leaks and UI stutter during real-time matrix generation.",
                 "Designed the algorithmic core with **Functional Programming principles**, allowing for isolated testing and modular extension of different scoring matrices (e.g., BLOSUM62).",
                 "Leveraged **GitHub Pages** for production hosting, ensuring a reliable, SSL-encrypted entry point for the professional portfolio."
             ]
+        },
+        {
+            title: "3D Physics Demo",
+            link: "https://gabehouse.github.io/js-physics-demo/",
+            repo: "https://github.com/gabehouse/js-physics-demo",
+            description: "A Three.js walk-around court with squashy balls, spin, and a shallow-water pool. Physics steps at a fixed 120 Hz so the same swing feels the same on 60 Hz and 144 Hz displays; WebGPU runs the water grid when the browser supports it.",
+            technologies: ["Three.js", "WebGPU", "JavaScript", "ES Modules", "GitHub Pages"],
+            insights: [
+                {
+                    label: "Contact, Spin & Shallow Water",
+                    video: "assets/physics-lab-demo.mp4",
+                    description: "Walk the court (WASD), hover-flick or pull a ball, and right-drag a line to hit. Floor and walls share a spring-damper contact model; a 2D height field carries waves, buoyancy, and hull coupling."
+                }
+            ],
+            cloudHighlights: [
+                "Stepped physics at a **fixed 120 Hz** (`FIXED_DT`) with frame interpolation, so motion stays consistent across 60 Hz and 144 Hz displays.",
+                "Modeled **hits and spin** from a short cursor-velocity window: off-center impacts add `r × Δv` torque, drag follows a spring (`GRAB_K`), and a short tap is a poke.",
+                "Used the same **spring-damper contact** on floor and walls (`-k · penetration − c · velocity`), with surface grip from slip (`v_tangent − ωR`) so sliding becomes rolling.",
+                "Ran a **shallow-water height field** (`h`, plus currents `u`, `w`) over the court; wave speed `c = √(gH)`, with McCowan crest limits and Jacobi smoothing of short grid noise.",
+                "Coupled the hull into nearby cells only while the ball is moving; buoyancy uses water around the hull, not the crater under it. **WebGPU** drives the grid when available, otherwise CPU."
+            ]
         }
     ];
+
+    const coreProjects = projects.slice(0, 4);
+    const labProjects = projects.slice(4);
 
     return (
         <div className="projects-section">
@@ -734,15 +744,42 @@ const Projects = () => {
             <p className="projects-section__lede">
                 Cloud-native systems spanning multi-account AWS platforms, real-time inference, and serverless product delivery.
             </p>
-            <div className="projects-section__grid">
-                {projects.map((project, index) => (
-                    <ProjectCard
-                        key={index}
-                        project={project}
-                        index={index}
-                    />
-                ))}
-            </div>
+
+            <section className="projects-section__group" aria-labelledby="core-projects-heading">
+                <p className="projects-section__group-eyebrow">Core</p>
+                <h2 id="core-projects-heading" className="projects-section__group-title">Production Systems</h2>
+                <p className="projects-section__group-lede">
+                    The platforms I put in front of users: identity, inference, commerce, and this site.
+                </p>
+                <div className="projects-section__grid projects-section__grid--core">
+                    {coreProjects.map((project, index) => (
+                        <ProjectCard
+                            key={project.title}
+                            project={project}
+                            index={index}
+                            variant="core"
+                        />
+                    ))}
+                </div>
+            </section>
+
+            <section className="projects-section__group" aria-labelledby="lab-projects-heading">
+                <p className="projects-section__group-eyebrow">Labs</p>
+                <h2 id="lab-projects-heading" className="projects-section__group-title">Experiments &amp; Studies</h2>
+                <p className="projects-section__group-lede">
+                    Smaller builds for algorithms, real-time simulation, and client-side engines.
+                </p>
+                <div className="projects-section__grid projects-section__grid--lab">
+                    {labProjects.map((project, index) => (
+                        <ProjectCard
+                            key={project.title}
+                            project={project}
+                            index={coreProjects.length + index}
+                            variant="lab"
+                        />
+                    ))}
+                </div>
+            </section>
         </div>
     );
 };
