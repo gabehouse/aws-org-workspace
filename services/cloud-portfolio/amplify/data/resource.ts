@@ -14,8 +14,8 @@ const schema = a
         content: a.string(),
         info: a.string(),
       })
-    })
-    .authorization((allow) => [allow.guest()]);
+  })
+  .authorization((allow) => [allow.guest()]);
 
 
 export type Schema = ClientSchema<typeof schema>;
@@ -27,7 +27,6 @@ export const data = defineData({
 
   },
 });
-
 /*== STEP 2 ===============================================================
 Go to your frontend source code. From your client-side code, generate a
 Data client to make CRUDL requests to your table. (THIS SNIPPET WILL ONLY
@@ -56,3 +55,4 @@ Fetch records from the database and use them in your frontend component.
 // const { data: todos } = await client.models.Todo.list()
 
 // return <ul>{todos.map(todo => <li key={todo.id}>{todo.content}</li>)}</ul>
+
