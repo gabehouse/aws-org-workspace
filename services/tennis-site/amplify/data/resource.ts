@@ -1,27 +1,31 @@
-// amplify/data/resource.ts
-import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
-import { sendEmailFunction } from '../functions/send-email-notification/resource'; // <--- IMPORT THE FUNCTION HERE
+import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
+import { bookingFunction } from '../functions/booking/resource';
+
+const slotArguments = {
+  dateSlot: a.string().required(), // YYYY-MM-DD
+  timeSlot: a.string().required(), // HH:MM
+};
 
 const schema = a.schema({
-  Todo: a
+  // Public view of the schedule. A row exists only while the slot is booked and holds no personal info.
+  Slot: a
+    .model(slotArguments)
+    .identifier(['dateSlot', 'timeSlot'])
+    .authorization((allow) => [allow.publicApiKey().to(['read']), allow.authenticated().to(['read'])]),
+
+  // Who booked a slot. Readable only by the booker and admins; written only by the booking Lambda.
+  Booking: a
     .model({
-      dateSlot: a.string().required(), // e.g., "YYYY-MM-DD"
-      timeSlot: a.string().required(), // e.g., "HH:MM"
-      bookedByUsername: a.string(),
-      bookedByFirstName: a.string(),
-      bookedByLastName: a.string(),
-      bookedByEmail: a.string(),
+      ...slotArguments,
+      owner: a.string().required(),
+      firstName: a.string(),
+      lastName: a.string(),
+      email: a.string(),
     })
-    .authorization(allow => [
-      // FIX: Reverted allow.owner() to its simplest form to avoid TypeScript error.
-      // This will rely on Amplify's default owner resolution (usually based on 'owner' field or 'sub' from Cognito).
-      allow.owner(),
-      allow.groups(['Admins']).to(['read', 'create', 'update', 'delete']), // Admins have full control
-      // FIX: Granting all authenticated users (including non-owners) full CRUD on Todo items.
-      // This ensures booking/unbooking works for all authenticated users, regardless of auth provider,
-      // and bypasses the identityField TypeScript error.
-      allow.authenticated().to(['read', 'create', 'update', 'delete']),
-      allow.publicApiKey().to(['read']) // Public can only read (view schedule)
+    .identifier(['dateSlot', 'timeSlot'])
+    .authorization((allow) => [
+      allow.ownerDefinedIn('owner').identityClaim('sub').to(['read']),
+      allow.groups(['Admins']).to(['read']),
     ]),
 
   WaitlistEntry: a
@@ -31,22 +35,21 @@ const schema = a.schema({
       lastName: a.string(),
       createdAt: a.datetime().required(),
     })
-    .authorization(allow => [
-      allow.owner(), // Default owner rule for WaitlistEntry
-      allow.authenticated().to(['create', 'read', 'delete']),
-      allow.groups(['Admins']).to(['read', 'create', 'update', 'delete']),
-    ]),
+    .authorization((allow) => [allow.owner(), allow.groups(['Admins']).to(['read', 'delete'])]),
 
-  // This mutation will trigger your email Lambda
-  sendNotificationEmail: a
+  bookSlot: a
     .mutation()
-    .arguments({
-      subject: a.string().required(),
-      body: a.string().required()
-    })
-    .returns(a.json())
-    .authorization(allow => [allow.authenticated()]) // Requires authenticated user to call
-    .handler(a.handler.function(sendEmailFunction))
+    .arguments(slotArguments)
+    .returns(a.boolean())
+    .authorization((allow) => [allow.authenticated()])
+    .handler(a.handler.function(bookingFunction)),
+
+  cancelBooking: a
+    .mutation()
+    .arguments(slotArguments)
+    .returns(a.boolean())
+    .authorization((allow) => [allow.authenticated()])
+    .handler(a.handler.function(bookingFunction)),
 });
 
 export type Schema = ClientSchema<typeof schema>;

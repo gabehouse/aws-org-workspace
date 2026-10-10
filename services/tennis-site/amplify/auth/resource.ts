@@ -31,4 +31,5 @@ export const auth = defineAuth({
       ],
     }
   },
+  groups: ['Admins'],
 });

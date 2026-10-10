@@ -1,138 +1,43 @@
-import { useEffect, useState, useCallback, Fragment, useRef } from "react";
+import { useEffect, useState, useCallback, useMemo, Fragment } from "react";
 import type { Schema } from "../amplify/data/resource";
 import { useAuthenticator, Authenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 import { generateClient } from "aws-amplify/data";
-import { Amplify } from 'aws-amplify';
-import { Hub } from "aws-amplify/utils";
-import { Subscription } from 'rxjs';
-import { AuthUser, fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
-import { sendEmail } from './utils/emailService'; // Assuming this path is correct
-import { getAmplifyEnvironmentName } from './utils/envUtils'; // Assuming this path is correct
+import { fetchAuthSession, fetchUserAttributes } from 'aws-amplify/auth';
+import { TIME_SLOTS as timeSlots, getBookableDates, isBookable, slotKey } from '../amplify/shared/schedule';
 
+type Booking = Schema["Booking"]["type"];
+type WaitlistEntry = Schema["WaitlistEntry"]["type"];
 
-// Define an extended AuthUser type that explicitly includes attributes and session for groups
-interface CustomAuthUser extends AuthUser {
-  attributes?: {
-    given_name?: string;
-    family_name?: string;
-    email?: string;
-  };
-  signInUserSession?: {
-    getAccessToken: () => {
-      payload: {
-        'cognito:groups'?: string[];
-      };
-    };
-  };
-}
+const SCHEDULE_REFRESH_MS = 30_000;
 
-// Interface for a common GraphQL error structure, to avoid 'any' in error handling
-interface GraphQLFormattedError {
-  errorType?: string;
-  message?: string;
-  // Add other properties if they are consistently present and needed from GraphQL errors
-}
+/** Formats a YYYY-MM-DD string as e.g. "Mon, Jul 15" without shifting it across time zones. */
+const formatDisplayDate = (dateSlot: string): string =>
+  new Date(`${dateSlot}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
-// Interface for a GraphQL response that might contain errors
-interface GraphQLResponseError {
-  errors?: GraphQLFormattedError[];
-}
-
-// Define the time slots for the schedule
-const timeSlots = Array.from({ length: 13 }, (_, i) => {
-  const hour = 6 + i; // From 8 AM (08:00) to 8 PM (20:00)
-  return `${hour.toString().padStart(2, '0')}:00`;
-});
-
-// --- Date Utility Functions ---
-/**
- * Formats a Date object into a string for display or or storage.
- * @param date The Date object to format.
- * @param format 'display' for "Mon, Jul 15" or 'storage' for "YYYY-MM-DD".
- * @returns Formatted date string.
- */
-const getFormattedDate = (date: Date, format: 'display' | 'storage'): string => {
-  if (format === 'display') {
-    const options: Intl.DateTimeFormatOptions = { weekday: 'short', month: 'short', day: 'numeric' };
-    return date.toLocaleDateString('en-US', options);
-  } else { // storage format 'YYYY-MM-DD'
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
-};
-
-/**
- * Generates an array of objects for the next 7 days, including today.
- * Each object contains the Date object, its display format, and its storage format.
- * @returns An array of date objects.
- */
-const getSevenDatesFromToday = (): { date: Date, display: string, storage: string }[] => {
-  const dates = [];
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); // Normalize to start of day
-
-  for (let i = 0; i < 7; i++) {
-    const currentDate = new Date(today);
-    currentDate.setDate(today.getDate() + i);
-    dates.push({
-      date: currentDate,
-      display: getFormattedDate(currentDate, 'display'),
-      storage: getFormattedDate(currentDate, 'storage')
-    });
-  }
-  return dates;
-};
-// --- End Date Utility Functions ---
-
-/**
- * Helper function to format the display name for a slot, prioritizing first/last name, then email, then username.
- * @param firstName User's first name.
- * @param lastName User's last name.
- * @param email User's email.
- * @param username User's username (e.g., Google ID for federated users).
- * @returns Formatted display string.
- */
 const formatDisplayName = (
   firstName: string | null | undefined,
   lastName: string | null | undefined,
   email: string | null | undefined,
-  username: string | null | undefined
 ): string => {
   if (firstName && lastName) {
     return `${firstName} ${lastName.charAt(0)}.`;
   }
-  if (email) {
-    return email;
-  }
-  return username || 'Unknown';
+  return email || 'Unknown';
 };
 
-// Type guard function to filter out null/undefined Todo items and check for required properties
-function isValidTodo(item: unknown): item is Schema["Todo"]["type"] {
-  return item !== null && item !== undefined &&
-    typeof item === 'object' &&
-    'id' in item && typeof (item as Schema["Todo"]["type"]).id === 'string' &&
-    'dateSlot' in item && typeof (item as Schema["Todo"]["type"]).dateSlot === 'string' &&
-    'timeSlot' in item && typeof (item as Schema["Todo"]["type"]).timeSlot === 'string';
+/** Amplify returns GraphQL errors (including messages thrown by the booking Lambda) instead of throwing. */
+async function runMutation(request: Promise<{ errors?: { message: string }[] }>): Promise<void> {
+  const { errors } = await request;
+  if (errors?.length) {
+    throw new Error(errors.map((e) => e.message).join(', '));
+  }
 }
 
-// Type guard function to filter out null/undefined WaitlistEntry items and check for required properties
-function isValidWaitlistEntry(item: unknown): item is Schema["WaitlistEntry"]["type"] {
-  return item !== null && item !== undefined &&
-    typeof item === 'object' &&
-    'id' in item && typeof (item as Schema["WaitlistEntry"]["type"]).id === 'string' &&
-    'email' in item && typeof (item as Schema["WaitlistEntry"]["type"]).email === 'string' &&
-    ('firstName' in item ? (typeof (item as Schema["WaitlistEntry"]["type"]).firstName === 'string' || (item as Schema["WaitlistEntry"]["type"]).firstName === null) : true) &&
-    ('lastName' in item ? (typeof (item as Schema["WaitlistEntry"]["type"]).lastName === 'string' || (item as Schema["WaitlistEntry"]["type"]).lastName === null) : true) &&
-    ('createdAt' in item ? (typeof (item as Schema["WaitlistEntry"]["type"]).createdAt === 'string' || (item as Schema["WaitlistEntry"]["type"]).createdAt === null) : true);
-}
+const errorMessage = (error: unknown, fallback: string): string =>
+  error instanceof Error && error.message ? error.message : fallback;
 
-// Interface for booker details, including the Todo item's ID for removal
 interface BookerDetails {
-  id: string; // ID of the Todo item
   dateSlot: string;
   timeSlot: string;
   firstName: string;
@@ -141,57 +46,34 @@ interface BookerDetails {
 }
 
 function App() {
-  const [isAmplifyConfigured, setIsAmplifyConfigured] = useState(false);
-  const clientRef = useRef<ReturnType<typeof generateClient<Schema>> | null>(null);
-  const [currentClientAuthMode, setCurrentClientAuthMode] = useState<'userPool' | 'apiKey' | null>(null);
+  const client = useMemo(() => generateClient<Schema>(), []);
 
   const { user, signOut, authStatus } = useAuthenticator((context) => [
     context.user,
     context.authStatus
-  ]) as { user: CustomAuthUser | undefined, signOut: () => void, authStatus: string };
+  ]);
+  const isSignedIn = authStatus === 'authenticated' && !!user;
+  const authMode = isSignedIn ? 'userPool' : 'apiKey';
 
-  // New state to hold the most reliable current user identifier (email or username)
-  const [currentUserIdentifierForWaitlist, setCurrentUserIdentifierForWaitlist] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!isAmplifyConfigured) {
-      return;
-    }
-
-    const desiredAuthMode = authStatus === 'authenticated' ? 'userPool' : 'apiKey';
-
-    if (!clientRef.current || currentClientAuthMode !== desiredAuthMode) {
-      clientRef.current = generateClient<Schema>({
-        authMode: desiredAuthMode
-      });
-      setCurrentClientAuthMode(desiredAuthMode);
-    }
-  }, [isAmplifyConfigured, authStatus, currentClientAuthMode]);
-
-  const client = clientRef.current;
-
-  const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
+  const [bookedSlots, setBookedSlots] = useState<Set<string>>(new Set());
+  const [bookings, setBookings] = useState<Map<string, Booking>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [modalContent, setModalContent] = useState<string | null>(null);
   const [showAuth, setShowAuth] = useState(false);
 
-  const [waitlistEntries, setWaitlistEntries] = useState<Array<Schema["WaitlistEntry"]["type"]>>([]);
+  const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([]);
   const [showWaitlistModal, setShowWaitlistModal] = useState(false);
-
-  const [isDataInitialized, setIsDataInitialized] = useState(false);
-  const initialLoadPerformed = useRef(false);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
   const [showBookerDetailsModal, setShowBookerDetailsModal] = useState(false);
   const [bookerDetails, setBookerDetails] = useState<BookerDetails | null>(null);
 
   const [isAdmin, setIsAdmin] = useState(false);
-  // State to track if the current user is in the waitlist, now dependent on currentUserIdentifierForWaitlist
-  const [isUserInWaitlist, setIsUserInWaitlist] = useState(false);
 
-  const [currentEnvironment, setCurrentEnvironment] = useState<string>('loading...');
-
-
-  const sevenDates = getSevenDatesFromToday();
+  const sevenDates = useMemo(
+    () => getBookableDates().map((storage) => ({ storage, display: formatDisplayDate(storage) })),
+    [],
+  );
 
   const hideModal = useCallback(() => {
     const timer = setTimeout(() => {
@@ -200,227 +82,70 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    const env = getAmplifyEnvironmentName();
-    setCurrentEnvironment(env);
+  // Slots (public) say which times are taken; Bookings (private) are only returned for the
+  // signed-in user's own slots, or for every slot if they are an admin.
+  const loadSchedule = useCallback(async () => {
+    try {
+      const dates = sevenDates.map((d) => d.storage);
+      const slotPages = await Promise.all(dates.map((dateSlot) => client.models.Slot.list({ dateSlot, authMode })));
+      setBookedSlots(new Set(slotPages.flatMap((page) => page.data).map((s) => slotKey(s.dateSlot, s.timeSlot))));
 
-    const removeListener = Hub.listen('core', (data) => {
-      if (data.payload.event === 'configured') {
-        setIsAmplifyConfigured(true);
-      }
-    });
-
-    if (Object.keys(Amplify.getConfig()).length > 0) {
-      setIsAmplifyConfigured(true);
-    }
-    // console.log('Amplify Configuration in Production:', Amplify.getConfig());
-    return () => removeListener();
-  }, []);
-
-  // Effect to reliably get the current user's email or username for waitlist identification
-  useEffect(() => {
-    const getAndSetUserIdentifier = async () => {
-      if (authStatus === 'authenticated' && user) {
-        try {
-          const latestAttrs = await fetchUserAttributes();
-          // Prioritize email, fallback to username (Google ID)
-          setCurrentUserIdentifierForWaitlist(latestAttrs.email || user.username || null);
-        } catch (error) {
-          console.error("Error fetching user attributes for waitlist identifier:", error);
-          // Fallback to username if attributes can't be fetched
-          setCurrentUserIdentifierForWaitlist(user.username || null);
-        }
+      if (isSignedIn) {
+        const bookingPages = await Promise.all(dates.map((dateSlot) => client.models.Booking.list({ dateSlot, authMode })));
+        setBookings(new Map(bookingPages.flatMap((page) => page.data).map((b) => [slotKey(b.dateSlot, b.timeSlot), b])));
       } else {
-        setCurrentUserIdentifierForWaitlist(null);
+        setBookings(new Map());
       }
-    };
-    getAndSetUserIdentifier();
-  }, [authStatus, user]); // Re-run when auth status or user object changes
-
-  // Effect 1: For initial data loading and cleanup (runs once on component mount, after Amplify is configured)
-  useEffect(() => {
-    const loadInitialData = async () => {
-      if (initialLoadPerformed.current) {
-        setIsLoading(false);
-        return;
-      }
-
-      if (!isAmplifyConfigured || authStatus === 'configuring' || !client) {
-        return;
-      }
-
-      setIsLoading(true);
-
-      try {
-        let allExistingTodos: Schema["Todo"]["type"][] = [];
-        let nextToken: string | undefined | null = null;
-        do {
-          const { data: currentTodosPage = [], nextToken: newNextToken_typed }: { data: Schema["Todo"]["type"][], nextToken?: string | null } = await client.models.Todo.list({
-            limit: 1000,
-            nextToken: nextToken || undefined,
-          });
-          allExistingTodos = allExistingTodos.concat(currentTodosPage.filter(isValidTodo));
-          nextToken = newNextToken_typed;
-        } while (nextToken);
-
-        setTodos(allExistingTodos);
-        console.log("Initial Todos loaded:", allExistingTodos); // Log initial load
-
-        const expectedSlotKeys = new Set<string>();
-        for (const dateObj of sevenDates) {
-          for (const time of timeSlots) {
-            expectedSlotKeys.add(`${dateObj.storage}-${time}`);
-          }
-        }
-
-        const validExistingSlots = new Map<string, Schema["Todo"]["type"]>();
-        const idsToDelete = new Set<string>();
-
-        allExistingTodos.forEach(todo => {
-          const key = `${todo.dateSlot}-${todo.timeSlot}`;
-          if (expectedSlotKeys.has(key)) {
-            if (validExistingSlots.has(key)) {
-              idsToDelete.add(todo.id);
-            } else {
-              validExistingSlots.set(key, todo);
-            }
-          } else {
-            idsToDelete.add(todo.id);
-          }
-        });
-
-        if (idsToDelete.size > 0) {
-          console.log("Deleting stale/duplicate Todo items:", Array.from(idsToDelete));
-          await Promise.allSettled(Array.from(idsToDelete).map(id => client.models.Todo.delete({ id })));
-        }
-
-        const newSlotsToCreate = [];
-        for (const dateObj of sevenDates) {
-          for (const time of timeSlots) {
-            const key = `${dateObj.storage}-${time}`;
-            if (!validExistingSlots.has(key)) {
-              newSlotsToCreate.push({
-                dateSlot: dateObj.storage,
-                timeSlot: time,
-                bookedByUsername: null,
-                bookedByFirstName: null,
-                bookedByLastName: null,
-                bookedByEmail: null,
-              });
-            }
-          }
-        }
-
-        if (newSlotsToCreate.length > 0) {
-          console.log("Creating new Todo slots:", newSlotsToCreate.length);
-          await Promise.allSettled(newSlotsToCreate.map(slot => client.models.Todo.create(slot)));
-        }
-
-        let finalTodos: Schema["Todo"]["type"][] = [];
-        let finalNextToken: string | undefined | null = null;
-        do {
-          const { data: page = [], nextToken: newNextToken_final }: { data: Schema["Todo"]["type"][], nextToken?: string | null } = await client.models.Todo.list({
-            limit: 1000,
-            nextToken: finalNextToken || undefined,
-          });
-          finalTodos = finalTodos.concat(page.filter(isValidTodo));
-          finalNextToken = newNextToken_final;
-        } while (finalNextToken);
-
-        setTodos(finalTodos);
-        console.log("Final Todos after setup:", finalTodos); // Log final state after setup
-
-        initialLoadPerformed.current = true;
-        setIsDataInitialized(true);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error during initial Todo data setup:", error);
-        setModalContent("Failed to initialize schedule. Please try again.");
-        hideModal();
-        setIsLoading(false);
-      }
-    };
-
-    loadInitialData();
-  }, [isAmplifyConfigured, authStatus, client, sevenDates, timeSlots, hideModal]);
-
-  // Effect to update isAdmin state when user object changes
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      let calculatedIsAdmin = false;
-      if (user?.username === 'google_116267331380489634932') {
-        calculatedIsAdmin = true;
-        console.log("Admin status: Hardcoded Google user detected.");
-      } else if (authStatus === 'authenticated') {
-        try {
-          const currentUser = await getCurrentUser();
-          console.log("Current authenticated user for admin check:", currentUser);
-          const groups = (currentUser as CustomAuthUser).signInUserSession?.getAccessToken()?.payload['cognito:groups'];
-          calculatedIsAdmin = groups?.includes('Admins') || false;
-          console.log("User groups:", groups);
-          console.log("Is user in 'Admins' group?", calculatedIsAdmin);
-        } catch (error) {
-          console.error("Error fetching current authenticated user for admin check:", error);
-          calculatedIsAdmin = false;
-        }
-      }
-      setIsAdmin(calculatedIsAdmin);
-      console.log("Final isAdmin state:", calculatedIsAdmin);
-    };
-
-    checkAdminStatus();
-  }, [user, authStatus]);
-
-  // Effect to update isUserInWaitlist state when user or waitlistEntries change
-  // This is crucial for the button to toggle correctly, using the consistent identifier
-  useEffect(() => {
-    if (currentUserIdentifierForWaitlist && waitlistEntries.length > 0) {
-      setIsUserInWaitlist(waitlistEntries.some(entry => entry.email === currentUserIdentifierForWaitlist));
-    } else {
-      setIsUserInWaitlist(false);
+    } catch (error) {
+      console.error("Error loading schedule:", error);
+      setModalContent("Failed to load the schedule. Please refresh the page.");
+      hideModal();
+    } finally {
+      setIsLoading(false);
     }
-  }, [currentUserIdentifierForWaitlist, waitlistEntries]); // Depend on the new consistent identifier
+  }, [client, authMode, isSignedIn, sevenDates, hideModal]);
 
-  // Effect 2: For setting up real-time subscriptions
   useEffect(() => {
-    let todoSub: Subscription | undefined;
-    let waitlistSub: Subscription | undefined;
-
-    if (isDataInitialized && client) {
-      todoSub = client.models.Todo.observeQuery().subscribe({
-        next: ({ items }) => {
-          console.log("Todo observeQuery received items:", items); // Log incoming todo items
-          const filteredItems = items.filter(isValidTodo);
-          setTodos(filteredItems);
-          console.log("Todos state updated by observeQuery:", filteredItems); // Confirm state update
-        },
-        error: (error) => {
-          console.error("Error observing todos in real-time:", error);
-        }
-      });
-
-      waitlistSub = client.models.WaitlistEntry.observeQuery().subscribe({
-        next: ({ items }) => {
-          console.log("Waitlist observeQuery received items:", items); // Log incoming waitlist items
-          const filteredItems = items.filter(isValidWaitlistEntry);
-          setWaitlistEntries(filteredItems);
-        },
-        error: (error) => {
-          console.error("Error observing waitlist entries in real-time:", error);
-        }
-      });
+    if (authStatus === 'configuring') {
+      return;
     }
-    // Removed empty else block statement here to resolve ESLint warning.
+    loadSchedule();
+    const interval = setInterval(loadSchedule, SCHEDULE_REFRESH_MS);
+    return () => clearInterval(interval);
+  }, [authStatus, loadSchedule]);
 
-    return () => {
-      if (todoSub) {
-        todoSub.unsubscribe();
-      }
-      if (waitlistSub) {
-        waitlistSub.unsubscribe();
-      }
-    };
-  }, [isDataInitialized, client, currentClientAuthMode]);
+  // The UI only shows admin controls; the backend enforces the Admins group on every request.
+  useEffect(() => {
+    if (!isSignedIn) {
+      setIsAdmin(false);
+      setCurrentUserEmail(null);
+      return;
+    }
+    fetchAuthSession()
+      .then((session) => {
+        const groups = session.tokens?.accessToken.payload['cognito:groups'];
+        setIsAdmin(Array.isArray(groups) && groups.includes('Admins'));
+      })
+      .catch(() => setIsAdmin(false));
+    fetchUserAttributes()
+      .then((attrs) => setCurrentUserEmail(attrs.email || user.username))
+      .catch(() => setCurrentUserEmail(user.username));
+  }, [isSignedIn, user]);
+
+  // Waitlist entries are owner-scoped: users see their own entry, admins see all of them.
+  useEffect(() => {
+    if (!isSignedIn) {
+      setWaitlistEntries([]);
+      return;
+    }
+    const sub = client.models.WaitlistEntry.observeQuery({ authMode: 'userPool' }).subscribe({
+      next: ({ items }) => setWaitlistEntries(items),
+      error: (error) => console.error("Error observing waitlist entries:", error),
+    });
+    return () => sub.unsubscribe();
+  }, [client, isSignedIn]);
+
+  const isUserInWaitlist = !!currentUserEmail && waitlistEntries.some((entry) => entry.email === currentUserEmail);
 
   useEffect(() => {
     if (authStatus === 'authenticated' && showAuth) {
@@ -430,288 +155,93 @@ function App() {
     }
   }, [authStatus, showAuth, hideModal]);
 
-
-  // Function to handle removing a booking as admin
-  const handleRemoveBookingAsAdmin = async (todoId: string) => {
-    console.log("Attempting to remove booking as admin for todoId:", todoId);
-    console.log("Current isAdmin status:", isAdmin);
-
-    if (!isAdmin) {
-      setModalContent("Unauthorized: Only the admin can remove other users' bookings.");
-      hideModal();
-      return;
-    }
-    if (!client) {
-      console.error("Amplify client is not initialized for booking operation.");
-      setModalContent("Application not ready. Please try again in a moment.");
-      hideModal();
-      return;
-    }
-
+  const handleRemoveBookingAsAdmin = async (dateSlot: string, timeSlot: string) => {
     try {
-      const updatedTodoResult = await client.models.Todo.update({ // Capture the result object
-        id: todoId,
-        bookedByUsername: null,
-        bookedByFirstName: null,
-        bookedByLastName: null,
-        bookedByEmail: null,
-      }, { authMode: 'userPool' });
-
-      console.log("Result of admin remove booking update:", updatedTodoResult); // Log the full result
-      if (updatedTodoResult.errors && updatedTodoResult.errors.length > 0) {
-        console.error("Errors from admin remove booking update:", updatedTodoResult.errors);
-      }
-
-      if (updatedTodoResult.data) {
-        setModalContent("Booking successfully removed by admin.");
-      } else {
-        // This is the specific error message you're seeing
-        setModalContent("Failed to remove booking: No data returned from backend update operation. Check console for errors.");
-      }
-      setShowBookerDetailsModal(false);
-      hideModal();
-    } catch (error: unknown) {
-      console.error("Error removing booking as admin (catch block):", error); // Log full error object
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'errors' in error &&
-        Array.isArray((error as GraphQLResponseError).errors) &&
-        (error as GraphQLResponseError).errors!.some(e => e.errorType === 'Unauthorized')
-      ) {
-        setModalContent("Permission denied: You do not have authorization to remove this booking. Please ensure you are signed in correctly.");
-      } else {
-        setModalContent("Failed to remove booking due to an unexpected error. Please check console.");
-      }
-      hideModal();
+      await runMutation(client.mutations.cancelBooking({ dateSlot, timeSlot }));
+      setModalContent("Booking removed.");
+    } catch (error) {
+      console.error("Error removing booking as admin:", error);
+      setModalContent(errorMessage(error, "Failed to remove booking."));
     }
+    setShowBookerDetailsModal(false);
+    hideModal();
+    await loadSchedule();
   };
 
-  // Function to handle clicking on a schedule slot
   const handleSlotClick = async (dateSlot: string, timeSlot: string) => {
-    console.log(`Slot clicked: ${dateSlot} ${timeSlot}`);
-    console.log("Current authStatus:", authStatus);
-    console.log("Current user:", user);
-
-    if (authStatus !== 'authenticated' || !user) {
+    if (!isSignedIn) {
       setModalContent("Please sign in to book or unbook a slot.");
       setShowAuth(true);
       return;
     }
 
-    let latestUserAttributes;
+    const key = slotKey(dateSlot, timeSlot);
+    const booking = bookings.get(key);
+    const label = `${formatDisplayDate(dateSlot)} ${timeSlot}`;
+
+    if (booking && booking.owner !== user.userId) {
+      if (isAdmin) {
+        setBookerDetails({
+          dateSlot,
+          timeSlot,
+          firstName: booking.firstName || 'N/A',
+          lastName: booking.lastName || 'N/A',
+          email: booking.email || 'N/A',
+        });
+        setShowBookerDetailsModal(true);
+      }
+      return;
+    }
+
     try {
-      latestUserAttributes = await fetchUserAttributes();
-      console.log("Fetched user attributes:", latestUserAttributes);
+      if (booking) {
+        await runMutation(client.mutations.cancelBooking({ dateSlot, timeSlot }));
+        setModalContent(`Slot ${label} unbooked.`);
+      } else if (bookedSlots.has(key)) {
+        setModalContent(`Slot ${label} is already booked.`);
+      } else {
+        await runMutation(client.mutations.bookSlot({ dateSlot, timeSlot }));
+        setModalContent(`Slot ${label} booked. See you on the court!`);
+      }
     } catch (error) {
-      console.error("Error fetching latest user attributes:", error);
-      setModalContent("Failed to retrieve user details. Please try again.");
-      hideModal();
-      return;
-    }
-
-    const currentUserLoginId = user.username;
-    const currentUserFirstName = latestUserAttributes.given_name || null;
-    const currentUserLastName = latestUserAttributes.family_name || null;
-    const currentUserEmail = latestUserAttributes.email || null;
-
-
-    if (!client) {
-      console.error("Amplify client is not initialized for booking operation.");
-      setModalContent("Application not ready. Please try again in a moment.");
-      hideModal();
-      return;
-    }
-
-    const targetTodo = todos.find(
-      (todo: Schema["Todo"]["type"]) =>
-        todo.dateSlot === dateSlot && todo.timeSlot === timeSlot
-    );
-
-    console.log("Target Todo for slot:", targetTodo);
-
-    try {
-      if (targetTodo) {
-        if (targetTodo.bookedByUsername === currentUserLoginId) {
-          // User is unbooking their own slot
-          console.log("Attempting to unbook own slot:", targetTodo.id);
-          const unbookResult = await client.models.Todo.update({
-            id: targetTodo.id,
-            bookedByUsername: null,
-            bookedByFirstName: null,
-            bookedByLastName: null,
-            bookedByEmail: null,
-          }, { authMode: 'userPool' });
-          console.log("Unbook result:", unbookResult); // Log the unbook result
-          if (unbookResult.errors && unbookResult.errors.length > 0) {
-            console.error("Errors from unbook update:", unbookResult.errors);
-          }
-          setModalContent(`Slot ${getFormattedDate(new Date(dateSlot), 'display')} ${timeSlot} unbooked.`);
-          hideModal();
-
-          // Send unbooking email
-          await sendEmail(
-            `GRT UNBOOKING ${currentEnvironment}`,
-            `UNBOOKING ${timeSlot}, ${dateSlot}, ${currentUserEmail}, ${currentUserFirstName}, ${currentUserLastName}`
-          );
-
-        }
-        else if (targetTodo.bookedByUsername !== null) {
-          // Slot is booked by someone else
-          setModalContent(`Slot ${getFormattedDate(new Date(dateSlot), 'display')} ${timeSlot} is already booked by ${formatDisplayName(targetTodo.bookedByFirstName, targetTodo.bookedByLastName, targetTodo.bookedByEmail, targetTodo.bookedByUsername)}.`);
-          hideModal();
-          if (isAdmin) {
-            setBookerDetails({
-              id: targetTodo.id,
-              dateSlot: targetTodo.dateSlot,
-              timeSlot: targetTodo.timeSlot,
-              firstName: targetTodo.bookedByFirstName || 'N/A',
-              lastName: targetTodo.bookedByLastName || 'N/A', // Corrected from targetTodo.lastName to targetTodo.bookedByLastName
-              email: targetTodo.bookedByEmail || 'N/A',
-            });
-            setShowBookerDetailsModal(true);
-          }
-        }
-        else {
-          // Slot is unbooked, user is booking it
-          console.log("Attempting to book unbooked slot (update existing):", targetTodo.id);
-          const bookResult = await client.models.Todo.update({
-            id: targetTodo.id,
-            bookedByUsername: currentUserLoginId,
-            bookedByFirstName: currentUserFirstName,
-            bookedByLastName: currentUserLastName,
-            bookedByEmail: currentUserEmail,
-          }, { authMode: 'userPool' });
-          console.log("Book result (update):", bookResult); // Log the book result
-          if (bookResult.errors && bookResult.errors.length > 0) {
-            console.error("Errors from book update:", bookResult.errors);
-          }
-          setModalContent(`Slot ${getFormattedDate(new Date(dateSlot), 'display')} ${timeSlot} booked.`);
-          hideModal();
-
-          // Send booking email
-          await sendEmail(
-            `GRT BOOKING ${currentEnvironment}`,
-            `BOOKING ${targetTodo.timeSlot}, ${targetTodo.dateSlot}, ${currentUserEmail}, ${currentUserFirstName}, ${currentUserLastName}`
-          );
-        }
-      } else {
-        // This 'else' block handles the case where targetTodo is NOT found, meaning it's a new slot to be created.
-        // This should primarily happen if the initial data setup failed or the DynamoDB table was cleared.
-        console.log("Attempting to create and book a new slot (targetTodo not found):", dateSlot, timeSlot);
-        const newSlotResult = await client.models.Todo.create({
-          dateSlot: dateSlot,
-          timeSlot: timeSlot,
-          bookedByUsername: currentUserLoginId,
-          bookedByFirstName: currentUserFirstName,
-          bookedByLastName: currentUserLastName,
-          bookedByEmail: currentUserEmail,
-        }, { authMode: 'userPool' });
-        console.log("New slot creation result:", newSlotResult);
-        if (newSlotResult.errors && newSlotResult.errors.length > 0) {
-          console.error("Errors from new slot creation:", newSlotResult.errors);
-        }
-        setModalContent(`New slot ${getFormattedDate(new Date(dateSlot), 'display')} ${timeSlot} created and booked!`);
-        hideModal();
-
-        // Corrected email subject and body for new slot creation
-        await sendEmail(
-          `GRT BOOKING ${currentEnvironment}`,
-          `BOOKING ${timeSlot}, ${dateSlot}, ${currentUserEmail}, ${currentUserFirstName}, ${currentUserLastName}`
-        );
-      }
-    } catch (error: unknown) {
-      console.error("Error booking/unbooking slot (catch block):", error); // Log full error object
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'errors' in error &&
-        Array.isArray((error as GraphQLResponseError).errors) &&
-        (error as GraphQLResponseError).errors!.some(e => e.errorType === 'Unauthorized')
-      ) {
-        setModalContent("Permission denied: You do not have authorization to book this slot. Please ensure you are signed in correctly.");
-      } else {
-        setModalContent("Failed to update slot. Please try again. Check console for details.");
-      }
+      console.error("Error booking/unbooking slot:", error);
+      setModalContent(errorMessage(error, "Failed to update slot. Please try again."));
     }
     hideModal();
+    await loadSchedule();
   };
 
   const handleWaitlistToggle = async () => {
-    if (authStatus !== 'authenticated' || !user) {
+    if (!isSignedIn) {
       setModalContent("Please sign in to manage your waitlist status.");
       setShowAuth(true);
       hideModal();
       return;
     }
 
-    if (!client) {
-      console.error("Amplify client is not initialized for waitlist operation.");
-      setModalContent("Application not ready. Please try again in a moment.");
-      hideModal();
-      return;
-    }
-
-    // Fetch latest user attributes to ensure they are up-to-date for waitlist signup
-    let latestUserAttributes;
-    try {
-      latestUserAttributes = await fetchUserAttributes();
-    } catch (error) {
-      console.error("Error fetching latest user attributes for waitlist:", error);
-      setModalContent("Failed to retrieve user details for waitlist. Please try again.");
-      hideModal();
-      return;
-    }
-
-    // Use the consistent identifier derived from fetchUserAttributes
-    const emailToStoreAndCheck = latestUserAttributes.email || user.username;
-    const currentUserFirstName = latestUserAttributes.given_name || null;
-    const currentUserLastName = latestUserAttributes.family_name || null;
-
-    if (!emailToStoreAndCheck) {
-      setModalContent("Could not retrieve your user identifier. Please ensure your profile has an email or username.");
-      hideModal();
-      return;
-    }
-
     try {
       if (isUserInWaitlist) {
-        // Remove from waitlist
-        const entryToRemove = waitlistEntries.find(entry => entry.email === emailToStoreAndCheck);
+        const entryToRemove = waitlistEntries.find((entry) => entry.email === currentUserEmail);
         if (entryToRemove) {
-          await client.models.WaitlistEntry.delete({ id: entryToRemove.id }, { authMode: 'userPool' });
-          setModalContent("You have been removed from the group lesson waitlist.");
-        } else {
-          // This case should ideally not happen if isUserInWaitlist is true and data is consistent
-          setModalContent("Could not find your waitlist entry to remove. Please try refreshing.");
+          await runMutation(client.models.WaitlistEntry.delete({ id: entryToRemove.id }, { authMode: 'userPool' }));
         }
+        setModalContent("You have been removed from the group lesson waitlist.");
       } else {
-        // Add to waitlist
-        await client.models.WaitlistEntry.create({
-          email: emailToStoreAndCheck, // Use the consistent identifier
-          firstName: currentUserFirstName,
-          lastName: currentUserLastName,
-          createdAt: new Date().toISOString(), // Changed to toISOString() to match resource.ts string type
-        }, { authMode: 'userPool' });
+        const attrs = await fetchUserAttributes();
+        await runMutation(client.models.WaitlistEntry.create({
+          email: attrs.email || user.username,
+          firstName: attrs.given_name || null,
+          lastName: attrs.family_name || null,
+          createdAt: new Date().toISOString(),
+        }, { authMode: 'userPool' }));
         setModalContent("You have been added to the group lesson waitlist! We'll notify you when spots become available.");
       }
-    } catch (error: unknown) {
+    } catch (error) {
       console.error("Error managing waitlist:", error);
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'errors' in error &&
-        Array.isArray((error as GraphQLResponseError).errors) &&
-        (error as GraphQLResponseError).errors!.some(e => e.errorType === 'Unauthorized')
-      ) {
-        setModalContent("Permission denied: You do not have authorization to manage your waitlist status. Please ensure you are signed in correctly.");
-      } else {
-        setModalContent("Failed to update waitlist status. Please try again.");
-      }
+      setModalContent(errorMessage(error, "Failed to update waitlist status. Please try again."));
     }
     hideModal();
   };
-
 
   const handleViewWaitlist = () => {
     setShowWaitlistModal(true);
@@ -831,42 +361,30 @@ function App() {
           </h1>
         </div>
 
-        {/* Tennis Coaching Blurb - Refined for Clients & Portfolio Appeal */}
         <div style={{ marginBottom: '1.5rem', textAlign: 'left', color: '#374151', padding: '0 1rem' }}>
           <p style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.75rem', color: '#111827' }}>
-            Professional Tennis Instruction | Waterloo
+            Private tennis lessons in Waterloo
           </p>
 
           <p style={{ fontSize: '1rem', lineHeight: '1.6', marginBottom: '1rem' }}>
-            Hi, I’m Gabriel. I provide technical coaching and high-performance hitting sessions for all skill levels. My background includes private instruction, tennis camp leadership, and serving as a hitting partner for <strong>top junior OTA players</strong>.
+            Hi, I’m Gabriel. I coach players of all levels, and I’ve led tennis camps and been a hitting partner for top junior OTA players. Lessons are at the WCI public courts.
           </p>
 
           <p style={{ fontSize: '1rem', lineHeight: '1.6', marginBottom: '1rem' }}>
-            <strong>The Training Environment:</strong> To keep elite-level coaching accessible, sessions are held at the WCI public courts. We operate with high adaptability—should courts be at capacity, we pivot to intensive off-court technical modules (biomechanics, volleys, and wall-drills) until space opens, ensuring zero downtime.
+            <strong>$30 an hour</strong>, split however you like with friends. Your first lesson is <strong>$10</strong>. Sign in and pick an open time below to book.
           </p>
 
-          <p style={{ fontSize: '1rem', lineHeight: '1.6', marginBottom: '1rem' }}>
-            <strong>Rates & Booking:</strong> <s>$40</s> <strong>$30 per hour</strong> (Split the cost with friends!).
-            Your <strong>introductory session is just $10</strong>. Select a calendar slot to trigger an automated confirmation and secure your booking.
-          </p>
-
-          <p style={{ fontSize: '0.9rem', color: '#6B7280', fontStyle: 'italic' }}>
-            Flexible cancellation: No fees for late changes, though 3-hour notice is appreciated. Payments accepted via Cash or E-transfer.
+          <p style={{ fontSize: '0.9rem', color: '#6B7280' }}>
+            No cancellation fees, though a few hours’ notice is appreciated. Cash or e-transfer. Questions? Email <a href="mailto:gabriel.jsh@gmail.com" style={{ color: '#2563eb', textDecoration: 'underline' }}>gabriel.jsh@gmail.com</a>.
           </p>
         </div>
 
-        {/* Group Lesson Description - Waitlist Logic */}
         <div style={{ marginBottom: '1rem', textAlign: 'left', color: '#374151', padding: '0 1rem' }}>
           <div style={{ backgroundColor: '#F3F4F6', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #3B82F6' }}>
             <p style={{ fontSize: '1rem', lineHeight: '1.5', margin: 0 }}>
-              <strong>Scalable Group Sessions:</strong> I am currently aggregating interest for structured group clinics at private facilities. These sessions will feature a mix of tactical drills and match-play. <strong>Join the waitlist</strong> to be notified when we reach capacity for a new cohort.
+              <strong>Group lessons:</strong> I’m planning small group clinics. Join the waitlist to hear when one opens.
             </p>
           </div>
-        </div>
-
-        {/* Email Contact Line - Added here and aligned left */}
-        <div style={{ marginBottom: '1.5rem', textAlign: 'left', color: '#374151', fontSize: '1rem', lineHeight: '1.5', paddingLeft: '1rem', paddingRight: '1rem' }}> {/* Added horizontal padding to the container */}
-          <p>Feel free to email <a href="mailto:gabriel.jsh@gmail.com" style={{ color: '#2563eb', textDecoration: 'underline' }}>gabriel.jsh@gmail.com</a> if you have any questions!</p>
         </div>
 
         <div style={{ textAlign: 'center', marginBottom: '2rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
@@ -938,13 +456,11 @@ function App() {
                   {time}
                 </div>
                 {sevenDates.map((dateObj) => {
-                  const todoForSlot = todos.find(
-                    (todo: Schema["Todo"]["type"]) =>
-                      todo.dateSlot === dateObj.storage && todo.timeSlot === time
-                  );
-
-                  const isBooked = !!todoForSlot?.bookedByUsername;
-                  const isBookedByCurrentUser = user?.username && todoForSlot?.bookedByUsername === user.username;
+                  const key = slotKey(dateObj.storage, time);
+                  const booking = bookings.get(key);
+                  const isBooked = bookedSlots.has(key);
+                  const isBookedByCurrentUser = !!booking && booking.owner === user?.userId;
+                  const isPast = !isBooked && !isBookable(dateObj.storage, time);
 
                   let slotCursor = 'pointer';
                   let slotClickHandler: (() => void) | undefined = () => handleSlotClick(dateObj.storage, time);
@@ -971,6 +487,12 @@ function App() {
                       slotCursor = 'default';
                       slotClickHandler = undefined;
                     }
+                  } else if (isPast) {
+                    slotBackgroundColor = '#f3f4f6';
+                    slotBorderColor = '#e5e7eb';
+                    slotTextColor = '#9ca3af';
+                    slotCursor = 'default';
+                    slotClickHandler = undefined;
                   } else {
                     slotBackgroundColor = '#dbeafe';
                     slotBorderColor = '#93c5fd';
@@ -1003,10 +525,10 @@ function App() {
                         <span style={{ fontSize: '0.75rem', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                           You
                         </span>
-                      ) : isBooked && todoForSlot ? (
+                      ) : isBooked ? (
                         <span style={{ fontSize: '0.75rem', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                          {isAdmin ? (
-                            formatDisplayName(todoForSlot.bookedByFirstName, todoForSlot.bookedByLastName, todoForSlot.bookedByEmail, todoForSlot.bookedByUsername)
+                          {isAdmin && booking ? (
+                            formatDisplayName(booking.firstName, booking.lastName, booking.email)
                           ) : (
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style={{ width: '1em', height: '1em', verticalAlign: 'middle', marginRight: '0.25em' }}>
                               <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z" clipRule="evenodd" />
@@ -1023,6 +545,18 @@ function App() {
             ))}
           </div>
         </div>
+
+        <p style={{ marginTop: '1.5rem', marginBottom: 0, textAlign: 'center', fontSize: '0.8rem', color: '#9ca3af' }}>
+          Built on AWS with AppSync, DynamoDB Streams, Lambda, and SES ·{' '}
+          <a
+            href="https://github.com/gabehouse/aws-org-workspace/tree/master/services/tennis-site"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#6b7280', textDecoration: 'underline' }}
+          >
+            How this site works
+          </a>
+        </p>
       </div>
       {modalContent && (
         <div style={{
@@ -1228,13 +762,13 @@ function App() {
               &times;
             </button>
             <h2 style={{ marginTop: '0', marginBottom: '1rem', fontSize: '1.5rem', fontWeight: 'bold' }}>Booker Details</h2>
-            <p style={{ margin: '0.5rem 0' }}><strong>Date:</strong> {getFormattedDate(new Date(bookerDetails.dateSlot), 'display')}</p>
+            <p style={{ margin: '0.5rem 0' }}><strong>Date:</strong> {formatDisplayDate(bookerDetails.dateSlot)}</p>
             <p style={{ margin: '0.5rem 0' }}><strong>Time:</strong> {bookerDetails.timeSlot}</p>
             <p style={{ margin: '0.5rem 0' }}><strong>First Name:</strong> {bookerDetails.firstName}</p>
             <p style={{ margin: '0.5rem 0' }}><strong>Last Name:</strong> {bookerDetails.lastName}</p>
             <p style={{ margin: '0.5rem 0' }}><strong>Email:</strong> {bookerDetails.email}</p>
             <button
-              onClick={() => handleRemoveBookingAsAdmin(bookerDetails.id)}
+              onClick={() => handleRemoveBookingAsAdmin(bookerDetails.dateSlot, bookerDetails.timeSlot)}
               style={{
                 padding: '0.75rem 1.5rem',
                 backgroundColor: '#dc2626',
