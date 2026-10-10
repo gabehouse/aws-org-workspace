@@ -66,7 +66,7 @@ const systems = [
         proof: [
             "Training games run on EC2 Spot for about 80% less than regular instances. If one gets shut down, I lose a few games and nothing else.",
             "The game server is Java on Elastic Beanstalk. The model runs inside it and picks a move in under a millisecond.",
-            "Over 2,300 games, the trained bot won 82.9% of the time. The rule-based bot won 49.5%."
+            "Over 2,300 games, the trained bot beat the rule-based bot 82.9% of the time. Two rule-based bots split about 50/50."
         ],
         figures: [
             {
@@ -77,7 +77,7 @@ const systems = [
             {
                 label: "Win rate",
                 image: "/assets/portfolio_convergence_chart.png",
-                description: "The trained bot against the rule-based one, over 2,300 games."
+                description: "Left: the rule-based bot against itself, about 50/50. Right: the trained bot against the rule-based bot, 82.9% over 2,300 games."
             },
             {
                 label: "Move time",
